@@ -1,0 +1,3 @@
+[submodule "importRosbagSubmodule"]
+	path = importRosbagSubmodule
+	url = https://github.com/event-driven-robotics/importRosbag
