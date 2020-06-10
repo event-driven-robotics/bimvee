@@ -78,12 +78,8 @@ its own channel, named after the topic in the bag.
 import string
 
 # Local imports
-if __package__ is None or __package__ == '':
-    from timestamps import zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
-    from importRosbagSubmodule.importRosbag import importRosbag
-else:
-    from .timestamps import zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
-    from .importRosbagSubmodule.importRosbag import importRosbag
+from .timestamps import zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
+from .importRosbagSubmodule.importRosbag.importRosbag import importRosbag
     
 def bimveeTypeForRosbagType(rosbagType):
     rosbagType = rosbagType.replace('/','_')

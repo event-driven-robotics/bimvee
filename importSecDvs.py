@@ -32,11 +32,7 @@ import numpy as np
 from tqdm import tqdm 
 
 # Local imports
-if __package__ is None or __package__ == '':
-    from timestamps import unwrapTimestamps, zeroTimestampsForADataType
-else:
-    from .timestamps import unwrapTimestamps, zeroTimestampsForADataType
-
+from .timestamps import unwrapTimestamps, zeroTimestampsForADataType
 
 def importSecDvs(**kwargs):
     filePathOrName = kwargs['filePathOrName']

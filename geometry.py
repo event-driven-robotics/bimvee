@@ -20,10 +20,7 @@ for example, for manipulating poses, orientations, projections etc
 import numpy as np
 
 # local imports
-if __package__ is None or __package__ == '':
-    from timestamps import sortDataTypeDictByTime
-else:
-    from .timestamps import sortDataTypeDictByTime
+from .timestamps import sortDataTypeDictByTime
 
 # Can accept an existing matrix, which should be min 3x3; 
 #if it creates a matrix it makes it 4x4

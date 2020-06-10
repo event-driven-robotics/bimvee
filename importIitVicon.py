@@ -70,12 +70,8 @@ import re
 import numpy as np
 
 # local imports
-if __package__ is None or __package__ == '':
-    from timestamps import zeroTimestampsForADataType
-    from split import splitByLabel
-else:
-    from .timestamps import zeroTimestampsForADataType
-    from .split import splitByLabel
+from .timestamps import zeroTimestampsForADataType
+from .split import splitByLabel
 
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.

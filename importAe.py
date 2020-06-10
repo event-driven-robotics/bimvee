@@ -58,17 +58,10 @@ Celex ...???
 import os
 
 # local imports
-if __package__ is None or __package__ == '':
-    from importIitYarp import importIitYarp
-    from importRpgDvsRos import importRpgDvsRos
-    from importSecDvs import importSecDvs
-    from importNumpy import importNumpy
-else:
-    from .importNumpy import importNumpy
-    from .importIitYarp import importIitYarp
-    from .importRpgDvsRos import importRpgDvsRos
-    from .importSecDvs import importSecDvs
-
+from .importNumpy import importNumpy
+from .importIitYarp import importIitYarp
+from .importRpgDvsRos import importRpgDvsRos
+from .importSecDvs import importSecDvs
 
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.

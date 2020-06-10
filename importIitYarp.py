@@ -59,14 +59,9 @@ from tqdm import tqdm
 import struct
 
 # local imports
-if __package__ is None or __package__ == '':
-    from importIitVicon import importIitVicon
-    from timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
-    from split import selectByLabel
-else:
-    from .importIitVicon import importIitVicon
-    from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
-    from .split import selectByLabel
+from .importIitVicon import importIitVicon
+from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
+from .split import selectByLabel
 
 def decodeEvents(data):
     '''

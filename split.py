@@ -34,10 +34,7 @@ cropSpace only works on x and y fields and is targetted for dvs - this could be 
 import numpy as np
 
 # local imports
-if __package__ is None or __package__ == '':
-    from timestamps import rezeroTimestampsForImportedDicts
-else:
-    from .timestamps import rezeroTimestampsForImportedDicts
+from .timestamps import rezeroTimestampsForImportedDicts
 
 # In selectByLabel, the field from which a value is selected already exists in the iDict
 def selectByLabel(inDict, labelName, labelValue):

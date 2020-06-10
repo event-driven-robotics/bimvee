@@ -40,16 +40,9 @@ import numpy as np
 import math
 
 # Local imports
-if __package__ is None or __package__ == '':
-    from plotDvsContrast import getEventImageForTimeRange
-    from geometry import quat2RotM, rotateUnitVectors, slerp, draw_line
-    from split import splitByLabel
-else:
-    # This format allows for a certain configuration of the ntupleviz visualiser, maybe?
-    from .plotDvsContrast import getEventImageForTimeRange
-    from .geometry import quat2RotM, rotateUnitVectors, slerp, draw_line
-    from .split import splitByLabel
-
+from .plotDvsContrast import getEventImageForTimeRange
+from .geometry import quat2RotM, rotateUnitVectors, slerp, draw_line
+from .split import splitByLabel
 
 # A function intended to find the nearest timestamp
 # adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array

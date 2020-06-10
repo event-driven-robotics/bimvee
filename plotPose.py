@@ -26,10 +26,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 
 # local imports
-if __package__ is None or __package__ == '':
-    from split import cropTime
-else:
-    from .split import cropTime
+from .split import cropTime
 
 def plotPose(inDicts, **kwargs):
     if isinstance(inDicts, list):
