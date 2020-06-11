@@ -1,0 +1,3 @@
+[submodule "bimvee/importRosbag"]
+	path = bimvee/importRosbag
+	url = https://github.com/event-driven-robotics/importRosbag

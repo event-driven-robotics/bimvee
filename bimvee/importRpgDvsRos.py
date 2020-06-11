@@ -79,7 +79,7 @@ import string
 
 # Local imports
 from .timestamps import zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
-from .importRosbagSubmodule.importRosbag.importRosbag import importRosbag
+from .importRosbag.importRosbag.importRosbag import importRosbag
     
 def bimveeTypeForRosbagType(rosbagType):
     rosbagType = rosbagType.replace('/','_')
