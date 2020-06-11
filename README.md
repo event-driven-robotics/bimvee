@@ -1,13 +1,8 @@
-bimvee - Batch Import, Manipulation, Visualisation, and Export Events etc.
+# bimvee - Batch Import, Manipulation, Visualisation, and Export Events etc.
 
 # Quickstart 
 
-This is the core library. It is included in:
-
-- robotology/event-driven - part of IIT's event-driven development for iCub. 
-- event/driven-robotics/bimvee_pkg - for creation as a standalone PyPi package. 
-
-Look at 'bimvee_pkg/examples.py' for examples of how to use the functionality in this library.
+Look at 'examples/examples.py' for examples of how to use the functionality in this library.
 
 # Introduction
 
@@ -19,15 +14,13 @@ including but not limited to:
 - IMU (imu)
 - tracked poses (e.g. 6 DOF - pose6q)
 - etc
-- derived datatypes, such as optical (flow) events, or labelled dvs events 
-    (dvsL) etc might also be supported. 
+- derived datatypes, such as optical (flow) events, or labelled dvs events (dvsL) etc might also be supported. 
 - Camera calibration info is also imported from e.g. ros (cam) 
 
 Aim is to include:
 - IIT YARP .log - ATIS Gen1 - 24 bit (incl. IMU, SKIN?)
-- rpg_dvs_ros - DVS/DAVIS .bag
-- Penn MvSEC (by using the above rosbag import)
-- Intel realsense 265 (by using the above rosbag import)
+- rpg_dvs_ros - DVS/DAVIS .bag 
+- Third-party datasets recorded by using the above rosbag importer (e.g. Penn MvSEC, UMD EvIMO, Intel Realsense etc)
 - Vicon - as dumped by yarpDumper
 - Samsung (SEC) Gen3 VGA .bin
 - INI jAER / cAER .aedat (v1/2/3) DVS / DAVIS / Cochlea (there is legacy code for this from "aedattools" repo)
@@ -130,6 +123,7 @@ For the 'plot' family of visualisation functions:
 
 - matplotlib
 - mpl_toolkits (only for certain 3d visualisations)
+- seaborn
 
 The "visualiser", however, generates graphics as numpy arrays 
 without reference to matplotlib, for rendering by an external application.
@@ -199,10 +193,13 @@ Definitions of minimal and optional(*) fields follow.
 
 Note: quaternion order follows the convention of e.g. blender (wxyz) but not e.g. ros. (xyzw)
 
-## flow:
+## flow: (per-pixel flow events)
 
-...
-
+- ts  n np.float64
+- x   n np.uint16
+- y   n np.uint16  
+- vx   n np.uint16
+- vy   n np.uint16  
 
 ## cam:
 
