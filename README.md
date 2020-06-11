@@ -79,7 +79,7 @@ tend toward accepting containers with an arbitrarily deep hierarchy.
 
 ## Visualisation functions
 
-A set of general functions for common visualisations of imported datasets.
+There is a set of general functions for common visualisations of imported datasets, using matplotlib or seaborn.
 
 - plotDvsContrast
 - plotDvsLastTs
@@ -89,12 +89,27 @@ A set of general functions for common visualisations of imported datasets.
 - plotImu
 - plotPose
 - plotCorrelogram
+- plotFlow
+
+These functions have several kwargs to modify their behaviour, and they support a 'callback' kwarg so you can pass in a function to do post-modification of the plots. 
+
+There are two different visualisation concepts. In the 'continuous' concept, a single plot shows all timestamped data for a given container. This might be limited to a certain time range, as defined by kwargs minTime and maxTime. Examples include:
+- plotEventRate 
+- plotImu
+- plotPose
+- plotSpikeogram
+
+In the 'snapshot' concept, a representation is generated for a chosen moment in time. In the case of frames this might be the nearest frame to the chosen time. In the case of dvs events this might be an image composed of events recruited from around that moment in time, for which there is a concept of the time window. In the case of poses this might be a projected view of the pose at the given time, where the pose might be linearly interpolated between the two nearest timestamped poses. Examples include:
+- plotDvsContrastSingle
+- plotDvsLastTs (in this case, the visualisation is based on all data up to the chosen time)
+
+In the case of the snapshot views, there are general functions which when passed a data container will choose a set of times distributed throughout the time range of that data and generate a snapshot view for each of these moments. Examples include:
+- plotDvsContrast
+- plotFrame
+
+'visualiser.py' defines a set of classes, one for each of a selection of data types, which generate snapshot views. These are output as numpy arrays, to be rendered by an external application. 
 
 info.py includes various functions to give quick text info about the contents of the containers that result from imports.
-
-visualiser.py introduces classes which accept a datatype dict and serves frames,
-perhaps to an external application, based on the data at various time points
-and in various time windows.
 
 ## Manipulation functions
 
