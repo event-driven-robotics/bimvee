@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Copyright (C) 2019 Event-driven Perception for Robotics
-Author: Sim Bamford
-Code contributions from Massimiliano Iacono - contains classes which substitutes DualStreamManager class.
+Authors: Sim Bamford
+        Massimiliano Iacono
 
 This program is free software: you can redistribute it and/or modify it under 
 the terms of the GNU General Public License as published by the Free Software 
@@ -46,13 +46,14 @@ from .split import splitByLabel
 
 # A function intended to find the nearest timestamp
 # adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
-def find_nearest(array, value):
+def findNearest(array, value):
     idx = np.searchsorted(array, value) # side="left" param is the default
-    if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
+    if idx > 0 and ( \
+            idx == len(array) or \
+            math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
         return idx-1
     else:
         return idx
-
 
 class Visualiser:
     
@@ -170,7 +171,7 @@ class VisualiserFrame(Visualiser):
             # Gone off the end of the frame data
             image = self.get_default_image()
         else:
-            frameIdx = find_nearest(data['ts'], time)
+            frameIdx = findNearest(data['ts'], time)
             image = data['frames'][frameIdx]
         # Allow for arbitrary post-production on image with a callback
         # TODO: as this is boilerplate, it could be pushed into pie syntax ...
@@ -217,7 +218,7 @@ class VisualiserOpticFlow(Visualiser):
             # Gone off the end of the frame data
             image = self.get_default_image()
         else:
-            frameIdx = find_nearest(data['ts'], time)
+            frameIdx = findNearest(data['ts'], time)
             image = self.flow_to_color(data['flowMaps'][frameIdx])
 
         return image
@@ -487,7 +488,7 @@ class VisualiserPose6q(Visualiser):
                         # based on data beyond the timeWindow
                         image[:30,:30,0] = 255 # TODO: Hardcoded
                 else: # No interpolation, so just choose the sample which is nearest in time
-                    poseIdx = find_nearest(data['ts'], time)
+                    poseIdx = findNearest(data['ts'], time)
                     point = data['point'][poseIdx, :]
                     rotation = data['rotation'][poseIdx, :]
             image = self.project_pose(point, rotation, image, **kwargs)                

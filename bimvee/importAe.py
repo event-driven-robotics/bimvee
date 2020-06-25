@@ -62,6 +62,7 @@ from .importNumpy import importNumpy
 from .importIitYarp import importIitYarp
 from .importRpgDvsRos import importRpgDvsRos
 from .importSecDvs import importSecDvs
+from .importAer2 import importAer2
 
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.
@@ -98,6 +99,8 @@ def importAe(**kwargs):
                 kwargs['fileFormat'] = 'secdvs'
             elif ext == '.npy':
                 kwargs['fileFormat'] = 'npy'
+            elif ext == '.aer2':
+                kwargs['fileFormat'] = 'aer2'
             # etc ...
             else:
                 raise Exception("The file format cannot be determined.")
@@ -115,6 +118,8 @@ def importAe(**kwargs):
     #    importedData = importIniAedat(kwargs)
     elif fileFormat in ['secdvs', 'bin', 'samsung', 'sec', 'gen3']:
         importedData = importSecDvs(**kwargs)
+    elif fileFormat in ['aer2']:
+        importedData = importAer2(**kwargs)
     else:
         raise Exception("fileFormat: " + str(fileFormat) + " not supported.")
     #celex

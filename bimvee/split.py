@@ -271,7 +271,49 @@ def cropSpatial(inDict, **kwargs):
 def cropTemporal(inDict, **kwargs):
     return cropTime(inDict, **kwargs)
 
-#-----------------------------------------------------------------------------------------------------
+# A function intended to find the nearest timestamp
+# adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
+def find_nearest(array, value):
+    idx = np.searchsorted(array, value) # side="left" param is the default
+    if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
+        return idx-1
+    else:
+        return idx
+
+'''
+getSamplesAtTimes takes a data-type dict and a parameter 'times',
+and returns a dict with one sample for each element in times, 
+being the sample in the original dict closest in time.
+The samples in the output dict might be repeated.
+'''
+def getSamplesAtTimes(inDict, times):
+    ts = inDict['ts']
+    ids = np.searchsorted(ts, times) # side="left" param is the default
+    numSamples = ts.shape[0]
+    shiftLeft = np.bitwise_and(
+            ids > 0, \
+            np.bitwise_or(
+                ids == numSamples,
+                np.absolute(times - ts[ids-1]) < np.absolute(times - ts[ids])))
+    ids[shiftLeft] = ids[shiftLeft] - 1
+    outDict = {}
+    for key in inDict.keys():
+        if type(inDict[key]) == np.ndarray:
+            if inDict[key].shape[0] == numSamples:
+                outDict[key] = inDict[key][ids] 
+            else:
+                outDict[key] = inDict[key]
+        elif type(inDict[key]) == list:
+            if len(inDict[key]) == numSamples:
+                outDict[key] = [inDict[key][idx] for idx in ids]
+            else:
+                outDict[key] = inDict[key]
+        else:
+            outDict[key] = inDict[key]
+            
+    return outDict
+
+#------------------------------------------------------------------------------
 def groupFlowTimeWindow(flowData, timeWindow):
     """
     Group the FLOW events based on a user-defined time window.
@@ -297,7 +339,7 @@ def groupFlowTimeWindow(flowData, timeWindow):
 
     return flowDataGrouped
 
-#-----------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 def groupImuTimeWindow(imuData, timeWindow, flowData):
     """
     Group the IMU samples based on a user-defined time window, and taking also into account the FLOW events time windows.

@@ -22,25 +22,34 @@ from .plotEventRate import plotEventRate
 from .plotFrame import plotFrame
 from .plotPose import plotPose
 from .plotImu import plotImu
+from .plotFlow import plotFlow
 
 def plot(inDict, **kwargs):
     if isinstance(inDict, list):
         for inDictInst in inDict:
             plot(inDictInst, **kwargs)
         return
-    filePathOrName = inDict['info'].get('filePathOrName', '')
-    for channelName in inDict['data'].keys():
-        channel = inDict['data'][channelName]
-        title = filePathOrName + '-' + channelName
-        kwargs['title'] = title
-        if 'dvs' in channel:
-            plotDvsContrast(channel['dvs'], **kwargs)
-            plotEventRate(channel['dvs'], **kwargs)
-        if 'frame' in channel:
-            plotFrame(channel['frame'], **kwargs)
-        if 'imu' in channel:
-            plotImu(channel['imu'], **kwargs)
-        if 'pose6q' in channel:
-            plotPose(channel['pose6q'], **kwargs)
-        if 'point3' in channel:
-            plotPose(channel['point3'], **kwargs)
+    if isinstance(inDict, dict):
+        if 'info' in inDict: # Special handling for a file-level container
+            kwargs['title'] = inDict['info'].get('filePathOrName', '')
+            plot(inDict['data'], **kwargs)
+        else:
+            title = kwargs.get('title', '')
+            for keyName in inDict.keys():
+                if isinstance(inDict[keyName], dict):
+                    if keyName == 'dvs':
+                        plotDvsContrast(inDict[keyName], **kwargs)
+                        plotEventRate(inDict[keyName], **kwargs)
+                    elif keyName == 'frame':
+                        plotFrame(inDict[keyName], **kwargs)
+                    elif keyName == 'imu':
+                        plotImu(inDict[keyName], **kwargs)
+                    elif keyName == 'pose6q':
+                        plotPose(inDict[keyName], **kwargs)
+                    elif keyName == 'point3' in channel:
+                        plotPose(inDict[keyName], **kwargs)
+                    elif keyName == 'flow' in channel:
+                        plotFlow(inDict[keyName], **kwargs)
+                    else:
+                        kwargs['title'] = (title + '-' + keyName).lstrip('-')
+                        plot(inDict[keyName], **kwargs)
