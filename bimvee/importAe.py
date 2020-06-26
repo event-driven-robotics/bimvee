@@ -58,11 +58,12 @@ Celex ...???
 import os
 
 # local imports
-from .importNumpy import importNumpy
+from .importIitNumpy import importIitNumpy
 from .importIitYarp import importIitYarp
 from .importRpgDvsRos import importRpgDvsRos
 from .importSecDvs import importSecDvs
 from .importAer2 import importAer2
+from .importFrames import importFrames
 
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.
@@ -80,12 +81,13 @@ def importAe(**kwargs):
     print(kwargs)
     if not os.path.exists(filePathOrName):
         raise FileNotFoundError("File or folder not found.")
-    fileFormat = kwargs.get('fileFormat') 
+    fileFormat = kwargs.get('fileFormat').lower()
     if not fileFormat:
         # Try to determine the file format
         if os.path.isdir(filePathOrName):
             # It's a path - assume YARP log directory
-            kwargs['fileFormat'] = 'yarp'
+            # Note that it could also be a folder full of frames
+            kwargs['fileFormat'] = 'iityarp'
         else:
             ext = os.path.splitext(filePathOrName)[1]
             if ext == '.aedat' or ext == '.dat':
@@ -98,7 +100,7 @@ def importAe(**kwargs):
                 # Assume it's a secdvs file
                 kwargs['fileFormat'] = 'secdvs'
             elif ext == '.npy':
-                kwargs['fileFormat'] = 'npy'
+                kwargs['fileFormat'] = 'iitnpy'
             elif ext == '.aer2':
                 kwargs['fileFormat'] = 'aer2'
             # etc ...
@@ -112,14 +114,16 @@ def importAe(**kwargs):
         if 'template' not in kwargs or kwargs['template'] is None:
             print('Template for ROS bag not defined - all data-type dicts will be imported into separate channels')
         importedData = importRpgDvsRos(**kwargs)
-    elif fileFormat in ['npy', 'numpy']:
-        importedData = importNumpy(**kwargs)
+    elif fileFormat in ['iitnpy', 'npy', 'numpy']:
+        importedData = importIitNumpy(**kwargs)
     #elif fileFormat in ['iniaedat', 'aedat', 'dat', 'jaer', 'caer', 'ini', 'inivation', 'inilabs']:
     #    importedData = importIniAedat(kwargs)
     elif fileFormat in ['secdvs', 'bin', 'samsung', 'sec', 'gen3']:
         importedData = importSecDvs(**kwargs)
     elif fileFormat in ['aer2']:
         importedData = importAer2(**kwargs)
+    elif fileFormat in ['frames', 'png', 'pngfolder', 'imagefolder']:
+        importedData = importFrames(**kwargs)
     else:
         raise Exception("fileFormat: " + str(fileFormat) + " not supported.")
     #celex

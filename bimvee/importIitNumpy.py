@@ -11,11 +11,14 @@ PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with
 this program. If not, see <https://www.gnu.org/licenses/>.
 
-Intended as part of bimvee (Batch Import, Manipulation, Visualisation and Export of Events etc)
-importNumpy is a function for importing timestamped address-event data, given a path to a npy file.
-If available at the predetermined locations, relative to the npy file additional data may also be imported, such as
-frames and bounding boxes used to label the data. At the moment frames and boxes are stored in a data.log file
-using the YARP format (see importIitYarp as an example). TODO generalize data structure
+Part of bimvee (Batch Import, Manipulation, Visualisation and Export of Events etc)
+importIitNumpy imports timestamped address-event data, given a path to a .npy file.
+It serves the needs of a specific data format developed at IIT involving events, 
+frames and bounding boxes.
+If available at the predetermined locations, relative to the npy file additional 
+data may also be imported, such as frames and bounding boxes used to label the 
+data. At the moment frames and boxes are stored in a data.log file using the 
+YARP format (see importIitYarp as an example). TODO: generalize data structure
 
 The output is a dictionary containing:
     - info
@@ -51,7 +54,7 @@ The exact contents varies according to the file type import but in general:
 import numpy as np
 import os
 
-def importNumpy(filePathOrName, **kwargs):
+def importIitNumpy(filePathOrName, **kwargs):
     outDict = {
         'info': kwargs,
         'data': {}
