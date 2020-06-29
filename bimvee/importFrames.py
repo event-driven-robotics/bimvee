@@ -79,7 +79,8 @@ def importFrames(**kwargs):
         'data': {'ch0': channelDict}
         }
     importedDict['info']['fileFormat'] = 'imagefolder'
-    rezeroTimestampsForAnImportedDict(importedDict)
+    if kwargs.get('zeroTimestamps'):
+        rezeroTimestampsForAnImportedDict(importedDict)
     return importedDict
         
     

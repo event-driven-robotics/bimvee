@@ -81,7 +81,7 @@ def importAe(**kwargs):
     print(kwargs)
     if not os.path.exists(filePathOrName):
         raise FileNotFoundError("File or folder not found.")
-    fileFormat = kwargs.get('fileFormat').lower()
+    fileFormat = kwargs.get('fileFormat', '').lower()
     if not fileFormat:
         # Try to determine the file format
         if os.path.isdir(filePathOrName):
