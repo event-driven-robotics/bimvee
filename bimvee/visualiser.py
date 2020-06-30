@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Copyright (C) 2019 Event-driven Perception for Robotics
-Authors: Sim Bamford
-        Massimiliano Iacono
+Author: Sim Bamford
+Code contributions from Massimiliano Iacono - contains classes which substitutes DualStreamManager class.
 
 This program is free software: you can redistribute it and/or modify it under 
 the terms of the GNU General Public License as published by the Free Software 
@@ -46,14 +46,13 @@ from .split import splitByLabel
 
 # A function intended to find the nearest timestamp
 # adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
-def findNearest(array, value):
+def find_nearest(array, value):
     idx = np.searchsorted(array, value) # side="left" param is the default
-    if idx > 0 and ( \
-            idx == len(array) or \
-            math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
+    if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
         return idx-1
     else:
         return idx
+
 
 class Visualiser:
     
@@ -66,7 +65,7 @@ class Visualiser:
     def set_data(self, data):
         self.__data = {}
         self.__data.update(data)
-        
+
     def get_frame(self, time, timeWindow, **kwargs):
         return np.zeros((1, 1), dtype=np.uint8)
 
@@ -77,23 +76,294 @@ class Visualiser:
         return 'luminance'
 
 
+class pRF:
+
+    def __init__(self):
+        self.mem_pot = float(0)
+        self.num_px_threshold = float(0)
+        self.threshold = float(0)
+        self.previous_timestamp = float(0)
+        self.radius = 0
+        self.diameter = 0
+        self.center_x = 0
+        self.center_y = 0
+        self.mask_TL_x = 0
+        self.mask_TL_y = 0
+        self.RF_id = 0
+        self.spikes = []
+        self.angle = 0
+        self.ring = 0
+        self.num_active_px = 0
+
 class VisualiserDvs(Visualiser):
 
     data_type = 'dvs'
 
+    def __init__(self, *args, **kwargs):
+        ##############################################
+        ########### eccentricity PARAMETERS ###########
+        ###############################################
+
+        ATIS_resolution = [304, 240]
+        camera_resolution = [240, 240]
+        shift = [int((ATIS_resolution[0] - camera_resolution[0]) / 2),
+                 int((ATIS_resolution[1] - camera_resolution[1]) / 2)]
+
+        end_angle = 360
+        step_angle = 4
+        num_angles = end_angle / step_angle
+        angles = range(0, end_angle, step_angle)
+        max_RF_size = 10
+        radius = camera_resolution[0] / 2
+        alpha_shift = camera_resolution[0] / 2
+        e_max = camera_resolution[0] / 2
+        diag_overlap = 20  # percentage of diagonal overlapping
+
+        'Eccentricity layer'
+
+        # RFs parameters
+        RFthreshold_percentage = 60
+        tau = float(1000)
+        perc_overlap = 20  # overlapping between rings
+        refractory_period = 20  # ms of refractory period
+
+        # RFs layer
+        x = np.linspace(0, camera_resolution[0], camera_resolution[0])
+        y = np.linspace(0, camera_resolution[1], camera_resolution[1])
+        X, Y = np.meshgrid(x, y)
+
+        RFs = [[] for x in range(len(angles))]
+        plot_log_polarFLAG = 0  # plotting all RFs log polar
+        log_polarFLAG = 1
+
+        [RFs, LUT, length_neurons, num_rings] = self.create_polar_rfs(RFs, camera_resolution, angles, X, Y, max_RF_size,
+                                                                 radius,
+                                                                 alpha_shift, e_max, RFthreshold_percentage,
+                                                                 log_polarFLAG,
+                                                                 perc_overlap)
+        self.RFs = RFs
+        self.LUT = LUT
+        self.tau = tau
+        self.refractory_period = refractory_period
+        self.camera_resolution = camera_resolution
+        self.shift = shift
+
+        super(VisualiserDvs, self).__init__(*args, **kwargs)
+
     def set_data(self, data):
         self.__data = {}
         self.__data.update(data)
+        self.data_ecc = self.rt_RF_lpc_rp(self.__data, self.RFs, self.LUT, self.tau, self.refractory_period, self.camera_resolution, self.shift)
+
+
+    # def dic_zip(self, *dcts):
+    #     for i in set(dcts[0]).intersection(*dcts[1:]):
+    #         yield (i,) + tuple(d[i] for d in dcts)
+
+    def inside_circle(self, x, y, x_c, y_c, r):
+        return (x - x_c) * (x - x_c) + (y - y_c) * (y - y_c) < r * r
+
+    def create_polar_rf(self, max_RF_size, e_max, e, r, ring_counter, id_counter, RFs, angle, count, alpha_shift,
+                        RFthreshold_percentage, log_polarFLAG, perc_overlap):
+        # RF size
+        min_size = 3.0
+        rf_size_tmp = round((((max_RF_size - min_size) / e_max) * e) + min_size)
+
+        if (ring_counter == 0):
+            overlap = 0
+        else:
+            overlap = (rf_size_tmp * perc_overlap) / 100
+
+        if (log_polarFLAG):
+            # RFcentre
+
+            x_r = (r - (rf_size_tmp / 2) + overlap) * math.cos(math.radians(angle))
+            y_r = (r - (rf_size_tmp / 2) + overlap) * math.sin(math.radians(angle))
+
+            rho = np.log(np.sqrt(math.pow(x_r, 2) + math.pow(y_r, 2)))
+
+            x_c = round(np.exp(rho) * math.cos(math.radians(angle))) + alpha_shift
+            y_c = -round(np.exp(rho) * math.sin(math.radians(angle))) + alpha_shift
+        else:
+            # RFcentre
+            x_c = round((r - (rf_size_tmp / 2) + overlap) * math.cos(math.radians(angle)) + alpha_shift)
+            y_c = round(-(r - (rf_size_tmp / 2) + overlap) * math.sin(math.radians(angle)) + alpha_shift)
+
+        # create the first peripheral RF
+        RF_tmp = pRF()
+        RF_tmp.center_x = x_c
+        RF_tmp.center_y = y_c
+        RF_tmp.diameter = rf_size_tmp  # diameter
+        RF_tmp.radius = rf_size_tmp / 2  # radius
+        RF_tmp.mask_TL_x = r * math.cos(angle) + alpha_shift
+        RF_tmp.mask_TL_y = -r * math.sin(angle) + alpha_shift
+        RF_tmp.ring = ring_counter
+        RF_tmp.RF_id = id_counter
+        RF_tmp.angle = angle
+        RF_tmp.threshold = 1.0
+        RF_tmp.num_px_threshold = (math.pi * math.pow(RF_tmp.radius, 2)) * RFthreshold_percentage / 100
+
+        RFs[count].append(RF_tmp)
+        ring_counter += 1
+        id_counter += 1
+        r = r - rf_size_tmp + overlap
+        e = r
+        return RFs, e, r, ring_counter, id_counter, count, RF_tmp
+
+    def create_polar_rfs(self, RFs, camera_resolution, angles, X, Y, max_RF_size, radius, alpha_shift, e_max, RFthreshold_percentage, log_polarFLAG, perc_overlap):
+        vSurface = np.zeros(camera_resolution)
+        id_counter = 0
+        count = 0
+        surf_check = np.zeros(camera_resolution)
+        surface = [[[] for i in range(camera_resolution[0])] for j in range(camera_resolution[1])]
+        # create a list for each angle
+        for angle in angles:
+            ring_counter = 0
+            r = radius
+            e = r
+            while r > 1:
+                # create RFs, each angle, different sizes
+                [RFs, e, r, ring_counter, id_counter, count, RF_tmp] = self.create_polar_rf(max_RF_size, e_max, e, r,
+                                                                                       ring_counter, id_counter, RFs,
+                                                                                       angle, count, alpha_shift,
+                                                                                       RFthreshold_percentage,
+                                                                                       log_polarFLAG, perc_overlap)
+                # plot RFs area
+                F = (X - RF_tmp.center_x) ** 2 + (Y - RF_tmp.center_y) ** 2 - RF_tmp.radius ** 2
+                for x in range(int(RF_tmp.center_x - RF_tmp.radius), int(RF_tmp.center_x + RF_tmp.radius)):
+                    for y in range(int(RF_tmp.center_y - RF_tmp.radius), int(RF_tmp.center_y + RF_tmp.radius)):
+                        res = self.inside_circle(x, y, RF_tmp.center_x, RF_tmp.center_y, RF_tmp.radius)
+                        if (res):
+                            surface[y][x].append([RF_tmp.RF_id, count, ring_counter - 1])
+                            surf_check[y][x] = RF_tmp.RF_id
+
+            count += 1
+        return RFs, surface, id_counter, ring_counter
+
+    def rt_RF_lpc_rp(self, events, RFs, LUT, tau, refractory_period, camera_resolution, shift):
+        spikes = []
+        data_ecc = {}
+        rf_ts = []
+        rf_x = []
+        rf_y = []
+        rf_pol = []
+        rf_size = []
+        for i in range(len(events['x'])): # better way to do it?
+            x = events['x'][i]
+            y = events['y'][i]
+            timestamp = events['ts'][i] #milliseconds?
+            pol = events['pol'][i]
+            if (x < shift[0] or x >= camera_resolution[0] - shift[0] or y < shift[1] or y >= camera_resolution[0] -
+                    shift[1]):
+                pass
+                # print('dropped event')
+            else:
+                x = x - shift[0]
+                y = y - shift[1]
+                if not LUT[y][x]:
+                    pass
+                    # print('dropped event')
+                else:
+                    for LUTcoord in LUT[y][x]:
+                        pos_angle = LUTcoord[1]
+                        pos_rf = LUTcoord[2]
+
+                        # dt from the previous timestamp within the RF
+                        if (RFs[pos_angle][pos_rf].diameter == 1):
+                            dt = 0.0
+                        else:
+                            dt = timestamp - RFs[pos_angle][pos_rf].previous_timestamp
+                            RFs[pos_angle][pos_rf].previous_timestamp = timestamp
+
+                        if (len(RFs[pos_angle][pos_rf].spikes) != 0):
+                            # counting active pixel within the RF
+                            if (timestamp - RFs[pos_angle][pos_rf].spikes[-1] >= refractory_period):
+                                RFs[pos_angle][pos_rf].mem_pot = RFs[pos_angle][pos_rf].mem_pot * np.exp(-dt / tau)
+                                RFs[pos_angle][pos_rf].mem_pot += float(1.0 / (RFs[pos_angle][pos_rf].num_px_threshold))
+                        else:
+                            RFs[pos_angle][pos_rf].mem_pot = RFs[pos_angle][pos_rf].mem_pot * np.exp(-dt / tau)
+                            RFs[pos_angle][pos_rf].mem_pot += 1.0 / (RFs[pos_angle][pos_rf].num_px_threshold)
+
+                        if (RFs[pos_angle][pos_rf].mem_pot >= RFs[pos_angle][pos_rf].threshold):
+                            RFs[pos_angle][pos_rf].mem_pot = 0.0
+                            RFs[pos_angle][pos_rf].spikes.append(timestamp)
+                            spikes.append(RFs[pos_angle][pos_rf].RF_id)
+                            print(' RF --> x: ' + str(RFs[pos_angle][pos_rf].center_x) + ' and y: ' + str(
+                                RFs[pos_angle][pos_rf].center_y))
+                            rf_ts.append(timestamp)
+                            rf_x.append(RFs[pos_angle][pos_rf].center_x)
+                            rf_y.append(RFs[pos_angle][pos_rf].center_y)
+                            rf_pol.append(pol)
+                            rf_size.append(RFs[pos_angle][pos_rf].radius)
+        data_ecc = {
+            "ts": np.array(rf_ts),
+            "x": np.array(rf_x),
+            "y": np.array(rf_y),
+            "pol": np.array(rf_pol),
+            "radius": np.array(rf_size),
+            "tsOffset": -9.32603056,
+            "dimX": 304,
+            "dimY": 240
+        }
+        return data_ecc
+
+
+    def getRFspikesInTimeRange(self, events, **kwargs):
+        from bimvee.plotDvsContrast import idsEventsInTimeRange
+
+        ids = kwargs.get('ids', idsEventsInTimeRange(events, **kwargs))
+        return {
+            'y': events['y'][ids],
+            'x': events['x'][ids],
+            'pol': events['pol'][ids],
+            'radius': events['radius'][ids]
+        }
+
+    def getRFspikesImage(self, events, **kwargs):
+        eventImage = np.zeros((kwargs.get('dimY'), kwargs.get('dimX')))
+        if len(events['x']) == 0:
+            return eventImage
+        # dims might be in the events dict, but allow override from kwargs
+        try:
+            dimX = kwargs.get('dimX', events.get('dimX', np.max(events['x']) + 1))
+            dimY = kwargs.get('dimY', events.get('dimY', np.max(events['y']) + 1))
+        except ValueError:  # no defined dims and events arrays are empty
+            dimX = 1
+            dimY = 1
+
+        if kwargs.get('polarised', (kwargs.get('polarized'), True)):
+
+            for x, y, pol, rad in zip(events['x'], events['y'], events['pol'], events['radius']):
+                # xx and yy are rowsxcolumns tables containing the x and y coordinates as values
+                # mgrid is a mesh creation helper
+                xx, yy = np.mgrid[:dimY, :dimX]
+                # circles contains the squared distance to the (x_center, y_center) point
+                # we are just using the circle equation learnt at school
+                circle = (xx - x) ** 2 + (yy - y) ** 2
+                # donuts contains 1's and 0's organized in a donut shape
+                # you apply 2 thresholds on circle to define the shape
+                donut = np.logical_and(circle < rad ** 2, circle >= 0)
+                if pol:
+                    eventImage[donut] = 1
+                else:
+                    eventImage[donut] = -1
+
+        return eventImage
+
+    def getRFspikesImageForTimeRange(self, events, **kwargs):
+        events = self.getRFspikesInTimeRange(events, **kwargs)
+        return self.getRFspikesImage(events, **kwargs)
+
 
     # TODO: There can be methods which better choose the best frame, or which create a visualisation which
     # respects the time_window parameter 
     def get_frame(self, time, timeWindow, **kwargs):
-        data = self.__data
+        data = self.data_ecc
         kwargs['startTime'] = time - timeWindow/2
         kwargs['stopTime'] = time + timeWindow/2
         kwargs['dimX'] = data['dimX']
         kwargs['dimY'] = data['dimY']
-        image = getEventImageForTimeRange(data, **kwargs)
+        image = self.getRFspikesImageForTimeRange(data, **kwargs)
         # Post processing to get image into uint8 with correct scale
         contrast = kwargs.get('contrast', 3)
         if kwargs.get('polarised', (kwargs.get('polarized'), True)):
@@ -171,7 +441,7 @@ class VisualiserFrame(Visualiser):
             # Gone off the end of the frame data
             image = self.get_default_image()
         else:
-            frameIdx = findNearest(data['ts'], time)
+            frameIdx = find_nearest(data['ts'], time)
             image = data['frames'][frameIdx]
         # Allow for arbitrary post-production on image with a callback
         # TODO: as this is boilerplate, it could be pushed into pie syntax ...
@@ -218,7 +488,7 @@ class VisualiserOpticFlow(Visualiser):
             # Gone off the end of the frame data
             image = self.get_default_image()
         else:
-            frameIdx = findNearest(data['ts'], time)
+            frameIdx = find_nearest(data['ts'], time)
             image = self.flow_to_color(data['flowMaps'][frameIdx])
 
         return image
@@ -488,7 +758,7 @@ class VisualiserPose6q(Visualiser):
                         # based on data beyond the timeWindow
                         image[:30,:30,0] = 255 # TODO: Hardcoded
                 else: # No interpolation, so just choose the sample which is nearest in time
-                    poseIdx = findNearest(data['ts'], time)
+                    poseIdx = find_nearest(data['ts'], time)
                     point = data['point'][poseIdx, :]
                     rotation = data['rotation'][poseIdx, :]
             image = self.project_pose(point, rotation, image, **kwargs)                
