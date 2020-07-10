@@ -63,24 +63,24 @@ def importFrames(**kwargs):
     files = sorted(os.listdir(path))
     # TODO: trusting the os to sort the files may not work
     frames = []
-    for file in files:
+    for file in tqdm(files):
         filePathAndName = os.path.join(path, file) 
         if file == 'timestamps.txt': # todo: is there a more general form?
             ts = np.loadtxt(filePathAndName)
         else:
             frames.append(imageio.imread(filePathAndName))
-    channelDict = {'ch0': 
-                       {'frame': {
-                           {'ts': ts,
-                            'frames': frames}}}}
+    channelDict = {'frame': 
+                       {'ts': ts,
+                        'frames': frames}}
     if getOrInsertDefault(kwargs, 'zeroTimestamps', True):
         zeroTimestampsForAChannel(channelDict)
     importedDict = {
         'info': kwargs,
-        'data': channels
+        'data': {'ch0': channelDict}
         }
     importedDict['info']['fileFormat'] = 'imagefolder'
-    rezeroTimestampsForAnImportedDict(importedDict)
+    if kwargs.get('zeroTimestamps'):
+        rezeroTimestampsForAnImportedDict(importedDict)
     return importedDict
         
     

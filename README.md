@@ -4,6 +4,8 @@
 
 Look at 'examples/examples.py' for examples of how to use the functionality in this library.
 
+Important! When you clone this repo, use --recurse-submodules option, as this repo uses 'importRosbag' library as a submodule. 
+
 # Introduction
 
 Working with timestamped address-event data from event cameras (dvs), and 
