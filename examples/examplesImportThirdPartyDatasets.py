@@ -72,7 +72,7 @@ containerData = importRpgDvsRos(filePathOrName=filePathOrName, template=template
 #%%
 # This is for the corresponding ground-truth file 
 filePathOrName = '/path/to/indoor_flying1_gt.bag'
-filePathOrName = 'C:/data/mvsec/indoor_flying1_gt.bag'
+filePathOrName = 'C:/data/external/mvsec/indoor_flying1_gt.bag'
 template = {
     'poseLocal': {
         'pose6q': '/davis/left/odometry',
@@ -84,7 +84,8 @@ template = {
         'frame': '/davis/right/depth_image_raw',
         }
     }
-containerGt = importRpgDvsRos(filePathOrName=filePathOrName, template=template)
+#containerGt = importRpgDvsRos(filePathOrName=filePathOrName, template=template)
+containerGt = importRpgDvsRos(filePathOrName=filePathOrName)
 
 # If you want, you can combine these containers into a single container;
 # In this case, the 'info' branch becomes inconsistent, but it doesn't really matter

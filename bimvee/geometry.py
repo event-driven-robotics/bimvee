@@ -167,6 +167,32 @@ def angleBetweenTwoQuaternions(q1, q2):
     return 2 * np.arcsin(normV)
 
 '''
+following https://github.com/KieranWynn/pyquaternion/blob/master/pyquaternion/quaternion.py
+'''
+def axisAngle2Quat(axis, angle):
+    mag_sq = np.dot(axis, axis)
+    if mag_sq == 0.0:
+        raise ZeroDivisionError("Provided rotation axis has no length")
+    # Ensure axis is in unit vector form
+    if (abs(1.0 - mag_sq) > 1e-12):
+        axis = axis / np.sqrt(mag_sq)
+    theta = angle / 2.0
+    r = np.cos(theta)
+    i = axis * np.sin(theta)
+    quat = np.concatenate((np.ones((1)) * r, i))
+    quat = quat / np.linalg.norm(quat)
+    return quat
+
+'''
+following: https://answers.unity.com/questions/1266985/convert-rotation-vector-or-matrix-to-quaternion.html
+Receives a rotation vector and returns a quaternion
+'''
+def rotVToQuat(rotV):
+    theta = np.linalg.norm(rotV)
+    quat = axisAngle2Quat(rotV[:, 0], theta)
+    return quat
+    
+'''
 Expects 
     - poseDict in bimvee form {'ts', 'point', 'rotation' as above}
     - translation as np array of x,y,z

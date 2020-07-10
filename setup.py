@@ -27,7 +27,8 @@ setup(
           'tqdm',
           'setuptools',
           'matplotlib',
-          'seaborn'
+          'seaborn',
+          'imageio'
       ],
   classifiers=[
     'Development Status :: 3 - Alpha',
