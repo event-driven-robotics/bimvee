@@ -148,6 +148,10 @@ without reference to matplotlib, for rendering by an external application.
 plotDvsLastTs uses rankdata from scipy; however if it's not installed, 
 it defaults to a local definition; scipy is therefore an optional dependency.
 
+import/export Hdf5 functions use:
+
+- hickle
+
 # Type definitions
 
 bimvee doesn't use classes for datatypes. Consequently, the code doesn't have a central place to refer to for the definition of datatypes. The types are intended to be used loosely, with minimal features which can be extended by adding optional fields. 

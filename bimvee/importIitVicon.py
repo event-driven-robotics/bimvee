@@ -63,6 +63,11 @@ then the data in the vicon channel is broken into two datatypes:
                     'point' : <2D array where each row has 3d position of a body at a time instant>,
                     'bodyId' : <1D array where each row has the bodyId of the corresponding marker>,
                     } ...
+                
+Known Issue: timestamps may not be monotonic in the raw data, 
+and this function doesn't attempt to correct it.
+Timestamps are monotonic for a single segment, but not necessarily for multiple 
+segments imported in the same container.
 """
 
 import os

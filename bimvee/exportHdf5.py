@@ -15,7 +15,7 @@ Intended as part of bimvee (Batch Import, Manipulation, Visualisation and Export
 
 Using hickle to add hierarchical lists and dicts to hdf5 automatically
 https://github.com/telegraphic/hickle
-In fact, thess are just thin wrappers around hickle.dump/load, 
+In fact, these are just thin wrappers around hickle.dump/load, 
 to offer a similar export function to other export calls.
 pack/unpackWorkspaceVars are facilities that allows extra random data WIP 
 to get bundled together. All files are included in both the import and export script for convenience. 

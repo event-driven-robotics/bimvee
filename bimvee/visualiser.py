@@ -654,7 +654,7 @@ class VisualiserBoundingBoxes(Visualiser):
             return [[0, 0, 0, 0]]
         gt_bb = self.__data
         box_index = np.searchsorted(gt_bb['ts'], time)
-        if abs(gt_bb['ts'][box_index] - time) > 0.03:
+        if abs(gt_bb['ts'][box_index] - time) > timeWindow:
             return [[0, 0, 0, 0]]
         indices = gt_bb['ts'] == gt_bb['ts'][box_index]
         boxes = np.column_stack((gt_bb['minY'][indices], gt_bb['minX'][indices],
