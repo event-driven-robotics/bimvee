@@ -28,7 +28,8 @@ setup(
           'setuptools',
           'matplotlib',
           'seaborn',
-          'imageio'
+          'imageio',
+          'hickle'
       ],
   classifiers=[
     'Development Status :: 3 - Alpha',
