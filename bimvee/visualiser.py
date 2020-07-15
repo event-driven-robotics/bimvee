@@ -381,9 +381,7 @@ class VisualiserPose6q(Visualiser):
         pointScaled[:, 1] = pointY - centreY
         pointScaled[:, 2] = pointZ - centreZ
         pointScaled = pointScaled / largestDim + 0.5
-        internalData = {'ts': data['ts'],
-                        'point': pointScaled,
-                        'rotation': data['rotation']}
+        internalData['point'] = pointScaled
         # Having scaled data for all poses, split out the poses for different bodies, if applicable
         if 'bodyId' in data:
             # split pose data by label, for ease of reference during rendering
@@ -461,12 +459,17 @@ class VisualiserPose6q(Visualiser):
         for data in allData:
             # Note, for the following, this follows library function pose6qInterp, but is broken out here, because of slight behavioural differences.
             idxPre = np.searchsorted(data['ts'], time, side='right') - 1
+            alignedIdx = idxPre - data['start_idx']
+            # print('ts = ', data['ts'][idxPre])
+            # print('idxPre = ', idxPre)
+            # print('aligne = ', alignedIdx)
+            # print('startIdx = ', data['start_idx'])
             timePre = data['ts'][idxPre]
             if timePre == time:
                 # In this edge-case of desired time == timestamp, there is no need 
                 # to interpolate 
-                point = data['point'][idxPre, :]
-                rotation = data['rotation'][idxPre, :]
+                point = data['point'][alignedIdx, :]
+                rotation = data['rotation'][alignedIdx, :]
             elif idxPre < 0 or (idxPre >= len(data['ts'])-1):
                 # In this edge-case of the time at the beginning or end, 
                 # don't show any pose
@@ -475,12 +478,12 @@ class VisualiserPose6q(Visualiser):
             else:
                 if kwargs.get('interpolate', True):
                     timePost = data['ts'][idxPre + 1]
-                    qPre = data['rotation'][idxPre, :]
-                    qPost = data['rotation'][idxPre + 1, :]
+                    qPre = data['rotation'][alignedIdx, :]
+                    qPost = data['rotation'][alignedIdx + 1, :]
                     timeRel = (time - timePre) / (timePost - timePre)
                     rotation = slerp(qPre, qPost, timeRel)
-                    locPre = data['point'][idxPre, :] 
-                    locPost = data['point'][idxPre + 1, :]
+                    locPre = data['point'][alignedIdx, :]
+                    locPost = data['point'][alignedIdx + 1, :]
                     point = locPre * (1-timeRel) + locPost * timeRel
                     timeDist = min(time - timePre, timePost - time)
                     if timeDist > timeWindow / 2:
@@ -527,9 +530,10 @@ class VisualiserPoint3(Visualiser):
     def set_data(self, data):
         # scale and offset point data so that it remains proportional 
         # but stays in the range 0-1 for all dimensions
-        pointX = data['point'][:, 0]
-        pointY = data['point'][:, 1]
-        pointZ = data['point'][:, 2]
+        internalData = data
+        pointX = internalData['point'][:, 0]
+        pointY = internalData['point'][:, 1]
+        pointZ = internalData['point'][:, 2]
         minX = np.min(pointX)
         maxX = np.max(pointX)
         minY = np.min(pointY)
@@ -543,7 +547,7 @@ class VisualiserPoint3(Visualiser):
         if largestDim == 0:
             largestDim = 1
 
-        pointScaled = np.empty_like(data['point'])
+        pointScaled = np.empty_like(internalData['point'])
         pointScaled[:, 0] = pointX - centreX
         pointScaled[:, 1] = pointY - centreY
         pointScaled[:, 2] = pointZ - centreZ
