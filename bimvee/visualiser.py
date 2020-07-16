@@ -556,9 +556,7 @@ class VisualiserPoint3(Visualiser):
         pointScaled[:, 1] = pointY - centreY
         pointScaled[:, 2] = pointZ - centreZ
         pointScaled = pointScaled / largestDim + 0.5
-        internalData = {'ts': data['ts'],
-                        'point': pointScaled
-                        }
+        internalData ['point'] = pointScaled
         self.__data = internalData
             
     def project3dTo2d(self, x=0, y=0, z=0, **kwargs):
@@ -610,6 +608,10 @@ class VisualiserPoint3(Visualiser):
         image[int(rY/2), int(rX/2 - rX/chp): int(rX/2 + rX/chp), :] = 128        
         firstIdx = np.searchsorted(data['ts'], time - timeWindow)
         lastIdx = np.searchsorted(data['ts'], time + timeWindow)
+        firstIdx -= data['start_idx']
+        lastIdx -= data['start_idx']
+        if firstIdx < 0 or lastIdx < 0 or lastIdx > len(data['point']):
+            raise IndexError
         points = data['point'][firstIdx:lastIdx, :]
         # Use yaw and pitch sliders to transform points
         yaw = -kwargs.get('yaw', 0) / 180 * np.pi
