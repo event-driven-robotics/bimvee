@@ -161,18 +161,24 @@ class VisualiserFrame(Visualiser):
             # Optional mode in which frames are only displayed 
             # between corresponding ts and tsEnd
             frameIdx = np.searchsorted(data['ts'], time, side='right') - 1
+            alignedFrameIdx = frameIdx - data['start_idx']
+            if alignedFrameIdx < 0:
+                raise IndexError
             if frameIdx < 0:
                 image = self.get_default_image()
             elif time > data['tsEnd'][frameIdx]:
                 image = self.get_default_image()
             else:                
-                image = data['frames'][frameIdx]
+                image = data['frames'][alignedFrameIdx]
         elif time < data['ts'][0] - timeWindow / 2 or time > data['ts'][-1] + timeWindow / 2:
             # Gone off the end of the frame data
             image = self.get_default_image()
         else:
             frameIdx = findNearest(data['ts'], time)
-            image = data['frames'][frameIdx]
+            alignedFrameIdx = frameIdx - data['start_idx']
+            if alignedFrameIdx < 0:
+                raise IndexError
+            image = data['frames'][alignedFrameIdx]
         # Allow for arbitrary post-production on image with a callback
         # TODO: as this is boilerplate, it could be pushed into pie syntax ...
         if kwargs.get('callback', None) is not None:
@@ -461,21 +467,15 @@ class VisualiserPose6q(Visualiser):
             # Note, for the following, this follows library function pose6qInterp, but is broken out here, because of slight behavioural differences.
             idxPre = np.searchsorted(data['ts'], time, side='right') - 1
             alignedIdx = idxPre - data['start_idx']
-            # print('ts = ', data['ts'][idxPre])
-            # print('idxPre = ', idxPre)
-            # print('aligne = ', alignedIdx)
-            # print('startIdx = ', data['start_idx'])
             timePre = data['ts'][idxPre]
             if timePre == time:
                 # In this edge-case of desired time == timestamp, there is no need 
-                # to interpolate 
+                # to interpolate
+                if alignedIdx < 0:
+                    raise IndexError
                 point = data['point'][alignedIdx, :]
                 rotation = data['rotation'][alignedIdx, :]
-            elif idxPre < 0 or (idxPre >= len(data['ts'])-1):
-                # In this edge-case of the time at the beginning or end, 
-                # don't show any pose
-                point = None
-                rotation = None
+
             else:
                 if kwargs.get('interpolate', True):
                     timePost = data['ts'][idxPre + 1]
