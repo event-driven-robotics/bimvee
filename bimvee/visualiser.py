@@ -360,6 +360,7 @@ class VisualiserPose6q(Visualiser):
     def set_data(self, data):
         # scale and offset point data so that it remains proportional 
         # but stays in the range 0-1 for all dimensions
+        internalData = data
         pointX = data['point'][:, 0]
         pointY = data['point'][:, 1]
         pointZ = data['point'][:, 2]
