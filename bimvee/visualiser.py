@@ -225,7 +225,10 @@ class VisualiserOpticFlow(Visualiser):
             image = self.get_default_image()
         else:
             frameIdx = findNearest(data['ts'], time)
-            image = self.flow_to_color(data['flowMaps'][frameIdx])
+            alignedFrameIdx = frameIdx - data['start_idx']
+            if alignedFrameIdx < 0:
+                raise IndexError
+            image = self.flow_to_color(data['flowMaps'][alignedFrameIdx])
 
         return image
 
