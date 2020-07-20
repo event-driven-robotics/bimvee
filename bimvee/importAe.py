@@ -126,7 +126,7 @@ def importAe(**kwargs):
             print('Template for ROS bag not defined - all data-type dicts will be imported into separate channels')
         importedData, topics = importRpgDvsRos(**kwargs)
         from .importRpgDvsRos import fill_dict_with_data
-        dp = DataProvider(importedData, topics, fill_dict_with_data)
+        dp = DataProvider(importedData, topics, fill_dict_with_data) # TODO data provider only defined in this branch
     elif fileFormat in ['iitnpy', 'npy', 'numpy']:
         importedData = importIitNumpy(**kwargs)
     #elif fileFormat in ['iniaedat', 'aedat', 'dat', 'jaer', 'caer', 'ini', 'inivation', 'inilabs']:

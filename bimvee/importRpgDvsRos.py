@@ -108,7 +108,7 @@ def importRpgDvsRos(filePathOrName, **kwargs):
         'data': {}
             }
     outDict['info']['filePathOrName'] = filePathOrName
-    outDict = fill_dict_with_data(outDict, topics, 0, 1, template)
+    outDict = fill_dict_with_data(outDict, topics, 0, 1, template) # TODO if not batch loading then load everything
     return outDict, topics
 
 
