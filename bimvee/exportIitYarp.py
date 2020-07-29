@@ -256,11 +256,11 @@ def encodeImu(ts, **kwargs):
     mag - no idea - this model doesn't have an internal mag
     '''
     numSamples = len(ts)
-    accConversionFactor = kwargs.get('accConversionFactor', 32768 / 2 / 9.80665)
-    angVConversionFactor = kwargs.get('angVConversionFactor', 32768 / 2000 * 180 / np.pi)
+    accConversionFactor = kwargs.get('accConversionFactor', (32768 / 2) / 9.80665)
+    angVConversionFactor = kwargs.get('angVConversionFactor', (32768 / 250) * (180 / np.pi))
     tempConversionFactor = kwargs.get('tempConversionFactor', 333.87)
     tempConversionOffset = kwargs.get('tempConversionOffset', -273.15 - 21)
-    magConversionFactor = kwargs.get('magConversionFactor', 1)
+    magConversionFactor = kwargs.get('magConversionFactor', (32768 / 4900) * 1000000)
     
     acc = kwargs.get('acc')
     angV = kwargs.get('angV')
