@@ -93,11 +93,35 @@ import numpy as np
 # local imports
 from .timestamps import sortDataTypeDictByTime
 
+#%% Helper functions
+
+def findRotationRepresentation(rotation):
+    if rotation.shape[1] == 1:
+        return 'axisAngle'
+    elif rotation.shape[1] == 4:
+        return 'quaternion'
+    elif rotation.ndim == 2:
+        return 'rVec'
+    else:
+        return 'mat'
+
 #%% Functions we want
+
+def rotToRepresentation(inDict, rotationRepresentation):
+    if rotationRepresentation == 'quaternion':
+        return rotToQuat(inDict)
+    elif rotationRepresentation == 'axisAngle':
+        return rotToAxisAngle(inDict)
+    elif rotationRepresentation == 'rVec':
+        return rotToVec(inDict)
+    else: #rotationRepresentation == 'mat'
+        return rotToMat(inDict)
+        
 
 def rotToMat(inDict):
     rotation = inDict['rotation']
-    if rotation.ndim == 3:
+    rotationRepresentation = findRotationRepresentation(rotation)
+    if rotationRepresentation == 'mat':
         # already a matrix
         return outDict 
 
@@ -108,8 +132,7 @@ def rotToMat(inDict):
     outDict['rotation'] = mat[:, :3, :3]
     outDict['transformation'] = mat
         
-    if rotation.shape[1] == 1:
-        # axis angle
+    if rotationRepresentation == 'axisAngle':
         angle = rotation
         axis = inDict['axis']
         x = axis[:, 0]
@@ -128,8 +151,7 @@ def rotToMat(inDict):
         mat[:, 2, 0] = z * x * (1 - cos) - y * sin 
         mat[:, 2, 1] = z * y * (1 - cos) + x * sin
         mat[:, 2, 2] = cos + z**2 * (1 - cos)
-    elif rotation.shape[1] == 4:
-        #quaternion
+    elif rotationRepresentation == 'quaternion':
         w = rotation[:, 0]
         x = rotation[:, 1]
         y = rotation[:, 2]
@@ -143,112 +165,164 @@ def rotToMat(inDict):
         mat[:, 2, 0] = 2 * x * z - 2 * y*w
         mat[:, 2, 1] = 2 * y * z + 2 * x*w
         mat[:, 2, 2] = 1 - 2 * x**2 - 2 * y**2
-    else:
-        #rVec
+    else: #rotationRepresentation == 'rVec'
         # following: https://github.com/robEllenberg/comps-plugins/blob/master/python/rodrigues.py
-'''Rodrigues formula
-Input: 1x3 array of rotations about x, y, and z
-Output: 3x3 rotation matrix'''
-from numpy import array,mat,sin,cos,dot,eye
-from numpy.linalg import norm
-
-def rodrigues(r):
-    def S(n):
-        Sn = array([[0,-n[2],n[1]],[n[2],0,-n[0]],[-n[1],n[0],0]])
-        return Sn
-    theta = norm(r)
-    if theta > 1e-30:
-        n = r/theta
-        Sn = S(n)
-        R = eye(3) + sin(theta)*Sn + (1-cos(theta))*dot(Sn,Sn)
-    else:
-        Sr = S(r)
+        # Start with identity matrix
+        mat[:, 0, 0] = 1
+        mat[:, 1, 1] = 1
+        mat[:, 1, 2] = 1
+        def S(n, mat):
+            rotation
+            Sn = np.zeros_like(mat)
+            Sn[:, 0, 1] = -n[:, 2]
+            Sn[:, 0, 2] = n[:, 1]
+            Sn[:, 1, 0] = n[:, 2]
+            Sn[:, 0, 2] = -n[:, 0]
+            Sn[:, 2, 0] = -n[:, 1]
+            Sn[:, 2, 1] = n[:, 0]
+            return Sn
+        
+        theta = np.linalg.norm(rotation, axis=1)
+        n = rotation / theta
+        Sn = S(n, mat)
+        Sr = S(r, mat)
         theta2 = theta**2
-        R = eye(3) + (1-theta2/6.)*Sr + (.5-theta2/24.)*dot(Sr,Sr)
-    return mat(R)
+        cond = theta > 1e-30
+        
+        def dotAlongZerothAxis(S, mat): # TODO: there is probably a neat numpy way of doing this: tensordot? apply_along_axis?
+            out = np.zeros_like(mat)
+            for idx, slicee in enumerate(S):
+                out[idx, :, :] = np.dot(S, S)
+            return out
+        
+        mat = mat \
+            + cond * ( np.sin(theta)*Sn + (1-np.cos(theta))*dotAlongZerothAxis(Sn, mat) ) \
+            + (1-cond) * ((1-theta2/6)*Sr + (0.5-theta2/24)*dotAlongZerothAxis(Sr, mat) )
+        return mat(R)
 
 def rotToVec(inDict):
     rotation = inDict['rotation']
-    if rotation.shape[1] == 1:
-        # axis angle
-    elif rotation.shape[1] == 4:
-        #quaternion
-    elif rotation.ndim == 2:
-        #rVec
-    else:
-        # mat
+    rotationRepresentation = findRotationRepresentation(rotation)
+    if rotationRepresentation == 'rVec':
+        return inDict
+    if rotationRepresentation == 'axisAngle':
+        raise Exception("Method not implemented") 
+    elif rotationRepresentation == 'quaternion':
+        raise Exception("Method not implemented") 
+    elif rotationRepresentation == 'rVec':
+    else: #rotationRepresentation == 'mat'
+        raise Exception("Method not implemented") 
     return outDict
     
 def rotToQuat(inDict):
     rotation = inDict['rotation']
-    if rotation.shape[1] == 1:
-        # axis angle
-    elif rotation.shape[1] == 4:
-        #quaternion
-    elif rotation.ndim == 2:
-        #rVec
-    else:
-        # mat
-    return outDict
+    rotationRepresentation = findRotationRepresentation(rotation)
+    if rotationRepresentation == 'quaternion':
+        return inDict
+    if rotationRepresentation == 'axisAngle':
+        raise Exception("Method not implemented") 
+    elif rotationRepresentation == 'rVec':
+        raise Exception("Method not implemented") 
+    else: #rotationRepresentation == 'mat'
+        raise Exception("Method not implemented") 
     
 def rotToAxisAngle(inDict):
     rotation = inDict['rotation']
-    if rotation.shape[1] == 1:
-        # axis angle
-    elif rotation.shape[1] == 4:
-        #quaternion
-    elif rotation.ndim == 2:
-        #rVec
-    else:
-        # mat
-    return outDict
+    rotationRepresentation = findRotationRepresentation(rotation)
+    if rotationRepresentation == 'axisAngle':
+        return inDict
+    if rotationRepresentation == 'quaternion':
+        raise Exception("Method not implemented") 
+    elif rotationRepresentation == 'rVec':
+        raise Exception("Method not implemented") 
+    else: #rotationRepresentation == 'mat'
+        raise Exception("Method not implemented") 
     
 def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
+    '''
+    method: based on the inputs times, period and maxPeriod, 
+    create a set of times desired
+    crop these outside of the range of the existing times
+    Then select original times which are also in the new times
+    Then do interpolation for each of the new times
+    Then merge the two sets.
+    
+    It would be possible to create sub-implementations for each rotation 
+    representation, but for simplicity we convert to quaternion, do the 
+    interpolation, and convert back again. 
+    
+    This function is not compatible with labelled poses, or any other 
+    non-standard additional fields in the poseDict
+    
+    '''
+    rotation = inDict['rotation']
+    rotationRepresentation = findRotationRepresentation(rotation)
+    poseDict = rotToQuat(inDict)
+
+    if np.isscalar(times):
+        return interpolatePosesSingle(inDict, time=times)
+    
     ts = poseDict['ts']
     points = poseDict['point']
     rotations = poseDict['rotation']
-    if time is not None:
-        idxPre = np.searchsorted(ts, time, side='right') - 1
-        timePre = ts[idxPre]
-        if timePre == time:
-            # In this edge-case of desired time == timestamp, there is no need 
-            # to interpolate 
-            return (points[idxPre, :], rotations[idxPre, :])
-        if idxPre < 0:
-            return (points[0, :], rotations[0, :])
-        if idxPre >= len(poseDict['ts']):
-            return (points[-1, :], rotations[-1, :])
-        timePost = ts[idxPre + 1]
-        rotPre = rotations[idxPre, :]
-        rotPost = rotations[idxPre + 1, :]
-        timeRel = (time - timePre) / (timePost - timePre)
-        rotOut = slerp(rotPre, rotPost, timeRel)
-        pointPre = points[idxPre, :] 
-        pointPost = points[idxPre + 1, :]
-        pointOut = pointPre * (1-timeRel) + pointPost * timeRel
-        return (pointOut, rotOut)
-    elif maxPeriod is not None:
-        firstTime = ts[0]
-        lastTime = ts[-1]
+    
+    firstTime = ts[0]
+    lastTime = ts[-1]
+    if times is not None:
+        keepTimesBool = np.logical_and(times >= firstTime, times <= lastTime)
+        times = times[keepTimes]
+        timesAlreadyExistBool = np.isin(times, ts)
+        existingTimes = times[timesAlreadyExistBool]
+        newTimes = times[~timesAlreadyExistBool]
+    elif period is not None:
+        times = np.arange(firstTime, lastTime, step=period)
+        timesAlreadyExistBool = numpy.isin(times, ts)
+        existingTimes = times[timesAlreadyExistBool]
+        newTimes = times[~timesAlreadyExistBool]
+    elif maxPeriod is not None:        
         proposedAdditionalTimes = np.arange(firstTime, lastTime, maxPeriod)
         prevIds = np.searchsorted(ts, proposedAdditionalTimes, side='right') - 1
         distPre = proposedAdditionalTimes - ts[prevIds]
         distPost = ts[prevIds + 1] - proposedAdditionalTimes
         dist = distPre + distPost
         keepAdditional = dist > maxPeriod
-        additionalTimes = proposedAdditionalTimes[keepAdditional]
-        additionalPoses = [pose6qInterp(poseDict, time=additionalTime) 
-                            for additionalTime in additionalTimes] 
-        additionalPoints, additionalRotations = zip(*additionalPoses)
-        ts = np.concatenate((ts, additionalTimes))
-        points = np.concatenate((points, np.array(additionalPoints)))
-        rotations = np.concatenate((rotations, np.array(additionalRotations)))
-        poseDict['ts'] = ts
-        poseDict['point'] = points
-        poseDict['rotation'] = rotations
-        poseDict = sortDataTypeDictByTime(poseDict)
-        return poseDict
-    return outDict FIX THIS
+        newTimes = proposedAdditionalTimes[keepAdditional]
+        existingTimes = ts
+
+    # Now we have newTimes and existingTimes; 
+    # Now iterate over newTimes and do interpolation
+    # TODO: slerp function could be vectorised
+    newPoints = np.zeros_like(newTimes)
+    newRotations = np.zeros_like(newTimes)
+    for idx in range(len(newTimes)):
+        newTime = newTimes[idx]
+        idxPre = np.searchsorted(ts, newTime, side='right') - 1
+        timePre = ts[idxPre]
+        timePost = ts[idxPre + 1]
+        rotPre = rotations[idxPre, :]
+        rotPost = rotations[idxPre + 1, :]
+        timeRel = (time - timePre) / (timePost - timePre)
+        newRotations[idx, :] = slerp(rotPre, rotPost, timeRel)
+        pointPre = points[idxPre, :] 
+        pointPost = points[idxPre + 1, :]
+        newPoints[idx, :] = pointPre * (1-timeRel) + pointPost * timeRel
+        
+    # get existingTimes for merging
+    if maxPeriod is None:
+        keepExistingBool = np.isin(ts, existingTimes)
+        ts = ts[keepExistingBool]
+        point = point[keepExistingBool]
+        rotation = rotation[keepExistingBool]
+    
+    ts = np.concatenate((ts, additionalTimes))
+    points = np.concatenate((points, np.array(additionalPoints)))
+    rotations = np.concatenate((rotations, np.array(additionalRotations)))
+    poseDict['ts'] = ts
+    poseDict['point'] = points
+    poseDict['rotation'] = rotations
+    poseDict = sortDataTypeDictByTime(poseDict)
+        
+    return rotToRepresentation(poseDict, rotationRepresentation)
     
 def rotate(inDict, rotation):
     return outDict
@@ -256,19 +330,94 @@ def rotate(inDict, rotation):
 def translate(inDict, translation):
     return outDict
 
-# If you pass in transformationDict, it is applied sample-wise as if the dicts 
-# contained mats and the result were: transformationDict @ poseDict
-def transform(inDict, transformationDict=None, translation=None, rotation=None):
-    return outDict
+'''
+If you pass in transformationDict, it is applied sample-wise as if the dicts 
+contained mats and the result were: transformationDict @ poseDict
+If instead you pass in either translation or rotation, or both, they are applied,
+first rotation then translation, to the whole array.
 
-# if rotation is a dict, it is applied sample-wise
+The implementation here first converts to transformation matrices
+and then converts back at the end
+TODO: There could be efficiency gains by not converting to matrices first
+'''
+def transform(inDict, transformationDict=None, translation=None, rotation=None):
+    if transformationDict is not None:
+        # Assume that the two dicts have exactly the same timestamps 
+        # TODO: don't assume this but rather interpolate and merge 
+        # following interpolatePoses function
+        rotation = inDict['rotation']
+        rotationRepresentation = findRotationRepresentation(rotation)
+        inDict = rotToMat(inDict)
+        transformationDict = rotToMat(transformationDict)
+        outDict = inDict.copy()
+        transformed = transformationDict['transformation'] @ inDict['transformation']
+        outDict['point'] = transformed[:, :3, 3]
+        outDict['rotation'] = transformed[:, :3, :3]
+        outDict['transformation'] = transformed
+    else:
+        raise Error('Transformation by single elements function not implemented')        
+    return rotToRepresentation(outDict, rotationRepresentation)
+
+# rotation is single
+# Assuming that rotation comes in as a quaternion; TODO: don't assume this
 def angleBetween(inDict, rotation):
+    '''
+    if rotation.ndim == 1:
+    qP = quaternionProduct(q1, quaternionInverse(q2))
+    normV = np.linalg.norm(qP[1:])
+    angle = 2 * np.arcsin(normV)
     return outDict
+    '''
+    raise Error('not implemented') 
 
 def averageRotation(inDict, weights=None):
-    return outDict
+    # Convert to quaternion
+    rotation = inDict['rotation']
+    rotationRepresentation = findRotationRepresentation(rotation)
+    inDict = rotToMat(inDict)
+    rotations = inDict['rotation']
+    numRotations = rotations.shape[0]
+    if weights is None:
+        weights = np.ones(numRotations)
+    weightSum = np.sum(weights)
+    A = np.zeros((4,4), dtype=np.float64)
+    for weight, q in zip(weights, rotations):
+        # multiply q with its transposed version q' and accumulate in A
+        A = A + weight * np.outer(q,q)
+    # scale
+    A = A / numRotations
+    # compute eigenvalues and -vectors
+    eigenValues, eigenVectors = np.linalg.eig(A)
+    # Sort by largest eigenvalue
+    eigenVectors = eigenVectors[:,eigenValues.argsort()[::-1]]
+    # return the real part of the largest eigenvector (has only real part)
+    return eigenVectors[:,0]
 
 #%% Better names for legacy functions
+
+def interpolatePosesSingle(poseDict, time):
+    ts = poseDict['ts']
+    points = poseDict['point']
+    rotations = poseDict['rotation']
+    idxPre = np.searchsorted(ts, time, side='right') - 1
+    timePre = ts[idxPre]
+    if timePre == time:
+        # In this edge-case of desired time == timestamp, there is no need 
+        # to interpolate 
+        return (points[idxPre, :], rotations[idxPre, :])
+    if idxPre < 0:
+        return (points[0, :], rotations[0, :])
+    if idxPre >= len(poseDict['ts']):
+        return (points[-1, :], rotations[-1, :])
+    timePost = ts[idxPre + 1]
+    rotPre = rotations[idxPre, :]
+    rotPost = rotations[idxPre + 1, :]
+    timeRel = (time - timePre) / (timePost - timePre)
+    rotOut = slerp(rotPre, rotPost, timeRel)
+    pointPre = points[idxPre, :] 
+    pointPost = points[idxPre + 1, :]
+    pointOut = pointPre * (1-timeRel) + pointPost * timeRel
+    return (pointOut, rotOut)
 
 # Can accept an existing matrix, which should be min 3x3; 
 #if it creates a matrix it makes it 4x4
