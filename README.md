@@ -1,5 +1,9 @@
 # bimvee - Batch Import, Manipulation, Visualisation, and Export Events etc.
 
+![events](https://github.com/event-driven-robotics/bimvee/images/events.png)
+![frames](https://github.com/event-driven-robotics/bimvee/images/frames.png)
+
+
 # Quickstart 
 
 Look at 'examples/examples.py' for examples of how to use the functionality in this library.

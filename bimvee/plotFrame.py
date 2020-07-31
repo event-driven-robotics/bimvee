@@ -105,7 +105,7 @@ def plotFrame(inDicts, **kwargs):
         if kwargs.get('flipHorizontal', False):
             frame = np.flip(frame, axis=1)
         ax.imshow(frame, cmap='gray')
-        plt.rcParams["axes.grid"] = False
+        ax.grid(b=False)
         ax.set_title('Time: ' + str(roundToSf(timePoint)) + ' s; frame number: ' + str(frameIdx))
 
 #%%

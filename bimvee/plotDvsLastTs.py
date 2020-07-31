@@ -65,8 +65,12 @@ def roundToSf(x, sig=3): # https://stackoverflow.com/questions/3410976/how-to-ro
 
 def plotDvsLastTsSingle(inDict, **kwargs):
     
-    time = kwargs.get('time', kwargs.get('maxTime', np.max(inDict['ts'])))
-    minTime = kwargs.get('minTime', np.min(inDict['ts']))
+    time = kwargs.get('time', kwargs.get('maxTime', kwargs.get('lastTime', 
+           kwargs.get('ts', kwargs.get('maxTs', kwargs.get('lastTs', 
+           np.max(inDict['ts'])))))))
+    minTime = kwargs.get('minTime', kwargs.get('firstTime', 
+              kwargs.get('minTs', kwargs.get('firstTs', 
+              np.min(inDict['ts'])))))
         
     # TODO: if the actual sensor size is known, use this instead of the following 
     minY = kwargs.get('minY',inDict['y'].min())
@@ -79,6 +83,7 @@ def plotDvsLastTsSingle(inDict, **kwargs):
 
     # populate the array by running time forward to time
     chosenLogical = inDict['ts'] <= time
+    chosenLogical &= inDict['ts'] >= minTime
     chosenLogical &= inDict['x'] >= minX
     chosenLogical &= inDict['x'] <= maxX
     chosenLogical &= inDict['y'] >= minY
@@ -110,6 +115,7 @@ def plotDvsLastTsSingle(inDict, **kwargs):
     cmap.set_under(color='white')
     image = axes.imshow(tsArray, cmap=cmap, norm=colors.Normalize(vmin=0, vmax=np.max(tsArray)))
     axes.set_aspect('equal', adjustable='box')
+    axes.grid(b=False)
     if kwargs.get('flipVertical', False):
         axes.invert_yaxis()
     if kwargs.get('flipHorizontal', False):
@@ -145,9 +151,15 @@ def plotDvsLastTs(inDict, **kwargs):
             else:
                 print('Channel ' + channelName + ' skipped because it contains no polarity data')
         return
-    times = kwargs.get('time', kwargs.get('maxTime', np.max(inDict['ts'])))
+    times = kwargs.get('time', kwargs.get('maxTime', kwargs.get('lastTime', 
+           kwargs.get('ts', kwargs.get('maxTs', kwargs.get('lastTs', 
+           np.max(inDict['ts'])))))))
+    minTimes = kwargs.get('minTime', kwargs.get('firstTime', 
+              kwargs.get('minTs', kwargs.get('firstTs', 
+              np.min(inDict['ts'])))))
     if np.isscalar(times):
         times = [times]
+        minTimes = [minTimes]
     numPlots = len(times)
     numPlotsX = int(round(np.sqrt(numPlots / 3 * 4)))
     numPlotsY = int(np.ceil(numPlots / numPlotsX))
@@ -157,7 +169,8 @@ def plotDvsLastTs(inDict, **kwargs):
     else:
         allAxes = allAxes.flatten()
     fig.suptitle(kwargs.get('title', ''))
-    for time, axes in zip(times, allAxes):
+    for time, minTime, axes in zip(times, minTimes, allAxes):
         kwargs['time'] = time
+        kwargs['minTime'] = minTime
         kwargs['axes'] = axes
         plotDvsLastTsSingle(inDict, **kwargs)
