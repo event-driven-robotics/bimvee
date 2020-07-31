@@ -1,8 +1,10 @@
 # bimvee - Batch Import, Manipulation, Visualisation, and Export Events etc.
 
-![events](https://github.com/event-driven-robotics/bimvee/tree/master/images/events.png)
-![frames](https://github.com/event-driven-robotics/bimvee/tree/master/images/frames.png)
-
+<img src="https://raw.githubusercontent.com/event-driven-robotics/bimvee/master/images/events.png" width="300"/> <img src="https://raw.githubusercontent.com/event-driven-robotics/bimvee/master/images/frames.png" width="300"/>
+<img src="https://raw.githubusercontent.com/event-driven-robotics/bimvee/master/images/imu.png" width="300"/>
+<img src="https://raw.githubusercontent.com/event-driven-robotics/bimvee/master/images/pose.png" width="300"/>
+<img src="https://raw.githubusercontent.com/event-driven-robotics/bimvee/master/images/dvslastts.png" width="300"/>
+<img src="https://raw.githubusercontent.com/event-driven-robotics/bimvee/master/images/eventrate.png" width="300"/>
 
 # Quickstart 
 
