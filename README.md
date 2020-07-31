@@ -12,28 +12,26 @@ Look at 'examples/examples.py' for examples of how to use the functionality in t
 
 Important! When you clone this repo, use --recurse-submodules option, as this repo uses 'importRosbag' library as a submodule. 
 
+Want to play back your timestamped multi-channel data? Consider using https://github.com/event-driven-robotics/mustard
+
 # Introduction
 
 Working with timestamped address-event data from event cameras (dvs), and 
-possibly other neuromorphic sensors (e.g. icub skin, maybe INI silicon cochlea etc), 
-alongside other timestamped data that we need for our experiments, 
-including but not limited to:
-- frame-based camera images (frame)
-- IMU (imu)
-- tracked poses (e.g. 6 DOF - pose6q)
-- etc
-- derived datatypes, such as optical (flow) events, or labelled dvs events (dvsL) etc might also be supported. 
-- Camera calibration info is also imported from e.g. ros (cam) 
+possibly other neuromorphic sensors alongside other timestamped data 
+that we need for our experiments, including but not limited to:
+- frame-based camera images
+- IMU
+- 6-DOF poses
+- derived datatypes, such as optical (flow) events, or labelled dvs events (dvsL) etc 
+- Camera calibration info is also imported from e.g. ros (cam)
 
-Aim is to include:
-- IIT YARP .log - ATIS Gen1 - 24 bit (incl. IMU, SKIN?)
+File formats supported include:
+- IIT YARP .log - ATIS Gen1 and IMU
 - rpg_dvs_ros - DVS/DAVIS .bag 
 - Third-party datasets recorded by using the above rosbag importer (e.g. Penn MvSEC, UMD EvIMO, Intel Realsense etc)
 - Vicon - as dumped by yarpDumper
 - Samsung (SEC) Gen3 VGA .bin
-- INI jAER / cAER .aedat (v1/2/3) DVS / DAVIS / Cochlea (there is legacy code for this from "aedattools" repo)
-- Celex v5 .bin
-- Maybe Prophesee raw?
+- Pull requests welcome for importers or exporters of other file formats.
 
 # Contents of library
 
@@ -135,8 +133,9 @@ visualise the resulting data.
 
 # Dependencies:
 
-This library is intended to require minimal dependencies.
-Notably, rosbag import is achieved without needing a ros installation.
+This library uses importRosbag library to import rosbag data without needing a ros installation.
+This is included as a submodule. 
+
 Beyond the python standard library, the main dependencies are:
 
 - numpy
@@ -160,7 +159,7 @@ import/export Hdf5 functions use:
 
 # Type definitions
 
-bimvee doesn't use classes for datatypes. Consequently, the code doesn't have a central place to refer to for the definition of datatypes. The types are intended to be used loosely, with minimal features which can be extended by adding optional fields. 
+bimvee doesn't use classes for datatypes. Consequently, the code doesn't have a central place to refer to for the definition of datatypes. The types are intended to be used loosely, with minimal features which can be extended by adding optional fields. There is an optional container class which gives some functions for easier data manipulation.
 
 There are some datatypes which are simply dicts which act as containers to group information, for example the 'cam' type. However most of the functionality of the library is based around the idea of a datatype dict containing a set of keys where each is a numpy array (or other iterable) where there is a 'ts' key, containing a numpy array of np.float64 timestamps, and then each iterable key should have the same number of elements (in the zeroth dimension) as the ts field. Thus a set of timestamped 'events' or other data type is defined. Other keys may be included which either aren't iterables or don't have the same number of elements in the zeroth dimension. These are therefore not interpreted as contributing dimensions to the set of data points. Concretely the datatypes which have some kind of support are:
 
