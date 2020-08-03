@@ -209,7 +209,6 @@ def rotToVec(inDict):
         raise Exception("Method not implemented") 
     elif rotationRepresentation == 'quaternion':
         raise Exception("Method not implemented") 
-    elif rotationRepresentation == 'rVec':
     else: #rotationRepresentation == 'mat'
         raise Exception("Method not implemented") 
     return outDict
@@ -270,13 +269,13 @@ def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
     lastTime = ts[-1]
     if times is not None:
         keepTimesBool = np.logical_and(times >= firstTime, times <= lastTime)
-        times = times[keepTimes]
+        times = times[keepTimesBool]
         timesAlreadyExistBool = np.isin(times, ts)
         existingTimes = times[timesAlreadyExistBool]
         newTimes = times[~timesAlreadyExistBool]
     elif period is not None:
         times = np.arange(firstTime, lastTime, step=period)
-        timesAlreadyExistBool = numpy.isin(times, ts)
+        timesAlreadyExistBool = np.isin(times, ts)
         existingTimes = times[timesAlreadyExistBool]
         newTimes = times[~timesAlreadyExistBool]
     elif maxPeriod is not None:        
@@ -301,7 +300,7 @@ def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
         timePost = ts[idxPre + 1]
         rotPre = rotations[idxPre, :]
         rotPost = rotations[idxPre + 1, :]
-        timeRel = (time - timePre) / (timePost - timePre)
+        timeRel = (newTime - timePre) / (timePost - timePre)
         newRotations[idx, :] = slerp(rotPre, rotPost, timeRel)
         pointPre = points[idxPre, :] 
         pointPost = points[idxPre + 1, :]
@@ -311,12 +310,12 @@ def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
     if maxPeriod is None:
         keepExistingBool = np.isin(ts, existingTimes)
         ts = ts[keepExistingBool]
-        point = point[keepExistingBool]
+        point = point[keepExistingBool] # BUG: point should be... ?
         rotation = rotation[keepExistingBool]
     
-    ts = np.concatenate((ts, additionalTimes))
-    points = np.concatenate((points, np.array(additionalPoints)))
-    rotations = np.concatenate((rotations, np.array(additionalRotations)))
+    ts = np.concatenate((ts, additionalTimes)) # BUG: additionalTimes should be...?
+    points = np.concatenate((points, np.array(additionalPoints))) # BUG: additionalPoints should be newPoints?
+    rotations = np.concatenate((rotations, np.array(additionalRotations))) # BUG: additionalRotations should be newRotations?
     poseDict['ts'] = ts
     poseDict['point'] = points
     poseDict['rotation'] = rotations
