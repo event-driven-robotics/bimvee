@@ -18,7 +18,7 @@ Important! If you clone this repo, use --recurse-submodules option, as this repo
 
 ## Usage
 
-Look at 'examples/examples.py' for examples of how to use the functionality in this library.
+Look at [examples.py](https://github.com/event-driven-robotics/bimvee/blob/master/examples/examples.py) for examples of how to use the functionality in this library.
 
 Want to play back your timestamped multi-channel data? Consider using https://github.com/event-driven-robotics/mustard
 
