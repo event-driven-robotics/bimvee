@@ -8,9 +8,17 @@
 
 # Quickstart 
 
-Look at 'examples/examples.py' for examples of how to use the functionality in this library.
+## Installation
 
-Important! When you clone this repo, use --recurse-submodules option, as this repo uses 'importRosbag' library as a submodule. 
+There is a pip installer:
+
+    pip install bimvee
+
+Important! If you clone this repo, use --recurse-submodules option, as this repo uses 'importRosbag' library as a submodule. 
+
+## Usage
+
+Look at 'examples/examples.py' for examples of how to use the functionality in this library.
 
 Want to play back your timestamped multi-channel data? Consider using https://github.com/event-driven-robotics/mustard
 
