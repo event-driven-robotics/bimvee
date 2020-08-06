@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Copyright (C) 2020 Event-driven Perception for Robotics
-Author: Sim Bamford
+Authors: Sim Bamford
+         Aiko Dinale   
 
 This program is free software: you can redistribute it and/or modify it under 
 the terms of the GNU General Public License as published by the Free Software 
@@ -210,6 +211,7 @@ def rotToVec(inDict):
     elif rotationRepresentation == 'quaternion':
         raise Exception("Method not implemented") 
     elif rotationRepresentation == 'rVec':
+        raise Exception("Method not implemented") 
     else: #rotationRepresentation == 'mat'
         raise Exception("Method not implemented") 
     return outDict
@@ -270,13 +272,13 @@ def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
     lastTime = ts[-1]
     if times is not None:
         keepTimesBool = np.logical_and(times >= firstTime, times <= lastTime)
-        times = times[keepTimes]
+        times = times[keepTimesBool]
         timesAlreadyExistBool = np.isin(times, ts)
         existingTimes = times[timesAlreadyExistBool]
         newTimes = times[~timesAlreadyExistBool]
     elif period is not None:
         times = np.arange(firstTime, lastTime, step=period)
-        timesAlreadyExistBool = numpy.isin(times, ts)
+        timesAlreadyExistBool = np.isin(times, ts)
         existingTimes = times[timesAlreadyExistBool]
         newTimes = times[~timesAlreadyExistBool]
     elif maxPeriod is not None:        
@@ -284,24 +286,26 @@ def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
         prevIds = np.searchsorted(ts, proposedAdditionalTimes, side='right') - 1
         distPre = proposedAdditionalTimes - ts[prevIds]
         distPost = ts[prevIds + 1] - proposedAdditionalTimes
-        dist = distPre + distPost
+        dist = (distPre + distPost) * (distPre > 0) * (distPost > 0)
         keepAdditional = dist > maxPeriod
         newTimes = proposedAdditionalTimes[keepAdditional]
         existingTimes = ts
 
     # Now we have newTimes and existingTimes; 
     # Now iterate over newTimes and do interpolation
-    # TODO: slerp function could be vectorised
-    newPoints = np.zeros_like(newTimes)
-    newRotations = np.zeros_like(newTimes)
-    for idx in range(len(newTimes)):
+    numNewTimes = len(newTimes)
+    newPoints = np.zeros((numNewTimes, 3), dtype=np.float64)
+    newRotations = np.zeros((numNewTimes, 4), dtype=np.float64)
+    for idx in range(numNewTimes): 
+        # TODO: slerp function could be vectorised
+        # then this whole loop could be vectorised
         newTime = newTimes[idx]
         idxPre = np.searchsorted(ts, newTime, side='right') - 1
         timePre = ts[idxPre]
         timePost = ts[idxPre + 1]
         rotPre = rotations[idxPre, :]
         rotPost = rotations[idxPre + 1, :]
-        timeRel = (time - timePre) / (timePost - timePre)
+        timeRel = (newTime - timePre) / (timePost - timePre)
         newRotations[idx, :] = slerp(rotPre, rotPost, timeRel)
         pointPre = points[idxPre, :] 
         pointPost = points[idxPre + 1, :]
@@ -311,23 +315,29 @@ def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
     if maxPeriod is None:
         keepExistingBool = np.isin(ts, existingTimes)
         ts = ts[keepExistingBool]
-        point = point[keepExistingBool]
-        rotation = rotation[keepExistingBool]
+        points = points[keepExistingBool, :]
+        rotations = rotations[keepExistingBool, :]
     
-    ts = np.concatenate((ts, additionalTimes))
-    points = np.concatenate((points, np.array(additionalPoints)))
-    rotations = np.concatenate((rotations, np.array(additionalRotations)))
-    poseDict['ts'] = ts
-    poseDict['point'] = points
-    poseDict['rotation'] = rotations
-    poseDict = sortDataTypeDictByTime(poseDict)
-        
-    return rotToRepresentation(poseDict, rotationRepresentation)
+    ts = np.concatenate((ts, newTimes))
+    points = np.concatenate((points, newPoints))
+    rotations = np.concatenate((rotations, newRotations))
+    
+    newPoseDict = {}
+    newPoseDict['ts'] = ts
+    newPoseDict['point'] = points
+    newPoseDict['rotation'] = rotations
+    for key in poseDict.keys():
+        if key not in ['ts', 'point', 'rotation']:
+            newPoseDict[key] = poseDict[key].copy()
+    newPoseDict = sortDataTypeDictByTime(newPoseDict)
+    return rotToRepresentation(newPoseDict, rotationRepresentation)
     
 def rotate(inDict, rotation):
+    raise Exception("Method not implemented") 
     return outDict
     
 def translate(inDict, translation):
+    raise Exception("Method not implemented") 
     return outDict
 
 '''
