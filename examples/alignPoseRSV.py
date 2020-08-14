@@ -17,6 +17,89 @@ This script has been written taking some parts from:
 - TODO: add 
 """
 
+#%% Define function for plotting two sets of points with common time coordinates
+import matplotlib.pyplot as plt
+
+def plotPoints(ts, pointsA, pointsB, legendA, legendB, title, datasetName, trialName):
+    fig = plt.figure()
+    fig.suptitle(title + "\n (" + datasetName + "/" + trialName + ")", fontsize=20, fontweight='bold')
+
+    ax11 = plt.subplot(3, 1, 1)
+    plt.plot(ts, pointsA[:, 0], color='r', linestyle='dotted', linewidth=2)
+    plt.plot(ts, pointsB[:, 0], color='r', linestyle='dotted', linewidth=2, alpha=0.25)
+    plt.ylabel('x [m]', fontsize=10, fontweight='bold')
+    plt.legend([legendA, legendB])
+    plt.grid(True)
+    plt.ylim(-1.5, 0.4)
+
+    plt.subplot(3, 1, 2, sharex=ax11)
+    plt.plot(ts, pointsA[:, 1], color='g', linestyle='dotted', linewidth=2)
+    plt.plot(ts, pointsB[:, 1], color='g', linestyle='dotted', linewidth=2, alpha=0.25)
+    plt.ylabel('y [m]', fontsize=10, fontweight='bold')
+    plt.legend([legendA, legendB])
+    plt.grid(True)
+    plt.ylim(-0.5, 1.5)
+
+    plt.subplot(3, 1, 3, sharex=ax11)
+    plt.plot(ts, pointsA[:, 2], color='b', linestyle='dotted', linewidth=2)
+    plt.plot(ts, pointsB[:, 2], color='b', linestyle='dotted', linewidth=2, alpha=0.25)
+    plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
+    plt.ylabel('z [m]', fontsize=10, fontweight='bold')
+    plt.legend([legendA, legendB])
+    plt.grid(True)
+    plt.ylim(-0.3, 1.3)
+
+    fig.subplots_adjust(top=0.9)
+    fig.align_ylabels()
+
+    plt.show()
+
+#%% Define function for plotting two sets of quaternions with common time coordinates
+import matplotlib.pyplot as plt
+
+def plotQuaternions(ts, rotationsA, rotationsB, labelA, labelB, title, datasetName, trialName):
+    fig = plt.figure()
+    fig.suptitle(title + "\n (" + datasetName + "/" + trialName + ")", fontsize=20, fontweight='bold')
+
+    ax11 = plt.subplot(4, 1, 1)
+    plt.plot(ts, rotationsA[:, 0], color='k', linestyle='dotted', linewidth=2)
+    plt.plot(ts, rotationsB[:, 0], color='k', linestyle='dotted', linewidth=2, alpha=0.25)
+    plt.ylabel('w', fontsize=10, fontweight='bold')
+    plt.legend([labelA, labelB])
+    plt.grid(True)
+    plt.ylim(-1, 1.3)
+
+    plt.subplot(4, 1, 2, sharex=ax11)
+    plt.plot(ts, rotationsA[:, 1], color='r', linestyle='dotted', linewidth=2)
+    plt.plot(ts, rotationsB[:, 1], color='r', linestyle='dotted', linewidth=2, alpha=0.25)
+    plt.ylabel('x', fontsize=10, fontweight='bold')
+    plt.legend([labelA, labelB])
+    plt.grid(True)
+    plt.ylim(-1, 1)
+
+    plt.subplot(4, 1, 3, sharex=ax11)
+    plt.plot(ts, rotationsA[:, 2], color='g', linestyle='dotted', linewidth=2)
+    plt.plot(ts, rotationsB[:, 2], color='g', linestyle='dotted', linewidth=2, alpha=0.25)
+    plt.ylabel('y', fontsize=10, fontweight='bold')
+    plt.legend([labelA, labelB])
+    plt.grid(True)
+    plt.ylim(-1, 1)
+
+    plt.subplot(4, 1, 4, sharex=ax11)
+    plt.plot(ts, rotationsA[:, 3], color='b', linestyle='dotted', linewidth=2)
+    plt.plot(ts, rotationsB[:, 3], color='b', linestyle='dotted', linewidth=2, alpha=0.25)
+    plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
+    plt.ylabel('z', fontsize=10, fontweight='bold')
+    plt.legend([labelA, labelB])
+    plt.grid(True)
+    plt.ylim(-1, 1)
+
+    fig.subplots_adjust(top=0.9)
+    fig.align_ylabels()
+
+    plt.show()
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 import os, sys
 
 # Get os-specific path for local libraries (YMMV)
@@ -115,120 +198,291 @@ del selected, key
 %matplotlib auto
 plot(container)
 
-#%% Interpolate with Slerp the Vicon and RealSense rotations
+#%%
+# import open3d as o3d
+
+# # Create a PointCloud for Vicon points
+# source_raw = o3d.geometry.PointCloud()
+# source_raw.points = o3d.utility.Vector3dVector(container['data']['vicon']['pose6q']['point'])
+
+# # Create a PointCloud for RealSense points
+# target_raw = o3d.geometry.PointCloud()
+# target_raw.points = o3d.utility.Vector3dVector(container['data']['rs']['pose6q']['point'])
+
+# def draw_registration_result(source, target, transformation):
+#     source_temp = copy.deepcopy(source)
+#     target_temp = copy.deepcopy(target)
+#     source_temp.paint_uniform_color([1, 0.706, 0]) # yellowish
+#     target_temp.paint_uniform_color([0, 0.651, 0.929]) # blueish
+#     source_temp.transform(transformation)
+#     o3d.visualization.draw_geometries([source_temp, target_temp])
+
+# draw_registration_result(source_raw, target_raw, np.identity(4))
+
+#%% Find a common time windows between Vicon and RealSense data00
 from bimvee.split import cropTime
-from scipy.spatial.transform import Slerp
-from scipy.spatial.transform import Rotation
 
 # Find the first common time and the last common time
 startTs = max(container['data']['vicon']['pose6q']['ts'][0], container['data']['rs']['pose6q']['ts'][0])
 stopTs = min(container['data']['vicon']['pose6q']['ts'][-1], container['data']['rs']['pose6q']['ts'][-1])
+#TODO: check who actually comes first! trailing at beginning
 
 # Crop data to have ROUGHLY the same common time window
 container['data']['vicon']['pose6q'] = cropTime(container['data']['vicon']['pose6q'], startTime=startTs, stopTime=stopTs, zeroTime=False)
 container['data']['rs']['pose6q'] = cropTime(container['data']['rs']['pose6q'], startTime=startTs, stopTime=stopTs, zeroTime=False)
 
-# Use the 'xyzw' format for quaternion
-q2r_order = [1, 2, 3, 0]
-# Use the 'wxyz' format for quaternion
-r2q_order = [3, 0, 1, 2]
-
 # Guarantee a feasible time window for the interpolation (i.e. it must be within the limits of both Vicon and RealSense data)
-startTs = max(container['data']['vicon']['pose6q']['ts'][0], container['data']['rs']['pose6q']['ts'][0])
-stopTs = min(container['data']['vicon']['pose6q']['ts'][-1], container['data']['rs']['pose6q']['ts'][-1])
-numSteps = round(np.mean([len(container['data']['vicon']['pose6q']['ts']), len(container['data']['rs']['pose6q']['ts'])]))
+tsVicon = container['data']['vicon']['pose6q']['ts']
+tsRS = container['data']['rs']['pose6q']['ts']
+startTs = max(tsVicon[0], tsRS[0])
+stopTs = min(tsVicon[-1], tsRS[-1])
+numSteps = round(np.mean([len(tsVicon), len(tsRS)]))
 timeWindow = np.linspace(startTs, stopTs, num=numSteps)
 
+#%% Interpolate with a Cubic Spline the Vicon and RealSense points
+from scipy.interpolate import CubicSpline
+
+pointsVicon_raw = copy.deepcopy(container['data']['vicon']['pose6q']['point'])
+pointsRS_raw = copy.deepcopy(container['data']['rs']['pose6q']['point'])
+
+cx = CubicSpline(x = tsVicon, y = pointsVicon_raw[:,0])
+cy = CubicSpline(x = tsVicon, y = pointsVicon_raw[:,1])
+cz = CubicSpline(x = tsVicon, y = pointsVicon_raw[:,2])
+pointsVicon = np.transpose([cx(timeWindow), cy(timeWindow), cz(timeWindow)])
+
+cx = CubicSpline(x = tsRS, y = pointsRS_raw[:,0])
+cy = CubicSpline(x = tsRS, y = pointsRS_raw[:,1])
+cz = CubicSpline(x = tsRS, y = pointsRS_raw[:,2])
+pointsRS = np.transpose([cx(timeWindow), cy(timeWindow), cz(timeWindow)])
+
+del cx, cy, cz
+
+# Plot Vicon and RealSense points after Cubic interpolation
+# %matplotlib auto
+plotPoints(timeWindow, pointsVicon, pointsRS, 'vicon', 'realsense', 'Vicon and RealSense points after Cubic interpolation', datasetName, trialName)
+
+#%% Global Registration for rough point cloud alignment [http://www.open3d.org/docs/0.6.0/tutorial/Advanced/global_registration.html#ransac]
+import open3d as o3d
+
+# Create a PointCloud for Vicon points
+source = o3d.geometry.PointCloud()
+source.points = o3d.utility.Vector3dVector(pointsVicon)
+
+# Create a PointCloud for RealSense points
+target = o3d.geometry.PointCloud()
+target.points = o3d.utility.Vector3dVector(pointsRS)
+
+# trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0], [1.0, 0.0, 0.0, 0.0],
+                        #  [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
+
+def draw_registration_result(source, target, transformation):
+    source_temp = copy.deepcopy(source)
+    target_temp = copy.deepcopy(target)
+    source_temp.paint_uniform_color([1, 0.706, 0]) # yellowish
+    target_temp.paint_uniform_color([0, 0.651, 0.929]) # blueish
+    source_temp.transform(transformation)
+    o3d.visualization.draw_geometries([source_temp, target_temp])
+
+# draw_registration_result(source, target, trans_init)
+# del trans_init
+
+def preprocess_point_cloud(pcd, voxel_size):
+    print(":: Downsample with a voxel size %.3f." % voxel_size)
+    pcd_down = pcd.voxel_down_sample(voxel_size)
+
+    radius_normal = voxel_size * 2
+    print(":: Estimate normal with search radius %.3f." % radius_normal)
+    pcd_down.estimate_normals(
+        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=30))
+
+    radius_feature = voxel_size * 5
+    print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
+    pcd_fpfh = o3d.registration.compute_fpfh_feature(
+        pcd_down,
+        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100))
+    return pcd_down, pcd_fpfh
+
+def prepare_dataset(voxel_size, source, target):
+    # print(":: Load two point clouds and disturb initial pose.")
+    # trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0], [1.0, 0.0, 0.0, 0.0],
+    #                          [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
+    # source.transform(trans_init)
+    draw_registration_result(source, target, np.identity(4))
+
+    source_down, source_fpfh = preprocess_point_cloud(source, voxel_size)
+    target_down, target_fpfh = preprocess_point_cloud(target, voxel_size)
+    return source, target, source_down, target_down, source_fpfh, target_fpfh
+
+voxel_size = 0.05 # means 5cm for this dataset
+source, target, source_down, target_down, source_fpfh, target_fpfh = prepare_dataset(voxel_size, source, target)
+
+def execute_global_registration(source_down, target_down, source_fpfh,
+                                target_fpfh, voxel_size):
+    distance_threshold = voxel_size * 1.5
+    print(":: RANSAC registration on downsampled point clouds.")
+    print("   Since the downsampling voxel size is %.3f," % voxel_size)
+    print("   we use a liberal distance threshold %.3f." % distance_threshold)
+    result = o3d.registration.registration_ransac_based_on_feature_matching(
+        source_down, target_down, source_fpfh, target_fpfh, distance_threshold,
+        o3d.registration.TransformationEstimationPointToPoint(False), 4, [
+            o3d.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+            o3d.registration.CorrespondenceCheckerBasedOnDistance(
+                distance_threshold)
+        ], o3d.registration.RANSACConvergenceCriteria(4000000, 500))
+    return result
+
+result_ransac = execute_global_registration(source_down, target_down,
+                                            source_fpfh, target_fpfh,
+                                            voxel_size)
+print(result_ransac)
+draw_registration_result(source_down, target_down, result_ransac.transformation)
+draw_registration_result(source, target, result_ransac.transformation)
+
+#%% Iterative Closest Point (ICP) for fine point cloud alignment [http://www.open3d.org/docs/release/tutorial/Basic/icp_registration.html?highlight=registration]
+
+threshold = 0.001
+trans_init = result_ransac.transformation
+
+print("Initial alignment")
+evaluation = o3d.registration.evaluate_registration(source, target, threshold, trans_init)
+print(evaluation)
+
+print("Apply point-to-point ICP")
+reg_p2p = o3d.registration.registration_icp(source, target, threshold, trans_init,
+        o3d.registration.TransformationEstimationPointToPoint(),
+        o3d.registration.ICPConvergenceCriteria(max_iteration = 5000))
+
+print(reg_p2p)
+print("Transformation is:")
+print(reg_p2p.transformation)
+draw_registration_result(source, target, reg_p2p.transformation)
+
+#%%
+# -------------------------------------
+# | IGNORE THE FOLLOWING CODE FOR NOW |
+# -------------------------------------
+
+#%% Interpolate with Slerp the Vicon and RealSense rotations
+from scipy.spatial.transform import Slerp
+from scipy.spatial.transform import Rotation
+
+rotationsVicon_raw = copy.deepcopy(container['data']['vicon']['pose6q']['rotation'])
+rotationsRS_raw = copy.deepcopy(container['data']['rs']['pose6q']['rotation'])
+
+# Define quaternion format
+q2r_order = [1, 2, 3, 0] # xyzw
+r2q_order = [3, 0, 1, 2] # wxyz
+
 # Interpolate the data only in the common time window
-slerperVicon = Slerp(times = container['data']['vicon']['pose6q']['ts'], rotations = Rotation.from_quat(container['data']['vicon']['pose6q']['rotation'][:, q2r_order]))
-rotationsVicon = slerperVicon(timeWindow).as_quat()[:, r2q_order]
+slerperVicon = Slerp(times = tsVicon, rotations = Rotation.from_quat(rotationsVicon_raw[:, q2r_order]))
+rotationsVicon_quat = slerperVicon(timeWindow).as_quat()[:, r2q_order]
+rotationsVicon_matrix = slerperVicon(timeWindow).as_matrix()
 
-slerperRS = Slerp(times = container['data']['rs']['pose6q']['ts'], rotations = Rotation.from_quat(container['data']['rs']['pose6q']['rotation'][:, q2r_order]))
-rotationsRS = slerperRS(timeWindow).as_quat()[:, r2q_order]
+slerperRS = Slerp(times = tsRS, rotations = Rotation.from_quat(rotationsRS_raw[:, q2r_order]))
+rotationsRS_quat = slerperRS(timeWindow).as_quat()[:, r2q_order]
+rotationsRS_matrix = slerperRS(timeWindow).as_matrix()
 
-# Plot RealSense and Vicon orientation before and after the interpolation
-import matplotlib.pyplot as plt
+# Plot Vicon and RealSense orientations after Slerper innterpolation
+# %matplotlib auto
+plotQuaternions(timeWindow, rotationsVicon_quat, rotationsRS_quat, 'vicon', 'realsense', 'Vicon and RealSense orientations after SLERP', datasetName, trialName)
 
-def plotQuaternionRSV(tsVicon, rotationsVicon_raw, rotationsVicon, tsRS, rotationsRS_raw, rotationsRS, datasetName, trialName):
-    fig = plt.figure()
-    fig.suptitle("Vicon and RealSense Orientation\n (" + datasetName + "/" + trialName + ")", fontsize=20, fontweight='bold')
+#%% Align Vicon and RealSense points w.r.t. their corresponding reference frame
+pointsVicon_rotated = np.array([R @ p for R, p in zip(rotationsVicon_matrix, pointsVicon)])
+pointsRS_rotated = np.array([R @ p for R, p in zip(rotationsRS_matrix, pointsRS)])
 
-    ax11 = plt.subplot(4, 2, 1)
-    plt.plot(tsVicon, rotationsVicon_raw[:, 0], color='k', alpha=0.25)
-    plt.plot(timeWindow, rotationsVicon[:, 0], color='k', linestyle='dotted', linewidth=2)
-    plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
-    plt.ylabel('w_Vicon', fontsize=10, fontweight='bold')
-    plt.legend(['raw', 'interpolated'])
-    plt.grid(True)
+# %matplotlib auto
+plotPoints(timeWindow, pointsVicon_rotated, pointsRS_rotated, 'vicon', 'realsense', 'Vicon and RealSense points ROTATED', datasetName, trialName)
 
-    plt.subplot(4, 2, 3, sharex=ax11)
-    plt.plot(tsVicon, rotationsVicon_raw[:, 1], color='r', alpha=0.25)
-    plt.plot(timeWindow, rotationsVicon[:, 1], color='r', linestyle='dotted', linewidth=2)
-    plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
-    plt.ylabel('x_Vicon', fontsize=10, fontweight='bold')
-    plt.legend(['raw', 'interpolated'])
-    plt.grid(True)
+#%%
+# Add path to rigid_transform_3D
+sys.path.append(os.path.join(prefix, 'src/rigid_transform_3D'))
 
-    plt.subplot(4, 2, 5, sharex=ax11)
-    plt.plot(tsVicon, rotationsVicon_raw[:, 2], color='g', alpha=0.25)
-    plt.plot(timeWindow, rotationsVicon[:, 2], color='g', linestyle='dotted', linewidth=2)
-    plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
-    plt.ylabel('y_Vicon', fontsize=10, fontweight='bold')
-    plt.legend(['raw', 'interpolated'])
-    plt.grid(True)
+from rigid_transform_3D import rigid_transform_3D
 
-    plt.subplot(4, 2, 7, sharex=ax11)
-    plt.plot(tsVicon, rotationsVicon_raw[:, 3], color='b', alpha=0.25)
-    plt.plot(timeWindow, rotationsVicon[:, 3], color='b', linestyle='dotted', linewidth=2)
-    plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
-    plt.ylabel('z_Vicon', fontsize=10, fontweight='bold')
-    plt.legend(['raw', 'interpolated'])
-    plt.grid(True)
+A = copy.deepcopy(pointsVicon_rotated.transpose())
+B = copy.deepcopy(pointsRS_rotated.transpose())
 
-    ax11 = plt.subplot(4, 2, 2)
-    plt.plot(tsRS, rotationsRS_raw[:, 0], color='k', alpha=0.25)
-    plt.plot(timeWindow, rotationsRS[:, 0], color='k', linestyle='dotted', linewidth=2)
-    plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
-    plt.ylabel('w_RealSense', fontsize=10, fontweight='bold')
-    plt.legend(['raw', 'interpolated'])
-    plt.grid(True)
+n = len(pointsRS)
 
-    plt.subplot(4, 2, 4, sharex=ax11)
-    plt.plot(tsRS, rotationsRS_raw[:, 1], color='r', alpha=0.25)
-    plt.plot(timeWindow, rotationsRS[:, 1], color='r', linestyle='dotted', linewidth=2)
-    plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
-    plt.ylabel('x_RealSense', fontsize=10, fontweight='bold')
-    plt.legend(['raw', 'interpolated'])
-    plt.grid(True)
+# Recover R and t
+ret_R, ret_t = rigid_transform_3D(A, B)
 
-    plt.subplot(4, 2, 6, sharex=ax11)
-    plt.plot(tsRS, rotationsRS_raw[:, 2], color='g', alpha=0.25)
-    plt.plot(timeWindow, rotationsRS[:, 2], color='g', linestyle='dotted', linewidth=2)
-    plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
-    plt.ylabel('y_RealSense', fontsize=10, fontweight='bold')
-    plt.legend(['raw', 'interpolated'])
-    plt.grid(True)
+# Compare the recovered R and t with the original
+B2 = (ret_R @ A) + np.tile(ret_t, (1, n))
 
-    plt.subplot(4, 2, 8, sharex=ax11)
-    plt.plot(tsRS, rotationsRS_raw[:, 3], color='b', alpha=0.25)
-    plt.plot(timeWindow, rotationsRS[:, 3], color='b', linestyle='dotted', linewidth=2)
-    plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
-    plt.ylabel('z_RealSense', fontsize=10, fontweight='bold')
-    plt.legend(['raw', 'interpolated'])
-    plt.grid(True)
+# Find the root mean squared error
+err = B2 - B
+err = np.multiply(err, err)
+err = np.sum(err)
+rmse = np.sqrt(err/n);
+print("Root Mean Squared Error = ", rmse)
 
-    fig.subplots_adjust(top=0.9)
-    fig.align_ylabels()
+pointsRS_transformed = B2.transpose()
 
-    plt.show()
+# %matplotlib auto
+plotPoints(timeWindow, pointsVicon_rotated, pointsRS_transformed, 'vicon', 'realsense', 'Vicon and RealSense points TRANSFORMED', datasetName, trialName)
 
-tsVicon = container['data']['vicon']['pose6q']['ts']
-rotationsVicon_raw = container['data']['vicon']['pose6q']['rotation']
+#%% Plot RealSense and Vicon points before and after the interpolation
+# import matplotlib.pyplot as plt
 
-tsRS = container['data']['rs']['pose6q']['ts']
-rotationsRS_raw = container['data']['rs']['pose6q']['rotation']
+# def plotPointsRSV(tsVicon, pointsVicon_raw, pointsVicon, tsRS, pointsRS_raw, pointsRS, datasetName, trialName):
+#     fig = plt.figure()
+#     fig.suptitle("Vicon and RealSense Points\n (" + datasetName + "/" + trialName + ")", fontsize=20, fontweight='bold')
 
-%matplotlib auto
-plotQuaternionRSV(tsVicon, rotationsVicon_raw, rotationsVicon, tsRS, rotationsRS_raw, rotationsRS, datasetName, trialName)
+#     ax11 = plt.subplot(3, 2, 1)
+#     plt.plot(ts, pointsVicAplt.plot(ts, rotationsA 0]+0.5, color='r', alpha=0.25, linestyle='dotted', linewidth=2)
+#     plt.plot(timeWindow, pointsVicon[sr='r', lineB='dotted', linewidth=2)
+#     plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
+#     plt.ylabel('x_Vicon [m]', fontsize=10, fontweight='bold')
+#     plt.legend(['raw', 'interpolated'])
+#     plt.grid(True)
+
+#     plt.subplot(3, 2, 3, sharex=ax11)
+#     plt.plot(ts, pointsVicAplt.plot(ts, rotationsA 1], color='g', alpha=0.25)
+#     plt.plot(timeWindow, pointsVicon[sr='g', lineB='dotted', linewidth=2)
+#     plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
+#     plt.ylabel('y_Vicon [m]', fontsize=10, fontweight='bold')
+#     plt.legend(['raw', 'interpolated'])
+#     plt.grid(True)
+
+#     plt.subplot(3, 2, 5, sharex=ax11)
+#     plt.plot(ts, pointsVicAplt.plot(ts, rotationsA 2], color='b', alpha=0.25)
+#     plt.plot(timeWindow, pointsVicon[sr='b', lineB='dotted', linewidth=2)
+#     plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
+#     plt.ylabel('z_Vicon [m]', fontsize=10, fontweight='bold')
+#     plt.legend(['raw', 'interpolated'])
+#     plt.grid(True)
+
+#     ax11 = plt.subplot(3, 2, 2)
+#     plt.plot(tsRS, pointsRS_raw[:, 0], color='r', alpha=0.25)
+#     plt.plot(timeWindow, pointsRS[:, 0], color='r', linestyle='dotted', linewidth=2)
+#     plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
+#     plt.ylabel('x_RealSense [m]', fontsize=10, fontweight='bold')
+#     plt.legend(['raw', 'interpolated'])
+#     plt.grid(True)
+
+#     plt.subplot(3, 2, 4, sharex=ax11)
+#     plt.plot(tsRS, pointsRS_raw[:, 1], color='g', alpha=0.25)
+#     plt.plot(timeWindow, pointsRS[:, 1], color='g', linestyle='dotted', linewidth=2)
+#     plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
+#     plt.ylabel('y_RealSense [m]', fontsize=10, fontweight='bold')
+#     plt.legend(['raw', 'interpolated'])
+#     plt.grid(True)
+
+#     plt.subplot(3, 2, 6, sharex=ax11)
+#     plt.plot(tsRS, pointsRS_raw[:, 2], color='b', alpha=0.25)
+#     plt.plot(timeWindow, pointsRS[:, 2], color='b', linestyle='dotted', linewidth=2)
+#     plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
+#     plt.ylabel('z_RealSense [m]', fontsize=10, fontweight='bold')
+#     plt.legend(['raw', 'interpolated'])
+#     plt.grid(True)
+
+#     fig.subplots_adjust(top=0.9)
+#     fig.align_ylabels()
+
+#     plt.show()
+
+# %matplotlib auto
+# plotPointsRSV(tsVicon, pointsVicon_raw, pointsVicon, tsRS, pointsRS_raw, pointsRS, datasetName, trialName)
 
 # %%
