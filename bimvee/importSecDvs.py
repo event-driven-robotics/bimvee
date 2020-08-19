@@ -162,6 +162,9 @@ def importSecDvs(**kwargs):
     y = y[ids]
     pol = pol[ids]
     
+    # Invert polarity, in line with library-wide definition
+    pol = ~pol
+    
     dvsDict = {'ts': ts,
                'x': x,
                'y': y,

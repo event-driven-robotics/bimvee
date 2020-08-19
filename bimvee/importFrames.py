@@ -67,7 +67,7 @@ def importFrames(**kwargs):
         filePathAndName = os.path.join(path, file) 
         if file == 'timestamps.txt': # todo: is there a more general form?
             ts = np.loadtxt(filePathAndName)
-        else:
+        elif os.path.isfile(filePathAndName):
             frames.append(imageio.imread(filePathAndName))
     channelDict = {'frame': 
                        {'ts': ts,

@@ -209,11 +209,11 @@ def samplesToImu(inDict, **kwargs):
     temp - 333.87 - but does it zero at 0K or at room temperature? (+21deg)
     mag - full scale is +/- 4900 uT
     '''
-    accConversionFactor = kwargs.get('accConversionFactor', 32768 / 2 / 9.80665)
-    angVConversionFactor = kwargs.get('angVConversionFactor', 32768 / 2000 * 180 / np.pi)
+    accConversionFactor = kwargs.get('accConversionFactor', (32768 / 2) / 9.80665)
+    angVConversionFactor = kwargs.get('angVConversionFactor', (32768 / 250) * (180 / np.pi))
     tempConversionFactor = kwargs.get('tempConversionFactor', 333.87)
     tempConversionOffset = kwargs.get('tempConversionOffset', -273.15 - 21)
-    magConversionFactor = kwargs.get('magConversionFactor', 32768 / 4900 * 1000000)
+    magConversionFactor = kwargs.get('magConversionFactor', (32768 / 4900) * 1000000)
     # Assume that sensor always ramps up, and split when it wraps around
     # Otherwise, iterate through this sample by sample - slowest and most robust method
     # Possible to do this much faster, but only my assuming no gaps in data

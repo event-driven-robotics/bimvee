@@ -106,6 +106,16 @@ To select which bodies to plot using bodyID:
  - pass a list of strings that should be absent from the bodyID of choice, through the parameter exclude
 """
 
+def plotPoints(points):
+    ax = plt.axes(projection='3d')
+    X = points[0, :]
+    Y = points[1, :]
+    Z = points[2, :]
+    ax.scatter3D(X, Y, Z, marker='o', s=0.5)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()
 
 def plotTrajectories(viconDataDict, bodyIds, include, exclude, **kwargs):
     ax = kwargs.get('ax')

@@ -41,7 +41,7 @@ import math
 
 # Local imports
 from .plotDvsContrast import getEventImageForTimeRange
-from .geometry import quat2RotM, rotateUnitVectors, slerp, draw_line
+from .geometry import quat2RotM, slerp
 from .split import splitByLabel
 
 # A function intended to find the nearest timestamp
@@ -54,6 +54,7 @@ def findNearest(array, value):
         return idx-1
     else:
         return idx
+
 
 class Visualiser:
     
@@ -348,6 +349,39 @@ class VisualiserOpticFlow(Visualiser):
         v = v / (rad_max + epsilon)
         return self.flow_uv_to_colors(u, v, convert_to_bgr)
 
+#%% Two helper functions for pose visualiser
+
+# adapted from https://stackoverflow.com/questions/50387606/python-draw-line-between-two-coordinates-in-a-matrix
+def draw_line(mat, x0, y0, x1, y1):
+    if (x0, y0) == (x1, y1):
+        if x0 >= 0 and x0 < mat.shape[1] and y0 >= 0 and y0 < mat.shape[0]:
+            mat[x0, y0] = 255
+        return
+    # Swap axes if Y slope is smaller than X slope
+    transpose = abs(x1 - x0) < abs(y1 - y0)
+    if transpose:
+        mat = mat.T
+        x0, y0, x1, y1 = y0, x0, y1, x1
+    # Swap line direction to go left-to-right if necessary
+    if x0 > x1:
+        x0, y0, x1, y1 = x1, y1, x0, y0
+    # Compute intermediate coordinates using line equation
+    x = np.arange(x0, x1 + 1)
+    y = np.round(((y1 - y0) / (x1 - x0)) * (x - x0) + y0).astype(x.dtype)
+    # Write intermediate coordinates
+    toKeep = np.logical_and(x >= 0, 
+                            np.logical_and(x<mat.shape[1], 
+                                           np.logical_and(y >= 0, y<mat.shape[0])))
+    mat[y[toKeep], x[toKeep]] = 255
+
+def rotateUnitVectors(rotM, unitLength=1.0):
+    xVec = np.expand_dims(np.array([unitLength, 0, 0, 1]), axis=1)
+    yVec = np.expand_dims(np.array([0, unitLength, 0, 1]), axis=1)
+    zVec = np.expand_dims(np.array([0, 0, unitLength, 1]), axis=1)
+    allVecs = np.concatenate((xVec, yVec, zVec), axis=1)
+    return rotM.dot(allVecs)
+
+#%%
 
 class VisualiserPose6q(Visualiser):
 

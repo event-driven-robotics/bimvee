@@ -48,27 +48,36 @@ def plotImu(inDict, **kwargs):
             else:
                 print('Channel ' + channelName + ' skipped because it contains no polarity data')
         return
-    fig, allAxes = plt.subplots(4, 1)
+    if 'temp' in inDict: 
+        numSubplots = 4
+    else:
+        numSubplots = 3
+    fig, allAxes = plt.subplots(numSubplots, 1)
     fig.suptitle(kwargs.get('title', ''))
     axesAcc = allAxes[0]
-    axesAcc.plot(inDict['ts'], inDict['acc'])
+    axesAcc.plot(inDict['ts'], inDict['acc'][:, 0], 'r')
+    axesAcc.plot(inDict['ts'], inDict['acc'][:, 1], 'g')
+    axesAcc.plot(inDict['ts'], inDict['acc'][:, 2], 'b')
     axesAcc.set_title('Acceleration (m/s)')
     axesAcc.legend(['x', 'y', 'z'])
 
     axesAngV = allAxes[1]
-    axesAngV.plot(inDict['ts'], inDict['angV'])
+    axesAngV.plot(inDict['ts'], inDict['angV'][:, 0], 'r')
+    axesAngV.plot(inDict['ts'], inDict['angV'][:, 1], 'g')
+    axesAngV.plot(inDict['ts'], inDict['angV'][:, 2], 'b')
     axesAngV.set_title('Angular velocity (rad/s)')
     axesAngV.legend(['x', 'y', 'z'])
 
+    axesMag = allAxes[2]
+    axesMag.plot(inDict['ts'], inDict['mag'])
+    axesMag.set_title('Mag (uT)')
+    axesMag.legend(['x', 'y', 'z'])
+
     if 'temp' in inDict: 
-        axesTemp = allAxes[2]
+        axesTemp = allAxes[3]
         axesTemp.plot(inDict['ts'], inDict['temp'])
         axesTemp.set_title('Temp (K)')
 
-    axesMag = allAxes[3]
-    axesMag.plot(inDict['ts'], inDict['mag'])
-    axesMag.set_title('Mag (?)')
-    axesMag.legend(['x', 'y', 'z'])
 
 #-----------------------------------------------------------------------------------------------------
 def plotImuDistribution(imuDict, unitIMU='FPGA', fig_path=None, fig_name=None, fig_subtitle=None):

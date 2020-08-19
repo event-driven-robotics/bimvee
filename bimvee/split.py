@@ -27,7 +27,11 @@ Two functions for narrowing down on the data by time or space:
 - cropTime (cropTemporal)
 - cropSpace (cropSpatial)
 cropTime works on ts.
-cropSpace only works on x and y fields and is targetted for dvs - this could be much more general.
+cropSpace works from optional min/max|X/Y/Z parameters; 
+    it has implementation for various datatypes:
+    - dvs, flow: operates on x and y fields 
+    - point: operates on the 3 dimensions, x, y, and z, of a 'point' field.
+    - frame: crops frames down to a chosen 2D spatial window.
 """
 
 #%%
