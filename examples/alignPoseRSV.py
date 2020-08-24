@@ -212,6 +212,8 @@ def plotPointSets3D(pointsA, pointsB, legendA, legendB, title, datasetName, tria
     plt.show()
 
 #%% Define function for 3D rigid transform
+
+# Reference: https://gist.github.com/oshea00/dfb7d657feca009bf4d095d4cb8ea4be
 import numpy as np
 from math import sqrt
 
@@ -274,15 +276,17 @@ datasetName = "chessboardViconRealSense"
 trialName = "2020-06-26_trial01"
 
 filePathOrName = os.path.join(prefix, datasetPath + "/" + datasetName + "/" + trialName)
-containerYarp = importIitYarp(filePathOrName=filePathOrName, tsBits=30)
+containerYarp = importIitYarp(filePathOrName=filePathOrName, tsBits=30, zeroTimestamps=True)
 
-# Separate markers (pose3) from segments (pose6q)
+# Separate markers (point3) from segments (pose6q)
 containerYarp[1]['data']['vicon']['pose6q'] = separateMarkersFromSegments(containerYarp[1]['data']['vicon']['pose6q'])['pose6q']
 
+#%%
 # Remove null poses
 selected = np.any(containerYarp[1]['data']['vicon']['pose6q']['point'] == np.zeros((1, 3)), axis = 1)
 for key in containerYarp[1]['data']['vicon']['pose6q'].keys():
-    containerYarp[1]['data']['vicon']['pose6q'][key] = containerYarp[1]['data']['vicon']['pose6q'][key][~selected]
+    if key != 'tsOffset':
+        containerYarp[1]['data']['vicon']['pose6q'][key] = containerYarp[1]['data']['vicon']['pose6q'][key][~selected]
 
 # Select only poses representing STEFI
 containerYarp[1]['data']['vicon']['pose6q'] =  splitByLabel(containerYarp[1]['data']['vicon']['pose6q'], 'bodyId')['Subj_StEFI::Seg_StEFI']
@@ -290,7 +294,8 @@ containerYarp[1]['data']['vicon']['pose6q'] =  splitByLabel(containerYarp[1]['da
 # Remove repeated poses
 _, selected = np.unique(containerYarp[1]['data']['vicon']['pose6q']['ts'], return_index=True)
 for key in containerYarp[1]['data']['vicon']['pose6q'].keys():
-    containerYarp[1]['data']['vicon']['pose6q'][key] = containerYarp[1]['data']['vicon']['pose6q'][key][selected]
+    if key != 'tsOffset':
+        containerYarp[1]['data']['vicon']['pose6q'][key] = containerYarp[1]['data']['vicon']['pose6q'][key][selected]
 
 # Clean-up
 del selected, key
@@ -307,20 +312,53 @@ containerRealsense = importRpgDvsRos(filePathOrName=bagname, zeroTimestamps=True
 
 # plotPointSet(containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['ts'], containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['point'], "RealSense Data after running importRpgDvsRos", datasetName, trialName)
 
+# %matplotlib auto
+# plotPointSets3x1(containerYarp[1]['data']['vicon']['pose6q']['ts'],
+#                  containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['ts'],
+#                  containerYarp[1]['data']['vicon']['pose6q']['point'],
+#                  containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['point'],
+#                  "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName)
+
+# # Plot Vicon and RealSense data in 3D
+# plotPointSets3D(containerYarp[1]['data']['vicon']['pose6q']['point'],
+#                 containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['point'],
+#                 "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName)
+
+#%%
+import copy
+
+containerRaw = {'info': copy.deepcopy(containerYarp[1]['info']),
+                'data': {'vicon': copy.deepcopy(containerYarp[1]['data']['vicon']),
+                         'rs': copy.deepcopy(containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data'])}}
+
+pointsRSraw_MOD = np.array([-containerRaw['data']['rs']['pose6q']['point'][:,0] + containerRaw['data']['vicon']['pose6q']['point'][0,0],
+                             containerRaw['data']['rs']['pose6q']['point'][:,1],
+                             containerRaw['data']['rs']['pose6q']['point'][:,2]]).T
+
 %matplotlib auto
-plotPointSets3x1(containerYarp[1]['data']['vicon']['pose6q']['ts'],
-                 containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['ts'],
-                 containerYarp[1]['data']['vicon']['pose6q']['point'],
-                 containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['point'],
+plotPointSets3x1(containerRaw['data']['vicon']['pose6q']['ts'],
+                 containerRaw['data']['rs']['pose6q']['ts'],
+                 containerRaw['data']['vicon']['pose6q']['point'],
+                 pointsRSraw_MOD,
+                 "Vicon", "RealSense", "Vicon and RealSense points after importing (modified X)", datasetName, trialName)
+
+# %matplotlib auto
+plotPointSets3x1(containerRaw['data']['vicon']['pose6q']['ts'],
+                 containerRaw['data']['rs']['pose6q']['ts'],
+                 containerRaw['data']['vicon']['pose6q']['point'],
+                 containerRaw['data']['rs']['pose6q']['point'],
                  "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName)
 
 # Plot Vicon and RealSense data in 3D
-plotPointSets3D(containerYarp[1]['data']['vicon']['pose6q']['point'],
-                containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['point'],
+plotPointSets3D(containerRaw['data']['vicon']['pose6q']['point'],
+                containerRaw['data']['rs']['pose6q']['point'],
                 "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName)
 
-#%% Time alignment of RealSense data to StEFI and Vicon data
+#%% Time alignment of RealSense data to Vicon data
+import copy
 import pyrealsense2 as rs
+
+containerRealsenseOffset = copy.deepcopy(containerRealsense)
 
 # Create pipeline
 pipeline = rs.pipeline()
@@ -342,17 +380,17 @@ try:
         # Wait for the next set of frames from the camera
         frames = pipeline.wait_for_frames()
 
-        containerRealsense['info']['tsOffsetFromInfo'] = frames.get_timestamp()/1000 # milliseconds to seconds
+        containerRealsenseOffset['info']['tsOffsetFromInfo'] = frames.get_timestamp()/1000 # milliseconds to seconds
 finally:
     pipeline.stop()
 
 # Compute and apply the temporal offset to the RealSense data
-offset = containerRealsense['info']['tsOffsetFromInfo'] - \
-    min(containerRealsense['info']['tsOffsetFromInfo'], containerYarp[0]['info']['tsOffsetFromInfo'], containerYarp[1]['info']['tsOffsetFromInfo'])
+offset = containerRealsenseOffset['info']['tsOffsetFromInfo'] - \
+    min(containerRealsenseOffset['info']['tsOffsetFromInfo'], containerYarp[1]['info']['tsOffsetFromInfo'])
 
 from bimvee.timestamps import offsetTimestampsForAContainer
 
-offsetTimestampsForAContainer(containerRealsense, offset)
+offsetTimestampsForAContainer(containerRealsenseOffset, offset)
 
 #%% Create a new container for Vicon and RealSense data
 import copy
@@ -363,15 +401,23 @@ from bimvee.split import splitByLabel
 
 container = {'info': copy.deepcopy(containerYarp[1]['info']),
              'data': {'vicon': copy.deepcopy(containerYarp[1]['data']['vicon']),
-                      'rs': copy.deepcopy(containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data'])}}
+                      'rs': copy.deepcopy(containerRealsenseOffset['data']['/device_0/sensor_0/Pose_0/pose/transform/data'])}}
 
 # Plot the obtained container
 # %matplotlib auto
 # plot(container)
 
+pointsRS_MOD = np.array([-container['data']['rs']['pose6q']['point'][:,0] + container['data']['vicon']['pose6q']['point'][0,0],
+                          container['data']['rs']['pose6q']['point'][:,1],
+                          container['data']['rs']['pose6q']['point'][:,2]]).T
+
 # Plot Vicon and RealSense data within the container
-# plotPointSet(container['data']['vicon']['pose6q']['ts'], container['data']['vicon']['pose6q']['point'], "Vicon Data (container)", datasetName, trialName)
-# plotPointSet(container['data']['rs']['pose6q']['ts'], container['data']['rs']['pose6q']['point'], "RealSense Data (container)", datasetName, trialName)
+plotPointSets3x1(container['data']['vicon']['pose6q']['ts'],
+                 container['data']['rs']['pose6q']['ts'],
+                 container['data']['vicon']['pose6q']['point'],
+                 pointsRS_MOD,
+                 "Vicon", "RealSense", "Vicon and RealSense points after time alignment (container - modified X)", datasetName, trialName)
+
 plotPointSets3x1(container['data']['vicon']['pose6q']['ts'],
                  container['data']['rs']['pose6q']['ts'],
                  container['data']['vicon']['pose6q']['point'],
@@ -383,7 +429,7 @@ plotPointSets3D(container['data']['vicon']['pose6q']['point'],
                 container['data']['rs']['pose6q']['point'],
                 "Vicon", "RealSense", "Vicon and RealSense points after time alignment (container)", datasetName, trialName)
 
-#%% Find a common time windows between Vicon and RealSense data00
+#%% Find a common time window between Vicon and RealSense data
 from bimvee.split import cropTime
 
 # Find the first common time and the last common time
@@ -420,6 +466,17 @@ cz = CubicSpline(x = tsRS, y = pointsRS_raw[:,2])
 pointsRS = np.transpose([cx(timeWindow), cy(timeWindow), cz(timeWindow)])
 
 del cx, cy, cz
+
+pointsRS_MOD2 = np.array([-pointsRS[:,0] + pointsVicon[0,0],
+                           pointsRS[:,1],
+                           pointsRS[:,2]]).T
+
+# Plot Vicon and RealSense data within the container
+plotPointSets3x1(timeWindow,
+                 timeWindow,
+                 pointsVicon,
+                 pointsRS_MOD2,
+                 "Vicon", "RealSense", "Vicon and RealSense points after Cubic interpolation (modified X)", datasetName, trialName)
 
 # Plot Vicon and RealSense points after Cubic interpolation
 plotPointSets3x1(timeWindow,
