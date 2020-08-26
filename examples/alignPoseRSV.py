@@ -308,7 +308,7 @@ from bimvee.importRpgDvsRos import importRpgDvsRos
 
 trialNameRS = "2020-06-26_trial01/RealSense/trial01.bag"
 bagname = os.path.join(prefix, datasetPath + "/" + datasetName + "/" + trialNameRS)
-containerRealsense = importRpgDvsRos(filePathOrName=bagname, zeroTimestamps=True)
+containerRealsense = importRpgDvsRos(filePathOrName=bagname, zeroTimestamps=False)
 
 # plotPointSet(containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['ts'], containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['point'], "RealSense Data after running importRpgDvsRos", datasetName, trialName)
 
@@ -337,14 +337,14 @@ pointsRSraw_MOD = np.array([-containerRaw['data']['rs']['pose6q']['point'][:,0] 
 
 %matplotlib auto
 plotPointSets3x1(containerRaw['data']['vicon']['pose6q']['ts'],
-                 containerRaw['data']['rs']['pose6q']['ts'],
+                 containerRaw['data']['rs']['pose6q']['ts'] - containerRaw['data']['rs']['pose6q']['ts'][0],
                  containerRaw['data']['vicon']['pose6q']['point'],
                  pointsRSraw_MOD,
                  "Vicon", "RealSense", "Vicon and RealSense points after importing (modified X)", datasetName, trialName)
 
 # %matplotlib auto
 plotPointSets3x1(containerRaw['data']['vicon']['pose6q']['ts'],
-                 containerRaw['data']['rs']['pose6q']['ts'],
+                 containerRaw['data']['rs']['pose6q']['ts'] - containerRaw['data']['rs']['pose6q']['ts'][0],
                  containerRaw['data']['vicon']['pose6q']['point'],
                  containerRaw['data']['rs']['pose6q']['point'],
                  "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName)
@@ -385,12 +385,11 @@ finally:
     pipeline.stop()
 
 # Compute and apply the temporal offset to the RealSense data
-offset = containerRealsenseOffset['info']['tsOffsetFromInfo'] - \
-    min(containerRealsenseOffset['info']['tsOffsetFromInfo'], containerYarp[1]['info']['tsOffsetFromInfo'])
+tsOffsetFromInfo = min(containerYarp[0]['info']['tsOffsetFromInfo'], containerYarp[1]['info']['tsOffsetFromInfo'])
+tsOffset = containerRealsenseOffset['info']['tsOffsetFromInfo'] - tsOffsetFromInfo
 
-from bimvee.timestamps import offsetTimestampsForAContainer
-
-offsetTimestampsForAContainer(containerRealsenseOffset, offset)
+containerRealsenseOffset['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['ts'] = containerRealsenseOffset['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['ts'] + tsOffset
+containerRealsenseOffset['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['tsOffset'] = tsOffset
 
 #%% Create a new container for Vicon and RealSense data
 import copy
