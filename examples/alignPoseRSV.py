@@ -20,8 +20,8 @@ This script has been written taking some parts from:
 #%% Define function for plotting a set of points in a 3x1 grid
 import matplotlib.pyplot as plt
 
-def plotPointSet(tsA, pointsA, title, datasetName, trialName):
-    fig = plt.figure()
+def plotPointSet(tsA, pointsA, title, datasetName, trialName, filePath):
+    fig = plt.figure(figsize=(13.33,7.5), dpi=96)
     fig.suptitle(title + "\n (" + datasetName + "/" + trialName + ")", fontsize=20, fontweight='bold')
 
     ax11 = plt.subplot(3, 1, 1)
@@ -43,13 +43,14 @@ def plotPointSet(tsA, pointsA, title, datasetName, trialName):
     fig.subplots_adjust(top=0.9)
     fig.align_ylabels()
 
+    plt.savefig(filePath, bbox_inches='tight')
     plt.show()
 
 #%% Define function for plotting two sets of points in a 3x1 grid
 import matplotlib.pyplot as plt
 
-def plotPointSets3x1(tsA, tsB, pointsA, pointsB, legendA, legendB, title, datasetName, trialName):
-    fig = plt.figure()
+def plotPointSets3x1(tsA, tsB, pointsA, pointsB, legendA, legendB, title, datasetName, trialName, filePath):
+    fig = plt.figure(figsize=(13.33, 7.5), dpi=96)
     fig.suptitle(title + "\n (" + datasetName + "/" + trialName + ")", fontsize=20, fontweight='bold')
 
     ax11 = plt.subplot(3, 1, 1)
@@ -58,7 +59,6 @@ def plotPointSets3x1(tsA, tsB, pointsA, pointsB, legendA, legendB, title, datase
     plt.ylabel('x [m]', fontsize=10, fontweight='bold')
     plt.legend([legendA, legendB])
     plt.grid(True)
-    # plt.ylim(-1.5, 0.4)
 
     plt.subplot(3, 1, 2, sharex=ax11)
     plt.plot(tsA, pointsA[:, 1], color='g', linestyle='dotted', linewidth=2)
@@ -66,7 +66,6 @@ def plotPointSets3x1(tsA, tsB, pointsA, pointsB, legendA, legendB, title, datase
     plt.ylabel('y [m]', fontsize=10, fontweight='bold')
     plt.legend([legendA, legendB])
     plt.grid(True)
-    # plt.ylim(-0.5, 1.5)
 
     plt.subplot(3, 1, 3, sharex=ax11)
     plt.plot(tsA, pointsA[:, 2], color='b', linestyle='dotted', linewidth=2)
@@ -75,18 +74,18 @@ def plotPointSets3x1(tsA, tsB, pointsA, pointsB, legendA, legendB, title, datase
     plt.ylabel('z [m]', fontsize=10, fontweight='bold')
     plt.legend([legendA, legendB])
     plt.grid(True)
-    # plt.ylim(-0.3, 1.3)
 
     fig.subplots_adjust(top=0.9)
     fig.align_ylabels()
 
+    plt.savefig(filePath, bbox_inches='tight')
     plt.show()
 
 #%% Define function for plotting four sets of points in a 3x2 grid
 import matplotlib.pyplot as plt
 
-def plotPointSets3x2(tsA, tsB, tsAA, tsBB, pointsA, pointsB, pointsAA, pointsBB, legendA, legendB, legendAA, legendBB, title, datasetName, trialName):
-    fig = plt.figure()
+def plotPointSets3x2(tsA, tsB, tsAA, tsBB, pointsA, pointsB, pointsAA, pointsBB, legendA, legendB, legendAA, legendBB, title, datasetName, trialName, filePath):
+    fig = plt.figure(figsize=(13.33, 7.5), dpi=96)
     fig.suptitle(title + "\n (" + datasetName + "/" + trialName + ")", fontsize=20, fontweight='bold')
 
     ax11 = plt.subplot(3, 2, 1)
@@ -98,16 +97,16 @@ def plotPointSets3x2(tsA, tsB, tsAA, tsBB, pointsA, pointsB, pointsAA, pointsBB,
     plt.grid(True)
 
     plt.subplot(3, 2, 3, sharex=ax11)
-    plt.plot(tsA, pointsA[:, 1], linestyle='dotted', linewidth=2, color='r')
-    plt.plot(tsAA, pointsAA[:, 1], linestyle='dotted', linewidth=2, color='r', alpha=0.25)
+    plt.plot(tsA, pointsA[:, 1], linestyle='dotted', linewidth=2, color='g')
+    plt.plot(tsAA, pointsAA[:, 1], linestyle='dotted', linewidth=2, color='g', alpha=0.25)
     plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
     plt.ylabel('y [m]', fontsize=10, fontweight='bold')
     plt.legend([legendA, legendAA])
     plt.grid(True)
 
     plt.subplot(3, 2, 5, sharex=ax11)
-    plt.plot(tsA, pointsA[:, 2], linestyle='dotted', linewidth=2, color='r')
-    plt.plot(tsAA, pointsAA[:, 2], linestyle='dotted', linewidth=2, color='r', alpha=0.25)
+    plt.plot(tsA, pointsA[:, 2], linestyle='dotted', linewidth=2, color='b')
+    plt.plot(tsAA, pointsAA[:, 2], linestyle='dotted', linewidth=2, color='b', alpha=0.25)
     plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
     plt.ylabel('z [m]', fontsize=10, fontweight='bold')
     plt.legend([legendA, legendAA])
@@ -122,16 +121,16 @@ def plotPointSets3x2(tsA, tsB, tsAA, tsBB, pointsA, pointsB, pointsAA, pointsBB,
     plt.grid(True)
 
     plt.subplot(3, 2, 4, sharex=ax11)
-    plt.plot(tsB, pointsB[:, 1], linestyle='dotted', linewidth=2, color='r')
-    plt.plot(tsBB, pointsBB[:, 1], linestyle='dotted', linewidth=2, color='r', alpha=0.25)
+    plt.plot(tsB, pointsB[:, 1], linestyle='dotted', linewidth=2, color='g')
+    plt.plot(tsBB, pointsBB[:, 1], linestyle='dotted', linewidth=2, color='g', alpha=0.25)
     plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
     plt.ylabel('y [m]', fontsize=10, fontweight='bold')
     plt.legend([legendB, legendBB])
     plt.grid(True)
 
     plt.subplot(3, 2, 6, sharex=ax11)
-    plt.plot(tsB, pointsB[:, 2], linestyle='dotted', linewidth=2, color='r')
-    plt.plot(tsBB, pointsBB[:, 2], linestyle='dotted', linewidth=2, color='r', alpha=0.25)
+    plt.plot(tsB, pointsB[:, 2], linestyle='dotted', linewidth=2, color='b')
+    plt.plot(tsBB, pointsBB[:, 2], linestyle='dotted', linewidth=2, color='b', alpha=0.25)
     plt.xlabel('Time [s]', fontsize=10, fontweight='bold')
     plt.ylabel('z [m]', fontsize=10, fontweight='bold')
     plt.legend([legendB, legendBB])
@@ -140,13 +139,14 @@ def plotPointSets3x2(tsA, tsB, tsAA, tsBB, pointsA, pointsB, pointsAA, pointsBB,
     fig.subplots_adjust(top=0.9)
     fig.align_ylabels()
 
+    plt.savefig(filePath, bbox_inches='tight')
     plt.show()
 
 #%% Define function for plotting two sets of quaternions in a 3x1 grid
 import matplotlib.pyplot as plt
 
-def plotQuaternions(tsA, tsB, rotationsA, rotationsB, legendA, legendB, title, datasetName, trialName):
-    fig = plt.figure()
+def plotQuaternions(tsA, tsB, rotationsA, rotationsB, legendA, legendB, title, datasetName, trialName, filePath):
+    fig = plt.figure(figsize=(13.33, 7.5), dpi=96)
     fig.suptitle(title + "\n (" + datasetName + "/" + trialName + ")", fontsize=20, fontweight='bold')
 
     ax11 = plt.subplot(4, 1, 1)
@@ -155,7 +155,6 @@ def plotQuaternions(tsA, tsB, rotationsA, rotationsB, legendA, legendB, title, d
     plt.ylabel('w', fontsize=10, fontweight='bold')
     plt.legend([legendA, legendB])
     plt.grid(True)
-    # plt.ylim(-1, 1.3)
 
     plt.subplot(4, 1, 2, sharex=ax11)
     plt.plot(tsA, rotationsA[:, 1], color='r', linestyle='dotted', linewidth=2)
@@ -163,7 +162,6 @@ def plotQuaternions(tsA, tsB, rotationsA, rotationsB, legendA, legendB, title, d
     plt.ylabel('x', fontsize=10, fontweight='bold')
     plt.legend([legendA, legendB])
     plt.grid(True)
-    # plt.ylim(-1, 1)
 
     plt.subplot(4, 1, 3, sharex=ax11)
     plt.plot(tsA, rotationsA[:, 2], color='g', linestyle='dotted', linewidth=2)
@@ -171,7 +169,6 @@ def plotQuaternions(tsA, tsB, rotationsA, rotationsB, legendA, legendB, title, d
     plt.ylabel('y', fontsize=10, fontweight='bold')
     plt.legend([legendA, legendB])
     plt.grid(True)
-    # plt.ylim(-1, 1)
 
     plt.subplot(4, 1, 4, sharex=ax11)
     plt.plot(tsA, rotationsA[:, 3], color='b', linestyle='dotted', linewidth=2)
@@ -180,28 +177,24 @@ def plotQuaternions(tsA, tsB, rotationsA, rotationsB, legendA, legendB, title, d
     plt.ylabel('z', fontsize=10, fontweight='bold')
     plt.legend([legendA, legendB])
     plt.grid(True)
-    # plt.ylim(-s1, 1)
 
     fig.subplots_adjust(top=0.9)
     fig.align_ylabels()
 
+    plt.savefig(filePath, bbox_inches='tight')
     plt.show()
 
 #%% Define function for plotting two sets of points in 3D
 from mpl_toolkits.mplot3d import Axes3D
-# import matplotlib.cm as cm
 
-def plotPointSets3D(pointsA, pointsB, legendA, legendB, title, datasetName, trialName):
+def plotPointSets3D(pointsA, pointsB, legendA, legendB, title, datasetName, trialName, filePath):
 
-    # cA = range(0, len(pointsA[:,0]))
-    # cB = range(0, len(pointsB[:,0]))
-
-    fig = plt.figure()
+    fig = plt.figure(figsize=(13.33, 7.5), dpi=96)
     fig.suptitle(title + "\n (" + datasetName + "/" + trialName + ")", fontsize=20, fontweight='bold')
 
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(pointsA[:,0], pointsA[:,1], pointsA[:,2], marker=".", color="#63ACBE")#c=cA, cmap=cm.YlOrRd_r)
-    ax.scatter(pointsB[:,0], pointsB[:,1], pointsB[:,2], marker=".", color="#EE442F", alpha=0.5)#c=cB ,cmap=cm.Blues_r)
+    ax.scatter(pointsA[:,0], pointsA[:,1], pointsA[:,2], marker=".", color="#63ACBE")
+    ax.scatter(pointsB[:,0], pointsB[:,1], pointsB[:,2], marker=".", color="#EE442F", alpha=0.5)
 
     ax.set_xlabel('x [m]')
     ax.set_ylabel('y [m]')
@@ -209,6 +202,7 @@ def plotPointSets3D(pointsA, pointsB, legendA, legendB, title, datasetName, tria
 
     plt.legend([legendA, legendB])
 
+    plt.savefig(filePath, bbox_inches='tight')
     plt.show()
 
 #%% Define function for 3D rigid transform
@@ -221,9 +215,7 @@ from math import sqrt
 # Input:
 #     Nominal  A Nx3 matrix of points
 #     Measured B Nx3 matrix of points
-# Returns Ac, Bc, R, t
-# Ac = Nx3 matrix of points obtained by subtracting the centroid from A
-# Bc = Nx3 matrix of points obtained by subtracting the centroid from B
+# Returns R, t
 # R = 3x3 rotation matrix (B to A)
 # t = 3x1 translation vector (B to A)
 def rigid_transform_3D(A, B):
@@ -253,7 +245,7 @@ def rigid_transform_3D(A, B):
 
     t = -R * centroid_B.T + centroid_A.T
 
-    return Ac, Bc, R, t
+    return R, t
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 import os, sys
@@ -300,36 +292,22 @@ for key in containerYarp[1]['data']['vicon']['pose6q'].keys():
 # Clean-up
 del selected, key
 
-# %matplotlib auto
-# plotPointSet(containerYarp[1]['data']['vicon']['pose6q']['ts'], containerYarp[1]['data']['vicon']['pose6q']['point'], "Vicon Data after running importIitYarp", datasetName, trialName)
-
 #%% Load RealSense data (ONLY poses)
 from bimvee.importRpgDvsRos import importRpgDvsRos
 
 trialNameRS = "2020-06-26_trial01/RealSense/trial01.bag"
 bagname = os.path.join(prefix, datasetPath + "/" + datasetName + "/" + trialNameRS)
-containerRealsense = importRpgDvsRos(filePathOrName=bagname, zeroTimestamps=False)
+template = {'rs': {'pose6q': '/device_0/sensor_0/Pose_0/pose/transform/data'}}
 
-# plotPointSet(containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['ts'], containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['point'], "RealSense Data after running importRpgDvsRos", datasetName, trialName)
+containerRealsense = importRpgDvsRos(filePathOrName=bagname, zeroTimestamps=True, template=template)
 
-# %matplotlib auto
-# plotPointSets3x1(containerYarp[1]['data']['vicon']['pose6q']['ts'],
-#                  containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['ts'],
-#                  containerYarp[1]['data']['vicon']['pose6q']['point'],
-#                  containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['point'],
-#                  "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName)
-
-# # Plot Vicon and RealSense data in 3D
-# plotPointSets3D(containerYarp[1]['data']['vicon']['pose6q']['point'],
-#                 containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['point'],
-#                 "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName)
-
-#%%
+#%% Plot Vicon and RealSense RAW data
 import copy
 
-containerRaw = {'info': copy.deepcopy(containerYarp[1]['info']),
+containerRaw = {'info': {'vicon': copy.deepcopy(containerYarp[1]['info']),
+                         'rs': copy.deepcopy(containerRealsense['info'])},
                 'data': {'vicon': copy.deepcopy(containerYarp[1]['data']['vicon']),
-                         'rs': copy.deepcopy(containerRealsense['data']['/device_0/sensor_0/Pose_0/pose/transform/data'])}}
+                         'rs': copy.deepcopy(containerRealsense['data']['rs'])}}
 
 pointsRSraw_MOD = np.array([-containerRaw['data']['rs']['pose6q']['point'][:,0] + containerRaw['data']['vicon']['pose6q']['point'][0,0],
                              containerRaw['data']['rs']['pose6q']['point'][:,1],
@@ -337,28 +315,24 @@ pointsRSraw_MOD = np.array([-containerRaw['data']['rs']['pose6q']['point'][:,0] 
 
 %matplotlib auto
 plotPointSets3x1(containerRaw['data']['vicon']['pose6q']['ts'],
-                 containerRaw['data']['rs']['pose6q']['ts'] - containerRaw['data']['rs']['pose6q']['ts'][0],
+                 containerRaw['data']['rs']['pose6q']['ts'],
                  containerRaw['data']['vicon']['pose6q']['point'],
                  pointsRSraw_MOD,
-                 "Vicon", "RealSense", "Vicon and RealSense points after importing (modified X)", datasetName, trialName)
+                 "Vicon", "RealSense", "Vicon and RealSense points after importing (modified X)", datasetName, trialName, os.path.join(filePathOrName, '01_RSV_rawData_MOD.png'))
 
-# %matplotlib auto
 plotPointSets3x1(containerRaw['data']['vicon']['pose6q']['ts'],
-                 containerRaw['data']['rs']['pose6q']['ts'] - containerRaw['data']['rs']['pose6q']['ts'][0],
+                 containerRaw['data']['rs']['pose6q']['ts'],
                  containerRaw['data']['vicon']['pose6q']['point'],
                  containerRaw['data']['rs']['pose6q']['point'],
-                 "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName)
+                 "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName, os.path.join(filePathOrName, '02_RSV_rawData.png'))
 
-# Plot Vicon and RealSense data in 3D
 plotPointSets3D(containerRaw['data']['vicon']['pose6q']['point'],
                 containerRaw['data']['rs']['pose6q']['point'],
-                "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName)
+                "Vicon", "RealSense", "Vicon and RealSense points after importing", datasetName, trialName, os.path.join(filePathOrName, '03_RSV_rawData3D.png'))
 
-#%% Time alignment of RealSense data to Vicon data
+#%% Align RealSense data w.r.t. StEFI and Vicon data in TIME
 import copy
 import pyrealsense2 as rs
-
-containerRealsenseOffset = copy.deepcopy(containerRealsense)
 
 # Create pipeline
 pipeline = rs.pipeline()
@@ -380,53 +354,47 @@ try:
         # Wait for the next set of frames from the camera
         frames = pipeline.wait_for_frames()
 
-        containerRealsenseOffset['info']['tsOffsetFromInfo'] = frames.get_timestamp()/1000 # milliseconds to seconds
+        containerRealsense['info']['tsOffsetFromInfo'] = frames.get_timestamp()/1000 # milliseconds to seconds
 finally:
     pipeline.stop()
 
 # Compute and apply the temporal offset to the RealSense data
 tsOffsetFromInfo = min(containerYarp[0]['info']['tsOffsetFromInfo'], containerYarp[1]['info']['tsOffsetFromInfo'])
-tsOffset = containerRealsenseOffset['info']['tsOffsetFromInfo'] - tsOffsetFromInfo
+tsOffset = containerRealsense['info']['tsOffsetFromInfo'] - tsOffsetFromInfo
 
-containerRealsenseOffset['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['ts'] = containerRealsenseOffset['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['ts'] + tsOffset
-containerRealsenseOffset['data']['/device_0/sensor_0/Pose_0/pose/transform/data']['pose6q']['tsOffset'] = tsOffset
+containerRealsense['data']['rs']['pose6q']['ts'] = containerRealsense['data']['rs']['pose6q']['ts'] + tsOffset
+containerRealsense['data']['rs']['pose6q']['tsOffset'] = tsOffset
 
-#%% Create a new container for Vicon and RealSense data
+#%% Plot Vicon and RealSense data after time alignment
 import copy
 import numpy as np
 from bimvee.importIitVicon import separateMarkersFromSegments
 from bimvee.split import splitByLabel
-# from bimvee.plot import plot
 
-container = {'info': copy.deepcopy(containerYarp[1]['info']),
+container = {'info': {'vicon': copy.deepcopy(containerYarp[1]['info']),
+                      'rs': copy.deepcopy(containerRealsense['info'])},
              'data': {'vicon': copy.deepcopy(containerYarp[1]['data']['vicon']),
-                      'rs': copy.deepcopy(containerRealsenseOffset['data']['/device_0/sensor_0/Pose_0/pose/transform/data'])}}
-
-# Plot the obtained container
-# %matplotlib auto
-# plot(container)
+                      'rs': copy.deepcopy(containerRealsense['data']['rs'])}}
 
 pointsRS_MOD = np.array([-container['data']['rs']['pose6q']['point'][:,0] + container['data']['vicon']['pose6q']['point'][0,0],
                           container['data']['rs']['pose6q']['point'][:,1],
                           container['data']['rs']['pose6q']['point'][:,2]]).T
 
-# Plot Vicon and RealSense data within the container
 plotPointSets3x1(container['data']['vicon']['pose6q']['ts'],
                  container['data']['rs']['pose6q']['ts'],
                  container['data']['vicon']['pose6q']['point'],
                  pointsRS_MOD,
-                 "Vicon", "RealSense", "Vicon and RealSense points after time alignment (container - modified X)", datasetName, trialName)
+                 "Vicon", "RealSense", "Vicon and RealSense points after time alignment (container - modified X)", datasetName, trialName, os.path.join(filePathOrName, '04_RSV_rawDataAlignedTime_MOD.png'))
 
 plotPointSets3x1(container['data']['vicon']['pose6q']['ts'],
                  container['data']['rs']['pose6q']['ts'],
                  container['data']['vicon']['pose6q']['point'],
                  container['data']['rs']['pose6q']['point'],
-                 "Vicon", "RealSense", "Vicon and RealSense points after time alignment (container)", datasetName, trialName)
+                 "Vicon", "RealSense", "Vicon and RealSense points after time alignment (container)", datasetName, trialName, os.path.join(filePathOrName, '05_RSV_rawDataAlignedTime.png'))
 
-# Plot Vicon and RealSense data in 3D
 plotPointSets3D(container['data']['vicon']['pose6q']['point'],
                 container['data']['rs']['pose6q']['point'],
-                "Vicon", "RealSense", "Vicon and RealSense points after time alignment (container)", datasetName, trialName)
+                "Vicon", "RealSense", "Vicon and RealSense points after time alignment (container)", datasetName, trialName, os.path.join(filePathOrName, '06_RSV_rawData3DAlignedTime.png'))
 
 #%% Find a common time window between Vicon and RealSense data
 from bimvee.split import cropTime
@@ -475,19 +443,19 @@ plotPointSets3x1(timeWindow,
                  timeWindow,
                  pointsVicon,
                  pointsRS_MOD2,
-                 "Vicon", "RealSense", "Vicon and RealSense points after Cubic interpolation (modified X)", datasetName, trialName)
+                 "Vicon", "RealSense", "Vicon and RealSense points after Cubic interpolation (modified X)", datasetName, trialName, os.path.join(filePathOrName, '07_RSV_interpolatedData_MOD.png'))
 
 # Plot Vicon and RealSense points after Cubic interpolation
 plotPointSets3x1(timeWindow,
                  timeWindow,
                  pointsVicon,
                  pointsRS,
-                 "Vicon", "RealSense", "Vicon and RealSense points after Cubic interpolation", datasetName, trialName)
+                 "Vicon", "RealSense", "Vicon and RealSense points after Cubic interpolation", datasetName, trialName, os.path.join(filePathOrName, '08_RSV_interpolatedData.png'))
 
 # Plot Vicon and RealSense data in 3D
 plotPointSets3D(pointsVicon,
                 pointsRS,
-                "Vicon", "RealSense", "Vicon and RealSense points after Cubic interpolation", datasetName, trialName)
+                "Vicon", "RealSense", "Vicon and RealSense points after Cubic interpolation", datasetName, trialName, os.path.join(filePathOrName, '09_RSV_interpolatedData3D.png'))
 
 #%% Interpolate with Slerp the Vicon and RealSense rotations
 # -------------------------------------
@@ -523,8 +491,7 @@ A = copy.deepcopy(np.asmatrix(pointsVicon))
 B = copy.deepcopy(np.asmatrix(pointsRS))
 
 # Recover R and t
-Ac, Bc, ret_R, ret_t = rigid_transform_3D(A, B)
-plotPointSets3D(Ac, Bc, "Vicon", "RealSense", "Vicon and RealSense points after substracting centroid", datasetName, trialName)
+ret_R, ret_t = rigid_transform_3D(A, B)
 
 # Compare the recovered R and t with the original
 n = len(pointsRS)
@@ -538,113 +505,15 @@ err = np.multiply(err, err)
 err = np.sum(err)
 rmse = sqrt(err / n);
 
-plotPointSets3x1(timeWindow, timeWindow, A, B2, "Vicon", "RealSense", "Vicon and RealSense points after rigid transformation", datasetName, trialName)
+plotPointSets3x1(timeWindow, timeWindow, A, B2, "Vicon", "RealSense", "Vicon and RealSense points after rigid transformation", datasetName, trialName, os.path.join(filePathOrName, '10_RSV_transformedData.png'))
 
-plotPointSets3D(A, B2, "Vicon", "RealSense", "Vicon and RealSense points after rigid transformation", datasetName, trialName)
+plotPointSets3D(A, B2, "Vicon", "RealSense", "Vicon and RealSense points after rigid transformation", datasetName, trialName, os.path.join(filePathOrName, '11_RSV_transformedData3D.png'))
 
 err_x = A[:, 0] - B2[:, 0]
 err_y = A[:, 1] - B2[:, 1]
 err_z = A[:, 2] - B2[:, 2]
 err = np.concatenate((err_x, err_y, err_z), axis=1)
 
-plotPointSet(timeWindow, err, "Rigid Transformation Error", datasetName, trialName)
+plotPointSet(timeWindow, err, "Rigid Transformation Error", datasetName, trialName, os.path.join(filePathOrName, '12_RSV_transformationError.png'))
 
-###############
-# STOP HERE ! #
-###############
-
-#%% Global Registration for rough point cloud alignment [http://www.open3d.org/docs/0.6.0/tutorial/Advanced/global_registration.html#ransac]
-import open3d as o3d
-
-# Create a PointCloud for Vicon points
-source = o3d.geometry.PointCloud()
-source.points = o3d.utility.Vector3dVector(pointsVicon)
-
-# Create a PointCloud for RealSense points
-target = o3d.geometry.PointCloud()
-target.points = o3d.utility.Vector3dVector(pointsRS)
-
-# trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0], [1.0, 0.0, 0.0, 0.0],
-                        #  [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
-
-def draw_registration_result(source, target, transformation):
-    source_temp = copy.deepcopy(source)
-    target_temp = copy.deepcopy(target)
-    source_temp.paint_uniform_color([1, 0.706, 0]) # yellowish
-    target_temp.paint_uniform_color([0, 0.651, 0.929]) # blueish
-    source_temp.transform(transformation)
-    o3d.visualization.draw_geometries([source_temp, target_temp])
-
-# draw_registration_result(source, target, trans_init)
-# del trans_init
-
-def preprocess_point_cloud(pcd, voxel_size):
-    print(":: Downsample with a voxel size %.3f." % voxel_size)
-    pcd_down = pcd.voxel_down_sample(voxel_size)
-
-    radius_normal = voxel_size * 2
-    print(":: Estimate normal with search radius %.3f." % radius_normal)
-    pcd_down.estimate_normals(
-        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=30))
-
-    radius_feature = voxel_size * 5
-    print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
-    pcd_fpfh = o3d.registration.compute_fpfh_feature(
-        pcd_down,
-        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100))
-    return pcd_down, pcd_fpfh
-
-def prepare_dataset(voxel_size, source, target):
-    # print(":: Load two point clouds and disturb initial pose.")
-    # trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0], [1.0, 0.0, 0.0, 0.0],
-    #                          [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
-    # source.transform(trans_init)
-    draw_registration_result(source, target, np.identity(4))
-
-    source_down, source_fpfh = preprocess_point_cloud(source, voxel_size)
-    target_down, target_fpfh = preprocess_point_cloud(target, voxel_size)
-    return source, target, source_down, target_down, source_fpfh, target_fpfh
-
-voxel_size = 0.05 # means 5cm for this dataset
-source, target, source_down, target_down, source_fpfh, target_fpfh = prepare_dataset(voxel_size, source, target)
-
-def execute_global_registration(source_down, target_down, source_fpfh,
-                                target_fpfh, voxel_size):
-    distance_threshold = voxel_size * 1.5
-    print(":: RANSAC registration on downsampled point clouds.")
-    print("   Since the downsampling voxel size is %.3f," % voxel_size)
-    print("   we use a liberal distance threshold %.3f." % distance_threshold)
-    result = o3d.registration.registration_ransac_based_on_feature_matching(
-        source_down, target_down, source_fpfh, target_fpfh, distance_threshold,
-        o3d.registration.TransformationEstimationPointToPoint(False), 4, [
-            o3d.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
-            o3d.registration.CorrespondenceCheckerBasedOnDistance(
-                distance_threshold)
-        ], o3d.registration.RANSACConvergenceCriteria(4000000, 500))
-    return result
-
-result_ransac = execute_global_registration(source_down, target_down,
-                                            source_fpfh, target_fpfh,
-                                            voxel_size)
-print(result_ransac)
-draw_registration_result(source_down, target_down, result_ransac.transformation)
-draw_registration_result(source, target, result_ransac.transformation)
-
-#%% Iterative Closest Point (ICP) for fine point cloud alignment [http://www.open3d.org/docs/release/tutorial/Basic/icp_registration.html?highlight=registration]
-
-threshold = 0.001
-trans_init = result_ransac.transformation
-
-print("Initial alignment")
-evaluation = o3d.registration.evaluate_registration(source, target, threshold, trans_init)
-print(evaluation)
-
-print("Apply point-to-point ICP")
-reg_p2p = o3d.registration.registration_icp(source, target, threshold, trans_init,
-        o3d.registration.TransformationEstimationPointToPoint(),
-        o3d.registration.ICPConvergenceCriteria(max_iteration = 5000))
-
-print(reg_p2p)
-print("Transformation is:")
-print(reg_p2p.transformation)
-draw_registration_result(source, target, reg_p2p.transformation)
+#%%

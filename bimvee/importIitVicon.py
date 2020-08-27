@@ -93,7 +93,7 @@ def separateMarkersFromSegments(poseDict):
     pointDict = selectByBool(poseDict, isMarker)
     poseDict = selectByBool(poseDict, ~isMarker)
     return {
-        'pose6q': poseDict,
+        'pose6q': poseDictNew,
         'point3': pointDict}
     
 def importIitVicon(**kwargs):
