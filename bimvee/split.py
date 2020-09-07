@@ -152,8 +152,8 @@ def cropTime(inDict, **kwargs):
         if startTime == ts[0] and stopTime == ts[-1]:
             # No cropping to do - pass out the dict unmodified
             return inDict
-        startIdx = np.searchsorted(ts, startTime)
-        stopIdx = np.searchsorted(ts, stopTime)
+        startIdx = np.searchsorted(ts, startTime, side='left')
+        stopIdx = np.searchsorted(ts, stopTime, side='right')
         tsNew = ts[startIdx:stopIdx]
         if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
             tsNew = tsNew - startTime
@@ -317,6 +317,28 @@ def getSamplesAtTimes(inDict, times):
             
     return outDict
 
+#------------------------------------------------------------------------------
+'''
+Merges multiple dicts then sorts by timestamp.
+If any singleton keys have contradictory values an error is raised.
+'''
+def mergeDataTypeDicts(listOfDicts):
+    outDict = {}
+    for inDict in listOfDicts:
+        for key in inDict.keys():
+            if key not in outDict:
+                outDict[key] = inDict[key]
+            else:
+                if type(inDict[key]) == np.ndarray:
+                    if inDict[key].shape[0] > 0:
+                        outDict[key] = np.concatenate((outDict[key], inDict[key]))
+                elif type(inDict[key]) == list:
+                    if len(inDict[key]) > 0:
+                        outDict[key] = outDict[key] + inDict[key]
+                else: # assume singleton
+                    if inDict[key] != outDict[key]:
+                        raise valueError('Singleton keys found with contradictory values')
+    return outDict
 #------------------------------------------------------------------------------
 def groupFlowTimeWindow(flowData, timeWindow):
     """
