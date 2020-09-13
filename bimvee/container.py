@@ -39,8 +39,16 @@ class Container():
                 if dataTypeKey == dataType:
                     dataTypeDicts.append(self.container['data'][channelKey][dataTypeKey])
         if len(dataTypeDicts) == 0:
-            raise Exception('No dicts found for that dataType')
+            raise ValueError('No dicts found for that dataType')
         if len(dataTypeDicts) > 1:
-            print('Warning: more than one dict found for dataType: ' + dataType)
-        
+            raise ValueError('More than one dict found for dataType: ' + dataType)        
         return dataTypeDicts[0]
+
+    def getAllDataOfType(self, dataType):
+        dataTypeDicts = {}
+        for channelKey in self.container['data'].keys():
+            for dataTypeKey in self.container['data'][channelKey]:
+                if dataTypeKey == dataType:
+                    dataTypeDicts[channelKey] = self.container['data'][channelKey][dataTypeKey]
+        return dataTypeDicts
+

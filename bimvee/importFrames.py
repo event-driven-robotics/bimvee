@@ -52,8 +52,6 @@ def getOrInsertDefault(inDict, arg, default):
     return value
 
 def importFrames(**kwargs):
-    '''
-    '''
     path = getOrInsertDefault(kwargs, 'filePathOrName', '.')
     print('importFrames trying path: ' + path)
     if not os.path.exists(path):

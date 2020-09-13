@@ -60,11 +60,14 @@ def plotPose(inDicts, **kwargs):
         inDict = cropTime(inDict, minTime=minTime, maxTime=maxTime, zeroTime=False)
         ts = inDict['ts']
 
+    axesR = kwargs.get('axesR')
+    axesT = kwargs.get('axesT')
     if 'rotation' in inDict:
-        fig, allAxes = plt.subplots(2, 1)
-        fig.suptitle(kwargs.get('title', ''))
-        axesT = allAxes[0]
-        axesR = allAxes[1]
+        if axesR is None:
+            fig, allAxes = plt.subplots(2, 1)
+            fig.suptitle(kwargs.get('title', ''))
+            axesT = allAxes[0]
+            axesR = allAxes[1]
         rotation = inDict['rotation']
         axesR.plot(ts, rotation[:, 0], 'k')
         axesR.plot(ts, rotation[:, 1], 'r')
@@ -75,7 +78,7 @@ def plotPose(inDicts, **kwargs):
         axesR.set_ylabel('Quaternion components')
         axesR.set_ylim([-1, 1])
     if 'point' in inDict:
-        if not 'axesT' in locals():
+        if axesT is None:
             fig, axesT = plt.subplots()
         if kwargs.get('zeroT', False):
             point = np.copy(inDict['point'])
@@ -91,6 +94,7 @@ def plotPose(inDicts, **kwargs):
         axesT.set_ylabel('Coords (m)')
     callback = kwargs.get('callback')
     if callback is not None:
+        del kwargs['callback']
         kwargs['axesT'] = axesT
         kwargs['axesR'] = axesR
         kwargs['minTime'] = minTime
@@ -117,20 +121,23 @@ def plotPoints(points):
     ax.set_zlabel('Z')
     plt.show()
 
-def plotTrajectories(viconDataDict, bodyIds, include, exclude, **kwargs):
+def plotTrajectories(dataDict, bodyIds, include, exclude, **kwargs):
+    if 'data' in dataDict:
+        dataDict = dataDict['data']
     ax = kwargs.get('ax')
     if ax is None:
         ax = plt.axes(projection='3d')
         kwargs['ax'] = ax
+    handles = []
     for name in bodyIds:
         select_body = all([(inc in name) for inc in include]) and all([not (exc in name) for exc in exclude])
         if select_body:  # modify this line to plot whichever markers you want
-            marker_pose = viconDataDict['data'][name]['pose6q']['point']
+            marker_pose = dataDict[name]['pose6q']['point']
             X = marker_pose[:, 0]
             Y = marker_pose[:, 1]
             Z = marker_pose[:, 2]
-            ax.scatter3D(X, Y, Z, label=name)
-
+            handles.append(ax.scatter3D(X, Y, Z, label=name))
+            
             # Create cubic bounding box to simulate equal aspect ratio
             max_range = np.array([X.max() - X.min(), Y.max() - Y.min(), Z.max() - Z.min()]).max()
             Xb = 0.5 * max_range * np.mgrid[-1:2:2, -1:2:2, -1:2:2][0].flatten() + 0.5 * (X.max() + X.min())
@@ -140,10 +147,14 @@ def plotTrajectories(viconDataDict, bodyIds, include, exclude, **kwargs):
             for xb, yb, zb in zip(Xb, Yb, Zb):
                 ax.plot([xb], [yb], [zb], 'w')
 
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.legend()
+    unit = kwargs.get('unit', '')
+    ax.set_xlabel('X' + unit)
+    ax.set_ylabel('Y' + unit)
+    ax.set_zlabel('Z' + unit)
+    if kwargs.get('legend') is not None:
+        ax.legend(handles, kwargs.get('legend'))
+    else:
+        ax.legend()
     callback = kwargs.get('callback')
     if callback is not None:
         kwargs['axes'] = ax  # TODO: make this handling consistent across the library
