@@ -113,7 +113,12 @@ def importRpgDvsRos(filePathOrName, **kwargs):
 
 
 def fill_dict_with_data(outDict, topics, start_time, end_time, template):
-    imported_topics = import_topics_at_time(topics, start_time, end_time)
+    topicsToImport = []
+    for ch in template:
+        for type in template[ch]:
+            topicsToImport.append(template[ch][type])
+    filtered_topics = {key: value for key, value in topics.items() if key in topicsToImport}
+    imported_topics = import_topics_at_time(filtered_topics, start_time, end_time)
     if template is None:
         for topicLabel in imported_topics.keys():
             rosbagType = imported_topics[topicLabel].pop('rosbagType')

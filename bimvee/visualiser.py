@@ -138,7 +138,8 @@ class VisualiserFrame(Visualiser):
             # Convert to uint8, converting to fullscale accross the whole dataset
             minValue = min([frame.min() for frame in self.__data['frames']])
             maxValue = max([frame.max() for frame in self.__data['frames']])
-            self.__data['frames'] = [((frame-minValue)/(maxValue-minValue)*255).astype(np.uint8) for frame in data['frames']] #TODO: assuming that it starts scaled in 0-1 - could have more general approach?
+            maxValue = min(255, maxValue)
+            self.__data['frames'] = [((np.clip(frame, 0, maxValue)-minValue)/(maxValue-minValue)*255).astype(np.uint8) for frame in data['frames']] #TODO: assuming that it starts scaled in 0-1 - could have more general approach?
 
     def get_colorfmt(self):
         try:
