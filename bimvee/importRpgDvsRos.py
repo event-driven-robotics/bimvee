@@ -80,7 +80,8 @@ import string
 # Local imports
 from .timestamps import zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
 from .importRosbag.importRosbag.importRosbag import importRosbag
-    
+from .importRosbag.importRosbag.importRosbag import import_topics_at_time
+
 def bimveeTypeForRosbagType(rosbagType):
     rosbagType = rosbagType.replace('/','_')
     if rosbagType == 'dvs_msgs_EventArray': return 'dvs'
@@ -107,14 +108,26 @@ def importRpgDvsRos(filePathOrName, **kwargs):
         'data': {}
             }
     outDict['info']['filePathOrName'] = filePathOrName
+    outDict = fill_dict_with_data(outDict, topics, 0, 1, template) # TODO if not batch loading then load everything
+    return outDict, topics
+
+
+def fill_dict_with_data(outDict, topics, start_time, end_time, template):
+    topicsToImport = []
+    for ch in template:
+        for type in template[ch]:
+            topicsToImport.append(template[ch][type])
+    filtered_topics = {key: value for key, value in topics.items() if key in topicsToImport}
+    imported_topics = import_topics_at_time(filtered_topics, start_time, end_time)
     if template is None:
-        for topicLabel in topics.keys():
-            rosbagType = topics[topicLabel].pop('rosbagType')
+        for topicLabel in imported_topics.keys():
+            rosbagType = imported_topics[topicLabel].pop('rosbagType')
             bimveeType = bimveeTypeForRosbagType(rosbagType)
             if bimveeType is None:
-                print('Actually, ' + topicLabel + ' has not been imported, because the rosbag message type ' + rosbagType + ' has not been recognised.')
+                print(
+                        'Actually, ' + topicLabel + ' has not been imported, because the rosbag message type ' + rosbagType + ' has not been recognised.')
             else:
-                outDict['data'][topicLabel] = {bimveeType: topics[topicLabel]}
+                outDict['data'][topicLabel] = {bimveeType: imported_topics[topicLabel]}
     else:
         # If we get to here then there is a template to parse
         # The template becomes the data branch of the importedDict
@@ -123,7 +136,7 @@ def importRpgDvsRos(filePathOrName, **kwargs):
             outDict['data'][channelKeyStripped] = {}
             for dataType in template[channelKey]:
                 topicLabel = template[channelKey][dataType]
-                topic = topics.pop(topicLabel)
+                topic = imported_topics.pop(topicLabel)
                 rosbagType = topic.pop('rosbagType')
                 bimveeType = bimveeTypeForRosbagType(rosbagType)
                 if bimveeType != dataType:
@@ -131,11 +144,11 @@ def importRpgDvsRos(filePathOrName, **kwargs):
                 else:
                     outDict['data'][channelKeyStripped][dataType] = topic
     # Post processing
-    if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
-        # Optional: start the timestamps at zero for the first event
-        # This is done collectively for all the concurrent imports
-        for channelKey in outDict['data'].keys():
-            zeroTimestampsForAChannel(outDict['data'][channelKey])
-        # jointly rezero for all channels
-        rezeroTimestampsForImportedDicts(outDict)
+    # if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
+    #     # Optional: start the timestamps at zero for the first event
+    #     # This is done collectively for all the concurrent imports
+    #     for channelKey in outDict['data'].keys():
+    #         zeroTimestampsForAChannel(outDict['data'][channelKey])
+    #     # jointly rezero for all channels
+    #     rezeroTimestampsForImportedDicts(outDict)
     return outDict

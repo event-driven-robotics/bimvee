@@ -65,6 +65,18 @@ from .importSecDvs import importSecDvs
 from .importAer2 import importAer2
 from .importFrames import importFrames
 
+
+class DataProvider:
+
+    def __init__(self, data_dict, data, batch_loading_fun, template):
+        self.data_dict = data_dict
+        self.data = data
+        self.batch_loading_fun = batch_loading_fun
+        self.template = template
+
+    def get_data_at_time(self, time):
+        return self.batch_loading_fun(self.data_dict, self.data, time - 2.5, time + 2.5, self.template)['data']
+
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.
     # If the the dict doesn't contain the arg, return the default, 
@@ -113,7 +125,9 @@ def importAe(**kwargs):
     elif fileFormat in ['rpgdvsros', 'rosbag', 'rpg', 'ros', 'bag', 'rpgdvs']:
         if 'template' not in kwargs or kwargs['template'] is None:
             print('Template for ROS bag not defined - all data-type dicts will be imported into separate channels')
-        importedData = importRpgDvsRos(**kwargs)
+        importedData, topics = importRpgDvsRos(**kwargs)
+        from .importRpgDvsRos import fill_dict_with_data
+        dp = DataProvider(importedData, topics, fill_dict_with_data, kwargs.get('template')) # TODO data provider only defined in this branch
     elif fileFormat in ['iitnpy', 'npy', 'numpy']:
         importedData = importIitNumpy(**kwargs)
     #elif fileFormat in ['iniaedat', 'aedat', 'dat', 'jaer', 'caer', 'ini', 'inivation', 'inilabs']:
@@ -127,4 +141,4 @@ def importAe(**kwargs):
     else:
         raise Exception("fileFormat: " + str(fileFormat) + " not supported.")
     #celex
-    return importedData
+    return importedData, dp

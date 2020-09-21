@@ -65,6 +65,11 @@ def idsEventsInTimeRange(events, **kwargs):
     # This might be faster, given that the ts array is already sorted
     startIdx = np.searchsorted(events['ts'], startTime)
     endIdx = np.searchsorted(events['ts'], endTime)
+    if 'start_idx' in events.keys():
+        startIdx -= events['start_idx']
+        endIdx -= events['start_idx']
+        if startIdx < 0 or endIdx < 0:
+            raise IndexError
     return range(startIdx, endIdx)
 
 

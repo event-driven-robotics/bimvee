@@ -138,7 +138,8 @@ class VisualiserFrame(Visualiser):
             # Convert to uint8, converting to fullscale accross the whole dataset
             minValue = min([frame.min() for frame in self.__data['frames']])
             maxValue = max([frame.max() for frame in self.__data['frames']])
-            self.__data['frames'] = [((frame-minValue)/(maxValue-minValue)*255).astype(np.uint8) for frame in data['frames']] #TODO: assuming that it starts scaled in 0-1 - could have more general approach?
+            maxValue = min(255, maxValue)
+            self.__data['frames'] = [((np.clip(frame, 0, maxValue)-minValue)/(maxValue-minValue)*255).astype(np.uint8) for frame in data['frames']] #TODO: assuming that it starts scaled in 0-1 - could have more general approach?
 
     def get_colorfmt(self):
         try:
@@ -162,18 +163,24 @@ class VisualiserFrame(Visualiser):
             # Optional mode in which frames are only displayed 
             # between corresponding ts and tsEnd
             frameIdx = np.searchsorted(data['ts'], time, side='right') - 1
+            alignedFrameIdx = frameIdx - data['start_idx']
+            if alignedFrameIdx < 0:
+                raise IndexError
             if frameIdx < 0:
                 image = self.get_default_image()
             elif time > data['tsEnd'][frameIdx]:
                 image = self.get_default_image()
             else:                
-                image = data['frames'][frameIdx]
+                image = data['frames'][alignedFrameIdx]
         elif time < data['ts'][0] - timeWindow / 2 or time > data['ts'][-1] + timeWindow / 2:
             # Gone off the end of the frame data
             image = self.get_default_image()
         else:
             frameIdx = findNearest(data['ts'], time)
-            image = data['frames'][frameIdx]
+            alignedFrameIdx = frameIdx - data['start_idx']
+            if alignedFrameIdx < 0:
+                raise IndexError
+            image = data['frames'][alignedFrameIdx]
         # Allow for arbitrary post-production on image with a callback
         # TODO: as this is boilerplate, it could be pushed into pie syntax ...
         if kwargs.get('callback', None) is not None:
@@ -220,7 +227,10 @@ class VisualiserOpticFlow(Visualiser):
             image = self.get_default_image()
         else:
             frameIdx = findNearest(data['ts'], time)
-            image = self.flow_to_color(data['flowMaps'][frameIdx])
+            alignedFrameIdx = frameIdx - data['start_idx']
+            if alignedFrameIdx < 0:
+                raise IndexError
+            image = self.flow_to_color(data['flowMaps'][alignedFrameIdx])
 
         return image
 
@@ -394,6 +404,7 @@ class VisualiserPose6q(Visualiser):
     def set_data(self, data):
         # scale and offset point data so that it remains proportional 
         # but stays in the range 0-1 for all dimensions
+        internalData = data
         pointX = data['point'][:, 0]
         pointY = data['point'][:, 1]
         pointZ = data['point'][:, 2]
@@ -415,9 +426,7 @@ class VisualiserPose6q(Visualiser):
         pointScaled[:, 1] = pointY - centreY
         pointScaled[:, 2] = pointZ - centreZ
         pointScaled = pointScaled / largestDim + 0.5
-        internalData = {'ts': data['ts'],
-                        'point': pointScaled,
-                        'rotation': data['rotation']}
+        internalData['point'] = pointScaled
         # Having scaled data for all poses, split out the poses for different bodies, if applicable
         if 'bodyId' in data:
             # split pose data by label, for ease of reference during rendering
@@ -495,26 +504,25 @@ class VisualiserPose6q(Visualiser):
         for data in allData:
             # Note, for the following, this follows library function pose6qInterp, but is broken out here, because of slight behavioural differences.
             idxPre = np.searchsorted(data['ts'], time, side='right') - 1
+            alignedIdx = idxPre - data['start_idx']
             timePre = data['ts'][idxPre]
             if timePre == time:
                 # In this edge-case of desired time == timestamp, there is no need 
-                # to interpolate 
-                point = data['point'][idxPre, :]
-                rotation = data['rotation'][idxPre, :]
-            elif idxPre < 0 or (idxPre >= len(data['ts'])-1):
-                # In this edge-case of the time at the beginning or end, 
-                # don't show any pose
-                point = None
-                rotation = None
+                # to interpolate
+                if alignedIdx < 0:
+                    raise IndexError
+                point = data['point'][alignedIdx, :]
+                rotation = data['rotation'][alignedIdx, :]
+
             else:
                 if kwargs.get('interpolate', True):
                     timePost = data['ts'][idxPre + 1]
-                    qPre = data['rotation'][idxPre, :]
-                    qPost = data['rotation'][idxPre + 1, :]
+                    qPre = data['rotation'][alignedIdx, :]
+                    qPost = data['rotation'][alignedIdx + 1, :]
                     timeRel = (time - timePre) / (timePost - timePre)
                     rotation = slerp(qPre, qPost, timeRel)
-                    locPre = data['point'][idxPre, :] 
-                    locPost = data['point'][idxPre + 1, :]
+                    locPre = data['point'][alignedIdx, :]
+                    locPost = data['point'][alignedIdx + 1, :]
                     point = locPre * (1-timeRel) + locPost * timeRel
                     timeDist = min(time - timePre, timePost - time)
                     if timeDist > timeWindow / 2:
@@ -561,9 +569,10 @@ class VisualiserPoint3(Visualiser):
     def set_data(self, data):
         # scale and offset point data so that it remains proportional 
         # but stays in the range 0-1 for all dimensions
-        pointX = data['point'][:, 0]
-        pointY = data['point'][:, 1]
-        pointZ = data['point'][:, 2]
+        internalData = data
+        pointX = internalData['point'][:, 0]
+        pointY = internalData['point'][:, 1]
+        pointZ = internalData['point'][:, 2]
         minX = np.min(pointX)
         maxX = np.max(pointX)
         minY = np.min(pointY)
@@ -577,14 +586,12 @@ class VisualiserPoint3(Visualiser):
         if largestDim == 0:
             largestDim = 1
 
-        pointScaled = np.empty_like(data['point'])
+        pointScaled = np.empty_like(internalData['point'])
         pointScaled[:, 0] = pointX - centreX
         pointScaled[:, 1] = pointY - centreY
         pointScaled[:, 2] = pointZ - centreZ
         pointScaled = pointScaled / largestDim + 0.5
-        internalData = {'ts': data['ts'],
-                        'point': pointScaled
-                        }
+        internalData ['point'] = pointScaled
         self.__data = internalData
             
     def project3dTo2d(self, x=0, y=0, z=0, **kwargs):
@@ -636,6 +643,10 @@ class VisualiserPoint3(Visualiser):
         image[int(rY/2), int(rX/2 - rX/chp): int(rX/2 + rX/chp), :] = 128        
         firstIdx = np.searchsorted(data['ts'], time - timeWindow)
         lastIdx = np.searchsorted(data['ts'], time + timeWindow)
+        firstIdx -= data['start_idx']
+        lastIdx -= data['start_idx']
+        if firstIdx < 0 or lastIdx < 0 or lastIdx > len(data['point']):
+            raise IndexError
         points = data['point'][firstIdx:lastIdx, :]
         # Use yaw and pitch sliders to transform points
         yaw = -kwargs.get('yaw', 0) / 180 * np.pi

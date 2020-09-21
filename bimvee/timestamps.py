@@ -66,8 +66,7 @@ def zeroTimestampsForAChannel(channelDict, tsOffset=None):
             channelDict[dtypeName]['ts'] = channelDict[dtypeName]['ts'] + tsOffset
             channelDict[dtypeName]['tsOffset'] = tsOffset
         except KeyError:
-            # This dataType doesn't have a ts; no problem. 
-            pass
+            print(dtypeName, " doesn't have a ts; no problem.")
 
 ''' 
 This function receives a single importedDict from importing one file. 
