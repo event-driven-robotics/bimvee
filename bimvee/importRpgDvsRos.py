@@ -94,6 +94,7 @@ def bimveeTypeForRosbagType(rosbagType):
     if rosbagType == 'sensor_msgs_Imu': return 'imu'
     if rosbagType == 'sensor_msgs_PointCloud2': return 'point3'
     if rosbagType == 'tf_tfMessage': return 'pose6q'
+    if rosbagType == 'vicon_Subject': return 'pose6q'
     return None
 
 def importRpgDvsRos(filePathOrName, **kwargs):    
