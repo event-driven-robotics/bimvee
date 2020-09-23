@@ -79,7 +79,7 @@ def decodeEvents(data):
     imu  = np.uint8(data[:, 1] & 0x01)    
     data[:, 1] >>= 1
     audio  = np.uint8(data[:, 1] & 0x01)
-    '''    
+    '''
     isNotDvsEvent = np.bool_(data[:, 1] & 0xFF800000)
 
     # If any non zero value shows up in bits 18-19 then we are sure that the new 24 bit codec is being used
@@ -113,7 +113,7 @@ def decodeEvents(data):
         #ts = np.float64(dataSample[:, 0] & ~(0x1 << 31)) * 0.00000008 # convert ts to seconds
         ts = np.uint32(dataSample[:, 0])
         if np.isscalar(ts):
-            ts = np.ones((1), dtype=np.uint32) * ts    
+            ts = np.ones((1), dtype=np.uint32) * ts
         ''' For now assuming that sample is IMU - later need to consider other samples: skin, audio etc
         Struct of imu sample is (from MSB left to LSB right):
         rrrr rrrr tcrr ssss vvvv vvvv vvvv vvvv
@@ -123,15 +123,15 @@ def decodeEvents(data):
         s = sensor (uint4)
         v = value of the sample (int16)
         '''
-        value = np.int16(dataSample[:, 1] & 0xFFFF)    
+        value = np.int16(dataSample[:, 1] & 0xFFFF)
         dataSample[:, 1] >>= 16
-        sensor = np.uint8(dataSample[:, 1] & 0x0F)    
+        sensor = np.uint8(dataSample[:, 1] & 0x0F)
         dataSample[:, 1] >>= 6
         ch  = np.uint8(dataSample[:, 1] & 0x01)
         samplesOut = {
-                'ts': ts, 
-                'ch': ch, 
-                'sensor': sensor, 
+                'ts': ts,
+                'ch': ch,
+                'sensor': sensor,
                 'value': value
             }
     else:
@@ -142,25 +142,25 @@ def decodeEvents(data):
         #ts = np.float64(dataDvs[:, 0] & ~(0x1 << 31)) * 0.00000008 # convert ts to seconds
         ts = np.uint32(dataDvs[:, 0])
         if np.isscalar(ts):
-            ts = np.ones((1), dtype=np.uint32) * ts    
-        pol  = ~np.bool_(dataDvs[:, 1] & 0x01) # We want True=ON=brighter, False=OFF=darker, so we negate    
+            ts = np.ones((1), dtype=np.uint32) * ts
+        pol  = ~np.bool_(dataDvs[:, 1] & 0x01) # We want True=ON=brighter, False=OFF=darker, so we negate
         dataDvs[:, 1] >>= 1
-        x = np.uint16(dataDvs[:, 1] & 0x1FF)    
+        x = np.uint16(dataDvs[:, 1] & 0x1FF)
         dataDvs[:, 1] >>= 11
-        y = np.uint16(dataDvs[:, 1] & 0xFF)    
+        y = np.uint16(dataDvs[:, 1] & 0xFF)
         dataDvs[:, 1] >>= 10
         ch  = np.uint8(dataDvs[:, 1] & 0x01)
         dvsOut = {
-                'ts': ts, 
-                'ch': ch, 
-                'x': x, 
+                'ts': ts,
+                'ch': ch,
+                'x': x,
                 'y': y,
                 'pol': pol
             }
     else:
         dvsOut = None
     return dvsOut, samplesOut
-    
+
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.
     # If the the dict doesn't contain the arg, return the default, 
@@ -287,8 +287,11 @@ def importIitYarpBinaryDataLog(**kwargs):
             kwargs['importedToByte'] = 'EOF'
         else:
             kwargs['importedToByte'] = file.tell() - 2 # - 2 also compensates for the small read-ahead just performed to test EOF
-    return importPostProcessing(dvs, samples, dvsLbl=None, flow=None, **kwargs)
-
+    if kwargs.get('split_stereo', True):
+        return importPostProcessing(dvs, samples, dvsLbl=None, flow=None, **kwargs)
+    else:
+        return importPostProcessingNoSplit(dvs, samples, dvsLbl=None, flow=None, **kwargs)
+    
 # Sample is an intermediate data type - later it gets converted to IMU etc
 def createDataTypeSample():
     sizeOfArray = 1024
@@ -298,8 +301,8 @@ def createDataTypeSample():
         'sensor': np.zeros((sizeOfArray), dtype=np.uint8),
         'value': np.zeros((sizeOfArray), dtype=np.int16),
         'numEvents': 0
-    }   
-       
+    }
+
 def createDataTypeDvs():
     sizeOfArray = 1024
     return {
@@ -308,22 +311,22 @@ def createDataTypeDvs():
         'x': np.zeros((sizeOfArray), dtype=np.uint16),
         'y': np.zeros((sizeOfArray), dtype=np.uint16),
         'pol': np.zeros((sizeOfArray), dtype=np.bool),
-        'numEvents': 0 
+        'numEvents': 0
         }
-                    
+
 def createDataTypeDvsLbl():
     dvs = createDataTypeDvs()
     sizeOfArray = len(dvs['ts'])
     dvs['lbl'] = np.zeros((sizeOfArray), dtype=np.int64)
     return dvs
-                    
+
 def createDataTypeDvsFlow():
     dvs = createDataTypeDvs()
     sizeOfArray = len(dvs['ts'])
     dvs['vx'] = np.zeros((sizeOfArray), dtype=np.uint32) # These end up as floats, but they start as ints and are converted in batch later
     dvs['vy'] = np.zeros((sizeOfArray), dtype=np.uint32) # These end up as floats, but they start as ints and are converted in batch later
     return dvs
-                
+
 def appendBatch(mainDict, batch):
     if batch is None: return mainDict
     # Check if the main array has enough free space for this batch
@@ -342,7 +345,7 @@ def appendBatch(mainDict, batch):
             batch[fieldName]
     mainDict['numEvents'] = numEventsInMain + numEventsInBatch
     return mainDict
- 
+
 def cropArraysToNumEvents(inDict):
     numEvents = inDict.pop('numEvents')
     for fieldName in inDict.keys():
@@ -397,8 +400,40 @@ def importPostProcessing(dvs, samples, dvsLbl=None, dvsFlow=None, **kwargs):
         'info': kwargs,
         'data': channels
         }
-    outDict['info']['fileFormat'] = 'iityarp'    
+    outDict['info']['fileFormat'] = 'iityarp'
     return outDict
+
+def importPostProcessingNoSplit(dvs, samples, dvsLbl=None, dvsFlow=None, **kwargs):
+    channels = {}
+    chDict={}
+    if dvs:
+        chDict['dvs'] = dvs
+    if dvsLbl:
+        chDict['dvslbl'] = dvsLbl
+    if samples:
+        if kwargs.get('convertSamplesToImu', True):
+            chDict['imu'] = samplesToImu(samples, **kwargs)
+        else:
+            chDict['sample'] = samples
+    if dvsFlow:
+        chDict['flow'] = dvsFlow
+        chDict['flow']['vx'] = flowFromBitsToFloat(chDict['flow']['vx'])
+        chDict['flow']['vy'] = flowFromBitsToFloat(chDict['flow']['vy'])
+    if any(chDict):
+        for dataType in chDict:
+            chDict[dataType]['ts'] = unwrapTimestamps(chDict[dataType]['ts'], **kwargs) * 0.00000008 # Convert to seconds
+
+        if getOrInsertDefault(kwargs, 'zeroTimestamps', True):
+            zeroTimestampsForAChannel(chDict)
+    channels['stereo'] = chDict
+    # Construct the output dict
+    outDict = {
+        'info': kwargs,
+        'data': channels
+        }
+    outDict['info']['fileFormat'] = 'iityarp'
+    return outDict
+
 
 def importIitYarpDataLog(**kwargs):
     # Check if format suggests data from vicon dumper
@@ -422,11 +457,11 @@ def importIitYarpDataLog(**kwargs):
         importToByte += importFromByte
     with open(kwargs['filePathOrName'], 'r') as file:
         file.seek(importFromByte)
-        importedToByte = 'EOF' # default if the following loop exits normally    
+        importedToByte = 'EOF' # default if the following loop exits normally
         # We are not using 'for' iteration because it's aincompatible with the tell() method
         line = file.readline()
         currentPointer = 0
-        while line:   
+        while line:
             if importToByte is not None:
                 if file.tell() > importToByte:
                     importedToByte = currentPointer - 1
@@ -452,14 +487,14 @@ def importIitYarpDataLog(**kwargs):
                     events = events.reshape(numEventsInBatch, 3)
                     # TODO: finish handling this case
                     dvsBatch, samplesBatch = decodeEvents(events[:, :2])
-                    dvsBatch['lbl'] = events[:, 2]          
+                    dvsBatch['lbl'] = events[:, 2]
                     appendBatch(dvsLbl, dvsBatch)
                 elif bottleType == 'FLOW':
                     numEventsInBatch = int(len(events) / 4)
                     events = events.reshape(numEventsInBatch, 4)
                     dvsBatch, samplesBatch = decodeEvents(events[:, :2])
                     dvsBatch['vx'] = events[:, 2]
-                    dvsBatch['vy'] = events[:, 3]                
+                    dvsBatch['vy'] = events[:, 3]
                     appendBatch(dvsFlow, dvsBatch)
                 else: # bottleType in ['AE', 'IMUS']
                     numEventsInBatch = int(len(events) / 2)
@@ -514,7 +549,7 @@ def importIitYarpRecursive(**kwargs):
     importedDicts = []
     tsOffset = None
     for file in files:
-        filePathOrName = os.path.join(path, file) 
+        filePathOrName = os.path.join(path, file)
         kwargs['filePathOrName'] = filePathOrName
         if os.path.isdir(filePathOrName):
             importedDicts = importedDicts + importIitYarpRecursive(**kwargs)
@@ -529,7 +564,7 @@ def importIitYarpRecursive(**kwargs):
     elif tsOffset is not None:
         importedDicts[-1]['info']['tsOffsetFromInfo'] = tsOffset
     return importedDicts
-        
+
 def importIitYarp(**kwargs):
     importedDicts = importIitYarpRecursive(**kwargs)
     if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
@@ -539,7 +574,7 @@ def importIitYarp(**kwargs):
     if len(importedDicts) == 1:
         importedDicts = importedDicts[0]
     return importedDicts
-    
+
 #%% LEGACY CODE
 # Import functions from marco monforte, for reference
 '''
@@ -571,4 +606,3 @@ def importIitYarp(**kwargs):
         return np.vstack([timestamps, polarity, taxel, cross_base, body_part, side, type, skin]).T.astype(np.float)
 '''
 
-    

@@ -49,7 +49,7 @@ def getDims(dataTypeDict):
         minY = 0
         maxY = (dataTypeDict['frames'][0].shape)[1]
     return minX, maxX, minY, maxY
-    
+
 def writeModule(xmlFile, name, **kwargs):
     xmlFile.write('<module>\n')
     xmlFile.write('    <name> ' + name + ' </name>\n')
@@ -99,20 +99,20 @@ def exportIitYarpViewer(importedDict, **kwargs):
                                                    ' --width ' + str(width) + \
                                                    ' --displays "(/' + channelAndDataType + ' (AE ISO))"'
                     writeModule(xmlFile=xmlFile, name='vFramerLite', parameters=paramsFramer, dependencies=dependencyStr)
-                    dependencyStr = ''                    
+                    dependencyStr = ''
                     paramsViewer = '--name /viewer/' + channelAndDataType + \
                                     ' --w ' + str((width) * 2) + \
                                     ' --h ' + str((height) * 2) + ' --synch'
                     writeModule(xmlFile=xmlFile, name='yarpview', parameters=paramsViewer)
-                    
+
                     fromPort = '/file/' + channelAndDataType + ':o'
                     toPort = '/framer' + channelAndDataType + '/' + channelAndDataType + '/AE:i'
                     writeConnection(xmlFile=xmlFile, fromPort=fromPort, toPort=toPort)
-                    
+
                     fromPort = '/framer' + channelAndDataType + '/' + channelAndDataType + '/image:o'
-                    toPort = '/viewer/' + channelAndDataType 
+                    toPort = '/viewer/' + channelAndDataType
                     writeConnection(xmlFile=xmlFile, fromPort=fromPort, toPort=toPort)
-                    
+
                 if dataType == 'frame':
                     minX, maxX, minY, maxY = getDims(importedDict['data'][channelKey][dataType])
                     height = maxY + 1
@@ -122,10 +122,10 @@ def exportIitYarpViewer(importedDict, **kwargs):
                                     ' --h ' + str((height) * 2) + ' --synch' + \
                                     ' --RefreshTime 33'
                     writeModule(xmlFile=xmlFile, name='yarpview', parameters=paramsViewer, dependencies=dependencyStr)
-                    dependencyStr = ''                    
+                    dependencyStr = ''
 
                     fromPort = '/file/' + channelAndDataType + ':o'
-                    toPort = '/viewer/' + channelAndDataType 
+                    toPort = '/viewer/' + channelAndDataType
                     writeConnection(xmlFile=xmlFile, fromPort=fromPort, toPort=toPort)
 
                 if dataType == 'imu':
@@ -134,23 +134,23 @@ def exportIitYarpViewer(importedDict, **kwargs):
                                                   ' --width 200' + \
                                                   ' --displays "(/' + channelAndDataType + ' (AE IMU))"'
                     writeModule(xmlFile=xmlFile, name='vFramerLite', parameters=paramsFramer, dependencies=dependencyStr)
-                    dependencyStr = ''                    
+                    dependencyStr = ''
                     paramsViewer = '--name /viewer/' + channelAndDataType + \
                                     ' --w 400 --h 400 --synch'
                     writeModule(xmlFile=xmlFile, name='yarpview', parameters=paramsViewer)
-                    
+
                     fromPort = '/file/' + channelAndDataType + ':o'
                     toPort = '/framer' + channelAndDataType + '/' + channelAndDataType + '/IMUS:i'
                     writeConnection(xmlFile=xmlFile, fromPort=fromPort, toPort=toPort)
-                    
+
                     fromPort = '/framer' + channelAndDataType + '/' + channelAndDataType + '/image:o'
-                    toPort = '/viewer/' + channelAndDataType 
+                    toPort = '/viewer/' + channelAndDataType
                     writeConnection(xmlFile=xmlFile, fromPort=fromPort, toPort=toPort)
-                    
-                    
+
+
         xmlFile.write('</application>\n')
 
-def encodeEvents24Bit(ts, x, y, pol, **kwargs):
+def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     # timestamps(ts) are 32 bit integers counted with an 80 ns clock. 
     # Events are encoded as 32 bits with x,y,channel(ch)(c) and polarity(pol)(p) as shown below
     # 0000 0000 tcrr yyyy yyyy rrxx xxxx xxxp    (r = reserved)
@@ -159,11 +159,17 @@ def encodeEvents24Bit(ts, x, y, pol, **kwargs):
     ts = ts / 0.00000008
     ts = ts.astype(np.uint32) # Timestamp wrapping occurs here
     ts = np.expand_dims(ts, 1)
-    x = x.astype(np.int32)
-    y = y.astype(np.int32)
-    pol = (~pol).astype(np.int32)
-    channel = kwargs.get('channel', 0)
-    ae = (channel << 22) + (y << 12) + (x << 1) + pol
+    x = x.astype(np.uint32)
+    y = y.astype(np.uint32)
+    pol = (~pol).astype(np.uint32)
+    # if ch stream is absent, data has already been split into left and right channels
+    # in that case, assign channel value of the whole stream (left or right) from kwargs
+    if ch is None:
+        ch = kwargs.get('channel', 0)
+        ch = np.uint32(ch)
+    else:
+        ch = ch.astype(np.uint32)
+    ae = (ch << 22) + (y << 12) + (x << 1) + pol
     ae = np.expand_dims(ae, 1)
     data = np.concatenate([ts, ae], axis=1)
     data = data.flatten().tolist()
@@ -173,10 +179,14 @@ def encodeEvents24Bit(ts, x, y, pol, **kwargs):
 def exportDvs(dataFile, data, bottleNumber, **kwargs):
     # preconvert numpy arrays into bottle-ready data
     print('Converting event arrays to bottle-ready string format ...')
-    eventsAsListOfStrings = encodeEvents24Bit(data['ts'], 
+    ch=None
+    if 'ch' in data:
+        ch = data['ch']
+    eventsAsListOfStrings = encodeEvents24Bit(data['ts'],
                                               data['x'],
                                               data['y'],
                                               data['pol'],
+                                              ch,
                                               **kwargs)
     print('Breaking into bottles by time')
     # Output dvs data bottle by bottle.
@@ -189,11 +199,11 @@ def exportDvs(dataFile, data, bottleNumber, **kwargs):
         firstTs = data['ts'][ptr]
         nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
         pbar.update(nextPtr-ptr)
-        bottleStrs.append(str(bottleNumber) + ' ' + 
+        bottleStrs.append(str(bottleNumber) + ' ' +
                        '{0:.6f}'.format(firstTs) + ' AE (' +
                        ' '.join(eventsAsListOfStrings[ptr*2 : nextPtr*2]) + ')')
         ptr = nextPtr
-        bottleNumber += 1 
+        bottleNumber += 1
     dataFile.write('\n'.join(bottleStrs))
 
 def exportFrame(dataFile, data, **kwargs):
@@ -203,7 +213,7 @@ def exportFrame(dataFile, data, **kwargs):
     for bottleNum, tsFrameTuple in enumerate(tqdm(list(zip(data['ts'], data['frames'])), position=0, leave=True)):
         ts, frame = tsFrameTuple
         xDim, yDim = frame.shape
-        lineStrs.append(str(bottleNum + 1) + ' ' + "{0:.3f}".format(ts) + ' [mat] [mono] (' + 
+        lineStrs.append(str(bottleNum + 1) + ' ' + "{0:.3f}".format(ts) + ' [mat] [mono] (' +
             ' '.join(['1', str(frame.size), '8', str((frame.shape)[0]), str((frame.shape)[1])]) + ') {' +
             ' '.join(list(map(str, frame.flatten().tolist()))) + '}\n')
 
@@ -261,17 +271,17 @@ def encodeImu(ts, **kwargs):
     tempConversionFactor = kwargs.get('tempConversionFactor', 333.87)
     tempConversionOffset = kwargs.get('tempConversionOffset', -273.15 - 21)
     magConversionFactor = kwargs.get('magConversionFactor', (32768 / 4900) * 1000000)
-    
+
     acc = kwargs.get('acc')
     angV = kwargs.get('angV')
     temp = kwargs.get('temp')
     mag = kwargs.get('mag')
-    
+
     acc = np.zeros((numSamples, 3), dtype = np.int16) if acc is None else (acc * accConversionFactor).astype(np.int16)
     angV = np.zeros((numSamples, 3), dtype = np.int16) if angV is None else (angV * angVConversionFactor).astype(np.int16)
     temp = np.zeros((numSamples, 1), dtype = np.int16) if temp is None else ((temp + tempConversionOffset) * tempConversionFactor).astype(np.int16)
     mag = np.zeros((numSamples, 3), dtype = np.int16) if mag is None else (mag * magConversionFactor).astype(np.int16)
-    
+
     # switch X and Y; negate Y, to match IMU as mounted on Stefi
     acc = acc[:, [1, 0, 2]]
     angV = angV[:, [1, 0, 2]]
@@ -279,7 +289,7 @@ def encodeImu(ts, **kwargs):
     acc[:, 0] = - acc[:, 0]
     angV[:, 0] = - angV[:, 0]
     mag[:, 0] = - mag[:, 0]
-    
+
     ts = ts / 0.00000008
     ts = ts.astype(np.uint32) # Timestamp wrapping occurs here
     ts = np.tile(ts, (1, 10))
@@ -291,17 +301,17 @@ def encodeImu(ts, **kwargs):
     sensor = sensor.flatten(order='C')
     channel = kwargs.get('channel', 0)
     eventType = 1
-    ae = (eventType << 23) + (channel << 22) + (sensor << 16) + values 
+    ae = (eventType << 23) + (channel << 22) + (sensor << 16) + values
     ae = np.expand_dims(ae, 1)
     data = np.concatenate([ts, ae], axis=1)
     data = data.flatten().tolist()
     data = list(map(str, data))
     return data
-      
+
 def exportImu(dataFile, data, bottleNumber, **kwargs):
     # preconvert numpy arrays into bottle-ready data
     print('Converting event arrays to bottle-ready string format ...')
-    eventsAsListOfStrings = encodeImu(ts=data['ts'], 
+    eventsAsListOfStrings = encodeImu(ts=data['ts'],
                                       acc=data['acc'],
                                       angV=data['angV'])
     print('Breaking into bottles by time')
@@ -316,11 +326,11 @@ def exportImu(dataFile, data, bottleNumber, **kwargs):
         nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
         pbar.update(nextPtr-ptr)
         # Why 20 in the following? Because there are 10 samples per imu and 2 ints per sample that need to be included. 
-        bottleStrs.append(str(bottleNumber) + ' ' + 
+        bottleStrs.append(str(bottleNumber) + ' ' +
                        '{0:.6f}'.format(firstTs) + ' IMUS (' +
                        ' '.join(eventsAsListOfStrings[ptr*20 : nextPtr*20]) + ')')
         ptr = nextPtr
-        bottleNumber += 1 
+        bottleNumber += 1
     dataFile.write('\n'.join(bottleStrs))
 
 def encodeSample(data, **kwargs):
@@ -330,7 +340,7 @@ def encodeSample(data, **kwargs):
     # Events are encoded as 32 bits with value(v), sensor(s), channel(c), and typet) as shown below
     # rrrr rrrr tcrr ssss vvvv vvvv vvvv vvvv    (r = reserved = 0)
     # Ignoring channel though
-    
+
     #Unpack
     ts = data['ts']
     sensor = data['sensor'].astype(np.uint32) # change type to allow shifting up bits
@@ -346,7 +356,7 @@ def encodeSample(data, **kwargs):
     data = data.flatten().tolist()
     data = list(map(str, data))
     return data
-      
+
 
 def exportSample(dataFile, data, bottleNumber, **kwargs):
     # preconvert numpy arrays into bottle-ready data
@@ -364,13 +374,13 @@ def exportSample(dataFile, data, bottleNumber, **kwargs):
         nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
         pbar.update(nextPtr-ptr)
         # Why 20 in the following? Because there are 10 samples per imu and 2 ints per sample that need to be included. 
-        bottleStrs.append(str(bottleNumber) + ' ' + 
+        bottleStrs.append(str(bottleNumber) + ' ' +
                        '{0:.6f}'.format(firstTs) + ' IMUS (' +
                        ' '.join(eventsAsListOfStrings[ptr*2 : nextPtr*2]) + ')')
         ptr = nextPtr
-        bottleNumber += 1 
+        bottleNumber += 1
     dataFile.write('\n'.join(bottleStrs))
-      
+
 def exportIitYarp(importedDict, **kwargs):
     exportFilePath = kwargs.get('exportFilePath', './')
     if isinstance(importedDict, list):
@@ -378,7 +388,7 @@ def exportIitYarp(importedDict, **kwargs):
             kwargs['exportFilePath'] = exportFilePath + '/' + str(idx)
             exportIitYarp(elem, **kwargs)
         return
-    print('exportIitYarp called for data imported from ' + 
+    print('exportIitYarp called for data imported from ' +
           str(importedDict['info']) +
           ' targeting folder ' + exportFilePath)
     try:
@@ -395,8 +405,8 @@ def exportIitYarp(importedDict, **kwargs):
             kwargs['channel'] = 0
         dataTypes = importedDict['data'][channelName].keys()
         for dataType in dataTypes:
-            if dataTypesToExport is None or dataType in dataTypesToExport: # , 'pose6', 'imu'                
-                if dataType not in ['dvs', 'frame', 'imu', 'sample']: 
+            if dataTypesToExport is None or dataType in dataTypesToExport: # , 'pose6', 'imu'
+                if dataType not in ['dvs', 'frame', 'imu', 'sample']:
                     print('unknown datatype')
                     continue # Exclude unknown datatypes
                 channelNameAndDataType = channelName + dataType # This is used as a new channel name
