@@ -386,8 +386,6 @@ def importPostProcessing(dvs, samples, dvsLbl=None, dvsFlow=None, **kwargs):
             for dataType in chDict:
                 chDict[dataType]['ts'] = unwrapTimestamps(chDict[dataType]['ts'], **kwargs) * 0.00000008 # Convert to seconds
 
-            if getOrInsertDefault(kwargs, 'zeroTimestamps', True):
-                zeroTimestampsForAChannel(chDict)
             if ch == 0:
                 channels['left'] = chDict
             else:
@@ -400,15 +398,59 @@ def importPostProcessing(dvs, samples, dvsLbl=None, dvsFlow=None, **kwargs):
     outDict['info']['fileFormat'] = 'iityarp'    
     return outDict
 
+
+def importIitImages(**kwargs):
+    import zlib
+    import matplotlib.pyplot as plt
+    patternForImages = re.compile('(\d+) (\d+.\d+) (\d+).([a-z]+) \[([a-z]+)\]')
+    filePathOrName = kwargs['filePathOrName']
+    with open(filePathOrName, 'r') as inFile:
+        content = inFile.read()
+    found = patternForImages.findall(content)
+    dirName = os.path.dirname(filePathOrName)
+    frames = []
+    timestamps = []
+    for botNum, ts, fileName, ext, type in found:
+        absPath = os.path.join(dirName, fileName + '.' + ext)
+        if ext == 'floatzip' and type =='dec':
+            f = open(absPath, 'rb')
+            header = f.read(16)
+            h, w = struct.unpack('ll', header)
+            data = zlib.decompress(f.read())
+            floats = np.array([x[0] for x in struct.iter_unpack('f', data)]).reshape((h, w))
+            frames.append(floats)
+        if type == 'rgb':
+            frames.append(plt.imread(absPath))
+        timestamps.append(ts)
+
+    channelDict = {'frame':
+                       {'ts': np.array(timestamps).astype(np.float64),
+                        'frames': np.array(frames)
+                        }
+                   }
+    importedDict = {
+        'info': {'filePathOrName': filePathOrName},
+        'data': {ext: channelDict}
+    }
+    return importedDict
+
 def importIitYarpDataLog(**kwargs):
-    # Check if format suggests data from vicon dumper
-    patternForVicon = re.compile('(\d+) (\d+\.\d+) \((.*)\)')
     with open(kwargs['filePathOrName'], 'r') as inFile:
         content = inFile.readline() # Look at first line of file
+
+    # Check if format suggests data from vicon dumper
+    patternForVicon = re.compile('(\d+) (\d+\.\d+) \((.*)\)')
     found = patternForVicon.findall(content)
     if found:
         print('Yarp vicon dumper pattern found - passing this file to importVicon function')
         return importIitVicon(**kwargs)
+
+    # Check if format suggests data from camera/depth camera
+    patternForImages = re.compile('(\d+) (\d+.\d+) (\d+.[a-z]+) \[([a-z]+)\]')
+    found = patternForImages.findall(content)
+    if found:
+        print('Images found - passing this file to importImages function')
+        return importIitImages(**kwargs)
 
     # Create dicts for each possible datatype
     dvs = createDataTypeDvs()
@@ -473,7 +515,8 @@ def importIitYarpDataLog(**kwargs):
             line = file.readline()
 
     # If importedToByte is not defined then we reached the end of the file
-    delattr(decodeEvents, "is24bitCodec")
+    if hasattr(decodeEvents, "is24bitCodec"):
+        delattr(decodeEvents, "is24bitCodec")
     # Crop arrays to number of events
     cropArraysToNumEvents(dvs)
     cropArraysToNumEvents(dvsLbl)
@@ -528,17 +571,26 @@ def importIitYarpRecursive(**kwargs):
         print('    "data.log" file not found')
     elif tsOffset is not None:
         importedDicts[-1]['info']['tsOffsetFromInfo'] = tsOffset
+
     return importedDicts
         
 def importIitYarp(**kwargs):
     importedDicts = importIitYarpRecursive(**kwargs)
+
     if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
         # Optional: start the timestamps at zero for the first event
         # This is done collectively for all the concurrent imports
-        rezeroTimestampsForImportedDicts(importedDicts)
-    if len(importedDicts) == 1:
-        importedDicts = importedDicts[0]
-    return importedDicts
+        for d in importedDicts:
+            for channelKey in d['data'].keys():
+                zeroTimestampsForAChannel(d['data'][channelKey])
+        # jointly rezero for all channels
+        # rezeroTimestampsForImportedDicts(importedDicts) # TODO this is required for fine data timestamps alignment but buggy at the moment
+    outDict = {'info': kwargs,
+               'data': {}}
+    for d in importedDicts:
+        for ch in d['data']:
+            outDict['data'][ch] = d['data'][ch]
+    return outDict
     
 #%% LEGACY CODE
 # Import functions from marco monforte, for reference
