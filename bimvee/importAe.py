@@ -64,6 +64,7 @@ from .importRpgDvsRos import importRpgDvsRos
 from .importSecDvs import importSecDvs
 from .importAer2 import importAer2
 from .importFrames import importFrames
+from .timestamps import rezeroTimestampsForImportedDicts
 
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.
@@ -85,19 +86,41 @@ def importAe(**kwargs):
     if not fileFormat:
         # Try to determine the file format
         if os.path.isdir(filePathOrName):
-            # It's a path - assume YARP log directory
-            # Note that it could also be a folder full of frames
-            kwargs['fileFormat'] = 'iityarp'
+            # It's a path - it could contain yarp .log or frames
+            listDir = os.listdir(filePathOrName)
+            fileTypes = [subName.split(".")[-1] for subName in listDir]
+            mostCommonFileType = max(set(fileTypes), key=fileTypes.count)
+            if mostCommonFileType == 'log':
+                kwargs['fileFormat'] = 'iityarp'
+            elif mostCommonFileType == 'png':
+                kwargs['fileFormat'] = 'frames'
+            else:
+                # recurse into this folder
+                resultsList = []
+                for subName in listDir:
+                    kwargs['filePathOrName'] = os.path.join(filePathOrName, subName)
+                    result = importAe(**kwargs)
+                    if  isinstance(result, list):
+                        resultsList = resultsList + result
+                    else:
+                        resultsList.append(result)
+                if len(resultsList) > 1 and \
+                    kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
+                        # Optional: start the timestamps at zero for the first event
+                        # This is done collectively for all the concurrent imports
+                        rezeroTimestampsForImportedDicts(resultsList)
+                elif len(resultsList) == 1:
+                    resultsList = resultsList[0]
+ 
+                return resultsList
         else:
+            # Guess the file format based on file extension
             ext = os.path.splitext(filePathOrName)[1]
             if ext == '.aedat' or ext == '.dat':
-                # Assume it's aedat
                 kwargs['fileFormat'] = 'aedat'
             elif ext == '.bag':
-                # Assume it's rpg_dvs_ros
                 kwargs['fileFormat'] = 'rosbag'
             elif ext == '.bin':
-                # Assume it's a secdvs file
                 kwargs['fileFormat'] = 'secdvs'
             elif ext == '.npy':
                 kwargs['fileFormat'] = 'iitnpy'
@@ -111,8 +134,6 @@ def importAe(**kwargs):
     if fileFormat in ['iityarp', 'yarp', 'iit', 'log', 'yarplog']: 
         importedData = importIitYarp(**kwargs)
     elif fileFormat in ['rpgdvsros', 'rosbag', 'rpg', 'ros', 'bag', 'rpgdvs']:
-        if 'template' not in kwargs or kwargs['template'] is None:
-            print('Template for ROS bag not defined - all data-type dicts will be imported into separate channels')
         importedData = importRpgDvsRos(**kwargs)
     elif fileFormat in ['iitnpy', 'npy', 'numpy']:
         importedData = importIitNumpy(**kwargs)
@@ -122,7 +143,7 @@ def importAe(**kwargs):
         importedData = importSecDvs(**kwargs)
     elif fileFormat in ['aer2']:
         importedData = importAer2(**kwargs)
-    elif fileFormat in ['frames', 'png', 'pngfolder', 'imagefolder']:
+    elif fileFormat in ['frame', 'frames', 'png', 'pngfolder', 'imagefolder']:
         importedData = importFrames(**kwargs)
     else:
         raise Exception("fileFormat: " + str(fileFormat) + " not supported.")

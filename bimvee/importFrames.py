@@ -70,14 +70,14 @@ def importFrames(**kwargs):
     channelDict = {'frame': 
                        {'ts': ts,
                         'frames': frames}}
-    if getOrInsertDefault(kwargs, 'zeroTimestamps', True):
+    if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
         zeroTimestampsForAChannel(channelDict)
     importedDict = {
         'info': kwargs,
         'data': {'ch0': channelDict}
         }
     importedDict['info']['fileFormat'] = 'imagefolder'
-    if kwargs.get('zeroTimestamps'):
+    if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
         rezeroTimestampsForAnImportedDict(importedDict)
     return importedDict
         

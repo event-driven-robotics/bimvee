@@ -36,6 +36,7 @@ cropSpace works from optional min/max|X/Y/Z parameters;
 
 #%%
 import numpy as np
+from itertools import compress
 
 # local imports
 from .timestamps import rezeroTimestampsForImportedDicts
@@ -65,7 +66,10 @@ def selectByBool(inDict, selectedEvents):
     for fieldName in inDict.keys():
         try:
             assert len(inDict[fieldName]) == len(selectedEvents)
-            outDict[fieldName] = inDict[fieldName][selectedEvents]
+            if isinstance(inDict[fieldName], list):
+                outDict[fieldName] = list(compress(inDict[fieldName], selectedEvents))
+            else:
+                outDict[fieldName] = inDict[fieldName][selectedEvents]
         except (AssertionError, TypeError): # TypeError for case that value has no len(); #AssertionError, in case it does but that len is not the same as the ts len.
             outDict[fieldName] = inDict[fieldName]
     return outDict
@@ -147,8 +151,20 @@ def cropTime(inDict, **kwargs):
         ts = inDict['ts']
         if not np.any(ts): # the dataset is empty
             return inDict
-        startTime = kwargs.get('startTime', kwargs.get('minTime', kwargs.get('beginTime', ts[0])))
-        stopTime = kwargs.get('stopTime', kwargs.get('maxTime', kwargs.get('endTime', ts[-1])))
+        startTime = kwargs.get('startTime', 
+                    kwargs.get('minTime', 
+                    kwargs.get('beginTime', 
+                    kwargs.get('startTs', 
+                    kwargs.get('minTs', 
+                    kwargs.get('beginTs', 
+                    ts[0]))))))
+        stopTime = kwargs.get('stopTime', 
+                   kwargs.get('maxTime', 
+                   kwargs.get('endTime', 
+                   kwargs.get('stopTs', 
+                   kwargs.get('maxTs', 
+                   kwargs.get('endTs', 
+                   ts[-1]))))))
         if startTime == ts[0] and stopTime == ts[-1]:
             # No cropping to do - pass out the dict unmodified
             return inDict
@@ -266,6 +282,9 @@ def cropSpace(inDict, **kwargs):
         # so we pass it out unmodified
         # TODO: frame datatype could be cropped spatially but doesn't get caught by this method
         return inDict
+
+def cropSpaceTime(inDict, **kwargs):
+    return cropSpace(cropTime(inDict, **kwargs), **kwargs)
 
 # synonyms
 def cropSpatial(inDict, **kwargs):

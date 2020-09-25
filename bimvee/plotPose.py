@@ -16,14 +16,22 @@ Intended as part of bimvee (Batch Import, Manipulation, Visualisation and Export
 plotPose takes 'inDict' - a dictionary containing imported pose data 
 (or a higher level container, in which attempts to descend and call itself) 
 as created by importAe, and plots against time the various dimensions of the 
-imu samples contained. 
-plotTrajectory
+samples contained. Each dimension is plotted against time, 
+and each channel has a separate figure
+
+plotPose3d works differently; it takes a dict with multiple channels, rejects
+time and rotation info and plots the point data in a 3d space, with one set of
+points for each channel of dataType pose6q or point3, in a different colour. 
+
+plotPoseMultiChannel uses the same inputs as plotPose3d to put multiple channels
+of pose or point data on the same graph.
 
 Also handles point3 type, which contains 3d points
 """
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
+import itertools
 
 # local imports
 from .split import cropTime
@@ -62,6 +70,8 @@ def plotPose(inDicts, **kwargs):
 
     axesR = kwargs.get('axesR')
     axesT = kwargs.get('axesT')
+    label = kwargs.get('label', '')
+    lineStyle = kwargs.get('lineStyle', '-')
     if 'rotation' in inDict:
         if axesR is None:
             fig, allAxes = plt.subplots(2, 1)
@@ -69,11 +79,19 @@ def plotPose(inDicts, **kwargs):
             axesT = allAxes[0]
             axesR = allAxes[1]
         rotation = inDict['rotation']
-        axesR.plot(ts, rotation[:, 0], 'k')
-        axesR.plot(ts, rotation[:, 1], 'r')
-        axesR.plot(ts, rotation[:, 2], 'g')
-        axesR.plot(ts, rotation[:, 3], 'b')
-        axesR.legend(['r_w', 'r_x', 'r_y', 'r_z'])
+        axesR.plot(ts, rotation[:, 0], 'k' + lineStyle)
+        axesR.plot(ts, rotation[:, 1], 'r' + lineStyle)
+        axesR.plot(ts, rotation[:, 2], 'g' + lineStyle)
+        axesR.plot(ts, rotation[:, 3], 'b' + lineStyle)
+        try:
+            existingLegend = [txt._text for txt in axesR.get_legend().get_texts()]
+        except AttributeError:
+            existingLegend = []
+        axesR.legend(existingLegend + 
+                     [' '.join([label, 'r_w']), 
+                      ' '.join([label, 'r_x']),
+                      ' '.join([label, 'r_y']),
+                      ' '.join([label, 'r_z']),])
         axesR.set_xlabel('Time (s)')
         axesR.set_ylabel('Quaternion components')
         axesR.set_ylim([-1, 1])
@@ -86,10 +104,17 @@ def plotPose(inDicts, **kwargs):
             point = point - firstPoint
         else:
             point = inDict['point']
-        axesT.plot(ts, point[:, 0], 'r')
-        axesT.plot(ts, point[:, 1], 'g')
-        axesT.plot(ts, point[:, 2], 'b')
-        axesT.legend(['x', 'y', 'z'])
+        axesT.plot(ts, point[:, 0], 'r' + lineStyle)
+        axesT.plot(ts, point[:, 1], 'g' + lineStyle)
+        axesT.plot(ts, point[:, 2], 'b' + lineStyle)
+        try:
+            existingLegend = [txt._text for txt in axesT.get_legend().get_texts()]
+        except AttributeError:
+            existingLegend = []
+        axesT.legend(existingLegend + 
+                     [' '.join([label, 'x']),
+                      ' '.join([label, 'y']),
+                      ' '.join([label, 'z']),])
         axesT.set_xlabel('Time (s)')
         axesT.set_ylabel('Coords (m)')
     callback = kwargs.get('callback')
@@ -101,6 +126,34 @@ def plotPose(inDicts, **kwargs):
         kwargs['maxTime'] = maxTime
         callback(**kwargs)
 
+def plotPoseMultiChannel(inDict, **kwargs):
+    if 'data' in inDict:
+        inDict = inDict['data']
+    axesR = kwargs.get('axesR')
+    if axesR is None:
+        fig, allAxes = plt.subplots(2, 1)
+        fig.suptitle(kwargs.get('title', ''))
+        kwargs['axesT'] = allAxes[0]
+        kwargs['axesR'] = allAxes[1]
+    bodyIds = kwargs.get('bodyIds', inDict.keys())
+    include = kwargs.get('include', [])
+    exclude = kwargs.get('exclude', [])
+    lineStyle = itertools.cycle(('-', '--', '-.', ':'))
+    for name in bodyIds:
+        select_body = all([(inc in name) for inc in include]) and all([not (exc in name) for exc in exclude])
+        if select_body:  # modify this line to plot whichever markers you want
+            try:
+                subDataDict = inDict[name]['pose6q']
+            except KeyError:
+                try:
+                    subDataDict = inDict[name]['point3']
+                except KeyError:
+                    continue
+            kwargs['label'] = name
+            kwargs['lineStyle'] = next(lineStyle)
+            plotPose(subDataDict, **kwargs)
+            
+
 """
 Plot the 3D trajectory of a body or marker for the entire duration of recording
 
@@ -110,7 +163,8 @@ To select which bodies to plot using bodyID:
  - pass a list of strings that should be absent from the bodyID of choice, through the parameter exclude
 """
 
-def plotPoints(points):
+# TODO: this function could be built up to become the core of pose3dMultiChannel
+def plotPose3d(points, **kwargs):
     ax = plt.axes(projection='3d')
     X = points[0, :]
     Y = points[1, :]
@@ -121,13 +175,20 @@ def plotPoints(points):
     ax.set_zlabel('Z')
     plt.show()
 
-def plotTrajectories(dataDict, bodyIds, include, exclude, **kwargs):
+# legacy name for the above function
+def plotPoints(points, **kwargs):
+    plotPose3d(points, **kwargs)
+
+def plotPose3dMultiChannel(dataDict, **kwargs):
     if 'data' in dataDict:
         dataDict = dataDict['data']
     ax = kwargs.get('ax')
     if ax is None:
-        ax = plt.axes(projection='3d')
+        fig, ax = plt.subplots(projection='3d')
         kwargs['ax'] = ax
+    bodyIds = kwargs.get('bodyIds', dataDict.keys())
+    include = kwargs.get('include', [])
+    exclude = kwargs.get('exclude', [])
     handles = []
     for name in bodyIds:
         select_body = all([(inc in name) for inc in include]) and all([not (exc in name) for exc in exclude])
@@ -159,4 +220,11 @@ def plotTrajectories(dataDict, bodyIds, include, exclude, **kwargs):
     if callback is not None:
         kwargs['axes'] = ax  # TODO: make this handling consistent across the library
         callback(**kwargs)
-    # return ax # ax is also available to the calling function inside **kwargs
+
+# legacy name for plotPose3d
+def plotTrajectories(dataDict, bodyIds, include, exclude, **kwargs):
+    kwargs['bodyIds'] = bodyIds
+    kwargs['include'] = include
+    kwargs['exclude'] = exclude 
+    plotPose3dMultiChannel(dataDict, **kwargs)
+    

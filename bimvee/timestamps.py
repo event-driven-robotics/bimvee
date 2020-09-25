@@ -143,7 +143,7 @@ def rezeroTimestampsForImportedDicts(importedDicts):
             if tsOffsetFromInfo == importedDict['info']['tsOffsetFromInfo']:
                 # The reason for this if clause is to catch a floating point 
                 # precision error due to mixing very big and very small timestamps. 
-                tsOffset = tsOffsetFromData                
+                tsOffset = importedDict['info']['tsOffsetFromData']                
             else:
                 tsOffset = importedDict['info']['tsOffsetFromData'] - tsOffsetFromInfo + importedDict['info']['tsOffsetFromInfo']
             

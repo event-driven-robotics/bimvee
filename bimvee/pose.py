@@ -106,6 +106,14 @@ def findRotationRepresentation(rotation):
     else:
         return 'mat'
 
+def findRotationRepresentationSingle(rotation):
+    if rotation.shape[0] == 4:
+        return 'quaternion'
+    elif rotation.ndim == 2:
+        return 'mat'
+    else:
+        return 'rVec'
+
 #%% Functions we want
 
 def rotToRepresentation(inDict, rotationRepresentation):
@@ -124,11 +132,12 @@ def rotToMat(inDict):
     rotationRepresentation = findRotationRepresentation(rotation)
     if rotationRepresentation == 'mat':
         # already a matrix
-        return outDict 
+        return inDict
 
     mat = np.zeros((rotation.shape[0], 4, 4), dtype=np.float64)
     mat[:, 3, 3] = 1
     mat[:, :3, 3] = inDict['point']
+    outDict = inDict.copy()
     outDict['point'] = mat[:, :3, 3]
     outDict['rotation'] = mat[:, :3, :3]
     outDict['transformation'] = mat
@@ -169,6 +178,7 @@ def rotToMat(inDict):
     else: #rotationRepresentation == 'rVec'
         # following: https://github.com/robEllenberg/comps-plugins/blob/master/python/rodrigues.py
         # Start with identity matrix
+        '''
         mat[:, 0, 0] = 1
         mat[:, 1, 1] = 1
         mat[:, 1, 2] = 1
@@ -199,21 +209,24 @@ def rotToMat(inDict):
         mat = mat \
             + cond * ( np.sin(theta)*Sn + (1-np.cos(theta))*dotAlongZerothAxis(Sn, mat) ) \
             + (1-cond) * ((1-theta2/6)*Sr + (0.5-theta2/24)*dotAlongZerothAxis(Sr, mat) )
-        return mat(R)
+        '''
+        pass
+    return outDict
 
 def rotToVec(inDict):
     rotation = inDict['rotation']
     rotationRepresentation = findRotationRepresentation(rotation)
     if rotationRepresentation == 'rVec':
         return inDict
+    outDict = inDict.copy()
     if rotationRepresentation == 'axisAngle':
-        raise Exception("Method not implemented") 
+        raise NotImplementedError("Method not implemented") 
     elif rotationRepresentation == 'quaternion':
-        raise Exception("Method not implemented") 
+        raise NotImplementedError("Method not implemented") 
     elif rotationRepresentation == 'rVec':
-        raise Exception("Method not implemented") 
+        raise NotImplementedError("Method not implemented") 
     else: #rotationRepresentation == 'mat'
-        raise Exception("Method not implemented") 
+        raise NotImplementedError("Method not implemented") 
     return outDict
     
 def rotToQuat(inDict):
@@ -222,11 +235,61 @@ def rotToQuat(inDict):
     if rotationRepresentation == 'quaternion':
         return inDict
     if rotationRepresentation == 'axisAngle':
-        raise Exception("Method not implemented") 
+        raise NotImplementedError("Method not implemented") 
     elif rotationRepresentation == 'rVec':
-        raise Exception("Method not implemented") 
+        raise NotImplementedError("Method not implemented") 
     else: #rotationRepresentation == 'mat'
-        raise Exception("Method not implemented") 
+        outDict = inDict.copy()
+        # Solution from https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+        m = rotation
+        m00 = m[:, 0, 0]
+        m01 = m[:, 0, 1]
+        m02 = m[:, 0, 2]
+        m10 = m[:, 1, 0]
+        m11 = m[:, 1, 1]
+        m12 = m[:, 1, 2]
+        m20 = m[:, 2, 0]
+        m21 = m[:, 2, 1]
+        m22 = m[:, 2, 2]
+        tr = m00 + m11 + m22
+        # TODO: it should be possible to matricise the following
+        numRotations = m.shape[0]
+        qw = np.zeros(numRotations)
+        qx = np.zeros(numRotations)
+        qy = np.zeros(numRotations)
+        qz = np.zeros(numRotations)
+        for i in range(m.shape[0]):
+            if tr[i] > 0: 
+                S = np.sqrt(tr[i] + 1.0) * 2
+                qw[i] = 0.25 * S
+                qx[i] = (m21[i] - m12[i]) / S
+                qy[i] = (m02[i] - m20[i]) / S
+                qz[i] = (m10[i] - m01[i]) / S
+            elif (m00[i] > m11[i]) and(m00[i] > m22[i]):
+                S = np.sqrt(1.0 + m00[i] - m11[i] - m22[i]) * 2
+                qw[i] = (m21[i] - m12[i]) / S
+                qx[i] = 0.25 * S
+                qy[i] = (m01[i] + m10[i]) / S
+                qz[i] = (m02[i] + m20[i]) / S
+            elif m11[i] > m22[i]: 
+                S = np.sqrt(1.0 + m11[i] - m00[i] - m22[i]) * 2
+                qw[i] = (m02[i] - m20[i]) / S
+                qx[i] = (m01[i] + m10[i]) / S
+                qy[i] = 0.25 * S
+                qz[i] = (m12[i] + m21[i]) / S
+            else:
+                S = np.sqrt(1.0 + m22[i] - m00[i] - m11[i]) * 2
+                qw[i] = (m10[i] - m01[i]) / S
+                qx[i] = (m02[i] + m20[i]) / S
+                qy[i] = (m12[i] + m21[i]) / S
+                qz[i] = 0.25 * S    
+        outDict['rotation'] = np.concatenate((qw[:, np.newaxis],
+                                              qx[:, np.newaxis],
+                                              qy[:, np.newaxis],
+                                              qz[:, np.newaxis],
+                                              ), axis=1)
+        del outDict['transformation']
+        return outDict
     
 def rotToAxisAngle(inDict):
     rotation = inDict['rotation']
@@ -234,11 +297,11 @@ def rotToAxisAngle(inDict):
     if rotationRepresentation == 'axisAngle':
         return inDict
     if rotationRepresentation == 'quaternion':
-        raise Exception("Method not implemented") 
+        raise NotImplementedError("Method not implemented") 
     elif rotationRepresentation == 'rVec':
-        raise Exception("Method not implemented") 
+        raise NotImplementedError("Method not implemented") 
     else: #rotationRepresentation == 'mat'
-        raise Exception("Method not implemented") 
+        raise NotImplementedError("Method not implemented") 
     
 def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
     '''
@@ -333,12 +396,10 @@ def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
     return rotToRepresentation(newPoseDict, rotationRepresentation)
     
 def rotate(inDict, rotation):
-    raise Exception("Method not implemented") 
-    return outDict
-    
+    return transform(inDict, rotation=rotation)
+
 def translate(inDict, translation):
-    raise Exception("Method not implemented") 
-    return outDict
+    return transform(inDict, translation=translation)
 
 '''
 If you pass in transformationDict, it is applied sample-wise as if the dicts 
@@ -351,21 +412,34 @@ and then converts back at the end
 TODO: There could be efficiency gains by not converting to matrices first
 '''
 def transform(inDict, transformationDict=None, translation=None, rotation=None):
+    rotationRepresentation = findRotationRepresentation(inDict['rotation'])
+    inDict = rotToMat(inDict)
     if transformationDict is not None:
         # Assume that the two dicts have exactly the same timestamps 
         # TODO: don't assume this but rather interpolate and merge 
         # following interpolatePoses function
-        rotation = inDict['rotation']
-        rotationRepresentation = findRotationRepresentation(rotation)
-        inDict = rotToMat(inDict)
         transformationDict = rotToMat(transformationDict)
-        outDict = inDict.copy()
         transformed = transformationDict['transformation'] @ inDict['transformation']
-        outDict['point'] = transformed[:, :3, 3]
-        outDict['rotation'] = transformed[:, :3, :3]
-        outDict['transformation'] = transformed
     else:
-        raise Error('Transformation by single elements function not implemented')        
+        # Form a transformation matrix from either or both of translation and rotation
+        mat = np.zeros((4, 4), dtype=np.float64)
+        mat[3, 3] = 1
+        if translation is not None:
+            mat[:3, 3] = translation
+        if rotation is not None:
+            rotRepOfTransformation = findRotationRepresentationSingle(rotation)
+            if rotRepOfTransformation == 'quaternion':
+                mat[:3, :3] = quatToMatSingle(rotation, M=mat[:3, :3])
+            elif rotRepOfTransformation == 'mat':
+                mat[:3, :3] = rotation
+            else:
+                raise NotImplementedError
+        transformed = mat @ inDict['transformation']
+    outDict = inDict.copy()
+    outDict['point'] = transformed[:, :3, 3]
+    outDict['rotation'] = transformed[:, :3, :3]
+    outDict['transformation'] = transformed
+        
     return rotToRepresentation(outDict, rotationRepresentation)
 
 # rotation is single
@@ -378,18 +452,15 @@ def angleBetween(inDict, rotation):
     angle = 2 * np.arcsin(normV)
     return outDict
     '''
-    raise Error('not implemented') 
+    raise NotImplementedError('not implemented') 
 
 def averageRotation(inDict, weights=None):
     # Convert to quaternion
-    rotation = inDict['rotation']
-    rotationRepresentation = findRotationRepresentation(rotation)
     inDict = rotToMat(inDict)
     rotations = inDict['rotation']
     numRotations = rotations.shape[0]
     if weights is None:
         weights = np.ones(numRotations)
-    weightSum = np.sum(weights)
     A = np.zeros((4,4), dtype=np.float64)
     for weight, q in zip(weights, rotations):
         # multiply q with its transposed version q' and accumulate in A
@@ -435,7 +506,7 @@ def quatToMatSingle(quat, M=None):
     if M is None: 
         M = np.zeros((4, 4))
         M[3, 3] = 1
-    elif M.shape[0] == 3:
+    elif M.shape[0] == 4:
         M[:, 3] = 0
         M[3, :] = 0
         M[3, 3] = 1
@@ -508,12 +579,12 @@ def quaternionConjugateSingle(q):
     return np.array([q[0], -q[1], -q[2], -q[3]])
 
 def quaternionInverseSingle(q):
-    return quaternionConjugate(q) / np.sum(q ** 2)
+    return quaternionConjugateSingle(q) / np.sum(q ** 2)
 
 def angleBetweenTwoQuaternionsSingle(q1, q2):
     # returns minimal angle in radians between two unit quaternions, following:
     # https://www.researchgate.net/post/How_do_I_calculate_the_smallest_angle_between_two_quaternions    
-    qP = quaternionProduct(q1, quaternionInverse(q2))
+    qP = quaternionProductSingle(q1, quaternionInverseSingle(q2))
     normV = np.linalg.norm(qP[1:])
     return 2 * np.arcsin(normV)
 
@@ -553,7 +624,7 @@ in the poseDict.
 The rotations are defined wrt local axes, unlike the translations.
 Returns a copy of the poseDict, rotated
 '''    
-def transformPoses(poseDict, translation=None, rotation=None):
+def transformPosesOld(poseDict, translation=None, rotation=None):
     # Create a copy of the input array - use the same contents
     outDict = {}
     for key in poseDict.keys():
@@ -563,7 +634,7 @@ def transformPoses(poseDict, translation=None, rotation=None):
     if rotation is not None:
         for idx in range(outDict['rotation'].shape[0]): # TODO: this could be matricised
             outDict['rotation'][idx, :] = \
-                quaternionProduct(outDict['rotation'][idx, :], rotation)
+                quaternionProductSingle(outDict['rotation'][idx, :], rotation)
     return outDict
         
 
