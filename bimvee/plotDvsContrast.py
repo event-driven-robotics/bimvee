@@ -122,21 +122,31 @@ def getEventImageForTimeRange(events, **kwargs):
 # This function accepts a dict of events and returns an event-image
 # formed by collecting count number of events in the past/future from time ts
 # direction =
-# -1 : look back in the past;
+# -1: look back in the past;
+# 0: look equally to past and future;
 # 1: look to the future
+
 def getEventImageByCount(events, **kwargs):
     direction = kwargs.get('direction', -1)  # default direction is past
     ts = kwargs.get('ts', 0)
     count = kwargs.get('count', 0)
     seedEventId = np.searchsorted(events['ts'], ts, side='right')
-    startOrEndEventId = min(max(seedEventId + direction * count, 0), len(events['ts']) - 1) # limit ID within range
-    startOrEndTime = events['ts'][startOrEndEventId]
-    firstEventId = min(seedEventId, startOrEndEventId)
-    lastEventId = max(seedEventId, startOrEndEventId)
+    if direction == 0:
+        halfCount = int(count/2)
+        firstEventId = max(seedEventId - halfCount, 0)
+        lastEventId = min(seedEventId + halfCount, len(events['ts']) - 1)
+        # startOrEndTime reports end time in this case
+        startOrEndTime = events['ts'][lastEventId]
+    else:
+        startOrEndEventId = min(max(seedEventId + direction * count, 0), 
+                                len(events['ts']) - 1) # limit ID within range
+        startOrEndTime = events['ts'][startOrEndEventId]
+        firstEventId = min(seedEventId, startOrEndEventId)
+        lastEventId = max(seedEventId, startOrEndEventId)
     selectedEvents = {
-        'y': events['y'][firstEventId:lastEventId],
-        'x': events['x'][firstEventId:lastEventId],
-        'pol': events['pol'][firstEventId:lastEventId]
+        'y': events['y'][firstEventId : lastEventId + 1],
+        'x': events['x'][firstEventId : lastEventId + 1],
+        'pol': events['pol'][firstEventId : lastEventId]
     }
     return getEventImage(selectedEvents, **kwargs), startOrEndTime
 

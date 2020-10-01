@@ -107,6 +107,11 @@ def splitByLabel(inDict, labelName, outList=False):
             outDictParent[label] = outDict
         return outDictParent
 
+''' Intended for data where samples come out in bursts at certain timestamps,
+output these bursts in separate dicts '''
+def splitByTimestamp(inDict, outList=False):
+    return splitByLabel(inDict, 'ts', outList=outList)
+    
 '''
 receives a dict containing (probably) dvs events
 returns a dict containing two dicts, labelled 0 and 1, for the polarities found
@@ -309,9 +314,10 @@ and returns a dict with one sample for each element in times,
 being the sample in the original dict closest in time.
 The samples in the output dict might be repeated.
 '''
-def getSamplesAtTimes(inDict, times):
+def getSamplesAtTimes(inDict, times, maxTimeDiff=None, allowDuplicates=False):
     ts = inDict['ts']
     ids = np.searchsorted(ts, times) # side="left" param is the default
+    ids[ids == ts.shape[0]] = ts.shape[0] - 1 # if the index went beyond the final sample, then bring it backwards
     numSamples = ts.shape[0]
     shiftLeft = np.bitwise_and(
             ids > 0, \
@@ -319,7 +325,13 @@ def getSamplesAtTimes(inDict, times):
                 ids == numSamples,
                 np.absolute(times - ts[ids-1]) < np.absolute(times - ts[ids])))
     ids[shiftLeft] = ids[shiftLeft] - 1
+    if maxTimeDiff is not None:
+        timeDiffs = times - ts[ids]
+        keepBool = timeDiffs <= maxTimeDiff 
+        ids = ids[keepBool]
     outDict = {}
+    if allowDuplicates == False:
+        ids = np.unique(ids)
     for key in inDict.keys():
         if type(inDict[key]) == np.ndarray:
             if inDict[key].shape[0] == numSamples:
