@@ -115,6 +115,11 @@ def importSecDvs(**kwargs):
 
     # A major timewrap is possible, so handle unwrapping before the following 
     # processing, which will mix up the timestamps
+    # Noticing that for whatever reason, there can be discontinuities in the 
+    # minor timestamps, there is a first call to unwrap timestamps which 
+    # uses a wrapTime of 1024 us. This would introduce about 1 ms of delay
+    # in the case of an actual major timewrap
+    ts = unwrapTimestamps(ts, wrapTime=1024)  
     ts = unwrapTimestamps(ts)  / 1000000 # Convert to seconds in the same step
     
     # Break out addr and pol for each of the two groups

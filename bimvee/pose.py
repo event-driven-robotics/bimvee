@@ -404,14 +404,20 @@ def translate(inDict, translation):
 '''
 If you pass in transformationDict, it is applied sample-wise as if the dicts 
 contained mats and the result were: transformationDict @ poseDict
-If instead you pass in either translation or rotation, or both, they are applied,
-first rotation then translation, to the whole array.
-
+If instead you pass in transformationMatrix, then this is applied to the whole
+array thus:
+    transformationMatrix @ poseDict
+If instead you pass in either translation or rotation, or both, they are 
+converted into a transformation matrix, and applied to the whole array.
+If 'direction' is 'reverse' then the multiplication is instead applied:
+    poseDict @ transformationMatrix 
+    
 The implementation here first converts to transformation matrices
 and then converts back at the end
 TODO: There could be efficiency gains by not converting to matrices first
 '''
-def transform(inDict, transformationDict=None, translation=None, rotation=None):
+def transform(inDict, transformationDict=None, transformationMatrix=None,
+              translation=None, rotation=None, direction='normal'):
     rotationRepresentation = findRotationRepresentation(inDict['rotation'])
     inDict = rotToMat(inDict)
     if transformationDict is not None:
@@ -419,22 +425,31 @@ def transform(inDict, transformationDict=None, translation=None, rotation=None):
         # TODO: don't assume this but rather interpolate and merge 
         # following interpolatePoses function
         transformationDict = rotToMat(transformationDict)
-        transformed = transformationDict['transformation'] @ inDict['transformation']
+        transformation = transformationDict['transformation']
     else:
-        # Form a transformation matrix from either or both of translation and rotation
-        mat = np.zeros((4, 4), dtype=np.float64)
-        mat[3, 3] = 1
-        if translation is not None:
-            mat[:3, 3] = translation
-        if rotation is not None:
-            rotRepOfTransformation = findRotationRepresentationSingle(rotation)
-            if rotRepOfTransformation == 'quaternion':
-                mat[:3, :3] = quatToMatSingle(rotation, M=mat[:3, :3])
-            elif rotRepOfTransformation == 'mat':
-                mat[:3, :3] = rotation
-            else:
-                raise NotImplementedError
-        transformed = mat @ inDict['transformation']
+        if transformationMatrix is not None:
+            transformation = transformationMatrix
+        else:
+            # Form a transformation matrix from either or both of translation and rotation
+            transformation = np.zeros((4, 4), dtype=np.float64)
+            transformation[3, 3] = 1
+            if translation is not None:
+                transformation[:3, 3] = translation
+            if rotation is not None:
+                rotRepOfTransformation = findRotationRepresentationSingle(rotation)
+                if rotRepOfTransformation == 'quaternion':
+                    transformation[:3, :3] = quatToMatSingle(rotation, 
+                                                M=transformation[:3, :3])
+                elif rotRepOfTransformation == 'mat':
+                    transformation[:3, :3] = rotation
+                else:
+                    raise NotImplementedError 
+    if direction in ['normal', 'forward', 'forwards']:
+        transformed = transformation @ inDict['transformation']        
+    elif direction in ['reverse', 'reversed', 'backward', 'backwards']:
+        transformed = inDict['transformation'] @ transformation
+    else:
+        raise ValueError('"direction" argument not recognised')
     outDict = inDict.copy()
     outDict['point'] = transformed[:, :3, 3]
     outDict['rotation'] = transformed[:, :3, :3]

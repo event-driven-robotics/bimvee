@@ -76,7 +76,7 @@ import numpy as np
 
 # local imports
 from .timestamps import zeroTimestampsForADataType
-from .split import splitByLabel
+from .split import splitByLabel, selectByBool
 
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.
@@ -90,17 +90,8 @@ def getOrInsertDefault(inDict, arg, default):
 # accepts a pose6q datatype dict; returns a channel dict containing pose6q and point3 datatypes
 def separateMarkersFromSegments(poseDict):
     isMarker = np.apply_along_axis(lambda x : 'Marker' in str(x[0]), 1, poseDict['bodyId'][..., np.newaxis])
-    pointDict = {
-        'ts': poseDict['ts'][isMarker],
-        'point': poseDict['point'][isMarker, :],
-        'bodyId': poseDict['bodyId'][isMarker],
-        }
-    poseDict = {
-        'ts': poseDict['ts'][~isMarker],
-        'point': poseDict['point'][~isMarker, :],
-        'rotation': poseDict['rotation'][~isMarker, :],
-        'bodyId': poseDict['bodyId'][~isMarker],
-        }
+    pointDict = selectByBool(poseDict, isMarker)
+    poseDict = selectByBool(poseDict, ~isMarker)
     return {
         'pose6q': poseDict,
         'point3': pointDict}

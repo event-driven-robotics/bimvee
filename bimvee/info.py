@@ -34,17 +34,20 @@ def fieldMinMax(dataTypeDict, fieldName):
         if type(field) == np.ndarray:
             if field.shape[0] > 1:
                 # Handle 2D arrays, e.g. an array containing x, y, z in columns
-                if len(field.shape) > 1:
-                    for dim1Idx in range(field.shape[1]):
+                try:
+                    if len(field.shape) > 1:
+                        for dim1Idx in range(field.shape[1]):
+                            print('            ', 
+                                  sf3(np.min(field[:, dim1Idx])), 
+                                  ' >= ', fieldName, ' - col ', dim1Idx,  
+                                  ' >= ', sf3(np.max(field[:, dim1Idx])))
+                    else:
                         print('            ', 
-                              sf3(np.min(field[:, dim1Idx])), 
-                              ' >= ', fieldName, ' - col ', dim1Idx,  
-                              ' >= ', sf3(np.max(field[:, dim1Idx])))
-                else:
-                    print('            ', 
-                          sf3(np.min(field)), 
-                          ' >= ', fieldName,
-                          ' >= ', sf3(np.max(field)))
+                              sf3(np.min(field)), 
+                              ' >= ', fieldName,
+                              ' >= ', sf3(np.max(field)))
+                except ValueError:
+                    print('            ', fieldName, ' contains data error!')  
 
 def info(containers, **kwargs):
     if not isinstance(containers, list):

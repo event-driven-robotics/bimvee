@@ -39,7 +39,7 @@ class Container():
                 if dataTypeKey == dataType:
                     dataTypeDicts.append(self.container['data'][channelKey][dataTypeKey])
         if len(dataTypeDicts) == 0:
-            raise ValueError('No dicts found for that dataType')
+            raise ValueError('No dicts found for dataType ' + dataType)
         if len(dataTypeDicts) > 1:
             raise ValueError('More than one dict found for dataType: ' + dataType)        
         return dataTypeDicts[0]
