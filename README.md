@@ -1,4 +1,4 @@
-# bimvee - Batch Import, Manipulation, Visualisation, and Export Events etc.
+# bimvee - Batch Import, Manipulation, Visualisation, and Export of Events etc.
 
 <img src="https://raw.githubusercontent.com/event-driven-robotics/bimvee/master/images/events.png" width="300"/> <img src="https://raw.githubusercontent.com/event-driven-robotics/bimvee/master/images/frames.png" width="300"/>
 <img src="https://raw.githubusercontent.com/event-driven-robotics/bimvee/master/images/imu.png" width="300"/>
