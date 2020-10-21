@@ -23,8 +23,12 @@ from .plotFrame import plotFrame
 from .plotPose import plotPose
 from .plotImu import plotImu
 from .plotFlow import plotFlow
+from .container import Container
 
 def plot(inDict, **kwargs):
+    if isinstance(inDict, Container):
+        inDict = inDict.container
+    
     if isinstance(inDict, list):
         for inDictInst in inDict:
             plot(inDictInst, **kwargs)
