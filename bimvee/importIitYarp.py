@@ -373,7 +373,7 @@ def importPostProcessing(dvs, samples, dvsLbl=None, dvsFlow=None, **kwargs):
             dvsLblCh = selectByLabel(dvsLbl, 'ch', ch)
             if dvsLblCh:
                 chDict['dvslbl'] = dvsLblCh
-        samplesCh = selectByLabel(samples, 'ch', ch)
+        samplesCh = selectByLabel(samples, 'ch', ch) if samples is not None else None
         if samplesCh:
             if kwargs.get('convertSamplesToImu', True):
                 chDict['imu'] = samplesToImu(samplesCh, **kwargs)
