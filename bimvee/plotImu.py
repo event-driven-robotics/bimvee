@@ -69,7 +69,9 @@ def plotImu(inDict, **kwargs):
     axesAngV.legend(['x', 'y', 'z'])
 
     axesMag = allAxes[2]
-    axesMag.plot(inDict['ts'], inDict['mag'])
+    axesMag.plot(inDict['ts'], inDict['mag'][:, 0], 'r')
+    axesMag.plot(inDict['ts'], inDict['mag'][:, 1], 'g')
+    axesMag.plot(inDict['ts'], inDict['mag'][:, 2], 'b')
     axesMag.set_title('Mag (uT)')
     axesMag.legend(['x', 'y', 'z'])
 
