@@ -93,6 +93,7 @@ import numpy as np
 
 # local imports
 from .timestamps import sortDataTypeDictByTime
+from .split import selectByBool
 
 #%% Helper functions
 
@@ -302,6 +303,31 @@ def rotToAxisAngle(inDict):
         raise NotImplementedError("Method not implemented") 
     else: #rotationRepresentation == 'mat'
         raise NotImplementedError("Method not implemented") 
+    
+'''
+Add into the dict two arrays, containing:
+(a) the instantaneous linear speed, calculated as the euclidean distance from
+  one point to the next / divided by the time from one point to the next, 
+  using the pairwise average of previous and next to give an estimate for
+  each point. 
+(b) the instantaneous rotational speed, calculated as above expect for angles
+'''
+def calculateSpeed(inDict):
+    def pairwiseMean(array):
+        array = array[:, np.newaxis]
+        shiftedArray = np.concatenate((array[1:], array[:-1]), axis=1)
+        array = np.mean(shiftedArray, axis=1)
+        array = np.insert(array, 0, array[0])
+        array = np.append(array, array[-1])
+        return array
+    linearDiffs = np.linalg.norm(np.diff(inDict['point'], axis=0), axis=1)
+    timeDiffs = np.diff(inDict['ts'])
+    inDict['linearSpeed'] = pairwiseMean(linearDiffs / timeDiffs)
+    inDictAsQuat = rotToRepresentation(inDict, 'quaternion')
+    rotations = inDictAsQuat['rotation']
+    angularDiffs = angleBetweenTwoQuaternionsArray(rotations[:-1, :], rotations[1:, :])
+    inDict['angularSpeed'] = pairwiseMean(angularDiffs / timeDiffs)
+    return inDict
     
 def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
     '''
@@ -589,18 +615,41 @@ def quaternionProductSingle(q1, q2):
     qOut[1:4] = vOut
     return qOut
     '''
+    
+# Array version of the above    
+def quaternionProductArray(q1, q2):
+    def x(q, idx): # tis function to clean up the following expression
+        return q[:, idx, np.newaxis]
+    return np.concatenate(( 
+    x(q1,0) * x(q2,0) - x(q1,1) * x(q2,1) - x(q1,2) * x(q2,2) - x(q1,3) * x(q2,3),
+    x(q1,0) * x(q2,1) + x(q1,1) * x(q2,0) + x(q1,2) * x(q2,3) - x(q1,3) * x(q2,2),
+    x(q1,0) * x(q2,2) - x(q1,1) * x(q2,3) + x(q1,2) * x(q2,0) + x(q1,3) * x(q2,1),
+    x(q1,0) * x(q2,3) + x(q1,1) * x(q2,2) - x(q1,2) * x(q2,1) + x(q1,3) * x(q2,0)
+    ), axis=1)
 
+    
 def quaternionConjugateSingle(q):
     return np.array([q[0], -q[1], -q[2], -q[3]])
 
+def quaternionConjugateArray(q):
+    return np.concatenate((q[:, 0, np.newaxis], -q[:, 1:4]), axis=1)
+
 def quaternionInverseSingle(q):
     return quaternionConjugateSingle(q) / np.sum(q ** 2)
+
+def quaternionInverseArray(q):
+    return quaternionConjugateArray(q) / np.sum(q ** 2, axis=1)[:, np.newaxis]
 
 def angleBetweenTwoQuaternionsSingle(q1, q2):
     # returns minimal angle in radians between two unit quaternions, following:
     # https://www.researchgate.net/post/How_do_I_calculate_the_smallest_angle_between_two_quaternions    
     qP = quaternionProductSingle(q1, quaternionInverseSingle(q2))
     normV = np.linalg.norm(qP[1:])
+    return 2 * np.arcsin(normV)
+
+def angleBetweenTwoQuaternionsArray(q1, q2):
+    qP = quaternionProductArray(q1, quaternionInverseArray(q2))
+    normV = np.linalg.norm(qP[:, 1:], axis=1)
     return 2 * np.arcsin(normV)
 
 '''
@@ -678,3 +727,23 @@ def averageOfQuaternions(allQ, w=None):
     eigenVectors = eigenVectors[:,eigenValues.argsort()[::-1]]
     # return the real part of the largest eigenvector (has only real part)
     return eigenVectors[:,0]
+
+'''
+iitVicon can produce consecutive pose samples with same ts, point and rotation
+eliminate these
+Ignore different bodyIds for now
+'''
+def removeDuplicates(poseDict):
+    ts = poseDict['ts']
+    point = poseDict['point']
+    rotation = poseDict['rotation']
+    tsDiff = np.diff(ts)
+    pointDiff = np.sum(np.diff(point, axis=0), axis=1)
+    rotationDiff = np.sum(np.diff(rotation, axis=0), axis=1)
+    toKeep = np.logical_or(tsDiff!=0, pointDiff!=0, rotationDiff!=0)
+    # remove following elements by shifting toKeep dict forwards
+    toKeep = np.insert(toKeep, 0, 'True')
+    return selectByBool(poseDict, toKeep)
+    
+    
+    

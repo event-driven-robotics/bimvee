@@ -243,7 +243,24 @@ def sortDataTypeDictByTime(inDict):
         except (AssertionError, TypeError):
             outDict[fieldName] = inDict[fieldName]
     return outDict
-            
+    
+'''
+If two or more file-level containers are merged, in general it's not possible 
+to align their timestamps without some extra prior knowledge. Here we reset
+all tsOffset fields, to avoid them being used to readjust timestamps incorrectly. 
+We assume that there's no overlap of channel names. 
+We also assume 
+'''    
+def mergeContainers(listOfDicts):
+    outDict = {'info': {'filePathOrName': 'merged'},
+               'data': {}}
+    for inDict in listOfDicts:
+        outDict['data'].update(inDict['data'])
+    for channelName in outDict['data']:
+        for dataTypeName in outDict['data'][channelName]:
+            outDict['data'][channelName][dataTypeName]['tsOffset'] = 0
+    return outDict
+    
 #%% LEGACY CODE - timestamps for different data types present in aedat
 # There are exceptions around the timestamps for frame data to consider 
 '''
