@@ -515,6 +515,16 @@ def averageRotation(inDict, weights=None):
     # return the real part of the largest eigenvector (has only real part)
     return eigenVectors[:,0]
 
+def canoniseQuaternions(inDict):
+    outDict = inDict.copy()
+    q = outDict['rotation']
+    qw = q[:, 0]
+    qSign = qw / np.abs(qw)
+    qSign = qSign[:, np.newaxis]
+    qCanonized = qSign * q
+    outDict['rotation'] = qCanonized
+    return outDict
+
 #%% Better names for legacy functions
 
 def interpolatePosesSingle(poseDict, time):
