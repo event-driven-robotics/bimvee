@@ -515,15 +515,51 @@ def averageRotation(inDict, weights=None):
     # return the real part of the largest eigenvector (has only real part)
     return eigenVectors[:,0]
 
+"""
+A quaternion is in canonical form when it's first component is non-negative.
+"""
 def canoniseQuaternions(inDict):
     outDict = inDict.copy()
     q = outDict['rotation']
     qw = q[:, 0]
     qSign = qw / np.abs(qw)
     qSign = qSign[:, np.newaxis]
-    qCanonized = qSign * q
-    outDict['rotation'] = qCanonized
+    qCanonised = qSign * q
+    outDict['rotation'] = qCanonised
     return outDict
+
+"""
+a negative dot product between two quaternions indicates a discontinuity;
+pass through the trajectory, flipping at these discontinuities
+"""
+def makeQuaternionsContinuous(inDict):
+    outDict = inDict.copy()
+    allQ = outDict['rotation'].copy()
+    swapIds = np.where((allQ[:-1, :] * allQ[1:, :]).sum(axis=1) < 0)[0]
+    swapBool = np.zeros((len(outDict['ts'])), dtype=np.bool)
+    for swapIdsIdx in range(0, len(swapIds), 2):
+        swapBool[swapIds[swapIdsIdx]+1 :swapIds[swapIdsIdx + 1]+1] = True
+    allQ[swapBool, :] = - allQ[swapBool, :]
+    outDict['rotation'] = allQ
+    return outDict
+    
+'''
+Offsets all points so that the first is at zero.
+TODO: think of a good way to store the offset, in reference to tsOffset;
+If a np[1,3] array is stored, that will break merge and copy dict functionalities. 
+'''
+def zeroPoint(inDict):
+    outDict = inDict.copy()
+    outDict['point'] = outDict['point'] - outDict['point'][0, :]
+    return outDict
+    
+'''
+rotate all the poses so that the first pose is at [1w, 0x, 0y, 0z]
+then offset
+'''
+def zeroPose(inDict):
+    raise NotImplementedError("Method not implemented") 
+    
 
 #%% Better names for legacy functions
 

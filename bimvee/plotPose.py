@@ -35,6 +35,7 @@ import itertools
 
 # local imports
 from .split import cropTime
+from bimvee.pose import canoniseQuaternions, makeQuaternionsContinuous
 
 def plotPose(inDicts, **kwargs):
     if isinstance(inDicts, list):
@@ -78,6 +79,10 @@ def plotPose(inDicts, **kwargs):
             fig.suptitle(kwargs.get('title', ''))
             axesT = allAxes[0]
             axesR = allAxes[1]
+        if kwargs.get('canonise', False):
+            inDict = canoniseQuaternions(inDict)
+        if kwargs.get('makeContinuous', True):
+            inDict = makeQuaternionsContinuous(inDict)
         rotation = inDict['rotation']
         axesR.plot(ts, rotation[:, 0], 'k' + lineStyle)
         axesR.plot(ts, rotation[:, 1], 'r' + lineStyle)
