@@ -126,6 +126,7 @@ def convertToHomogeneousCoords(inDict):
         ), axis=1)
     outDict['x'] = outDict['xyh']['x']
     outDict['x'] = outDict['xyh']['y']
+    return outDict
 
 '''
 Uses opencv functions to create an undistortion map and undistort events.
