@@ -65,6 +65,7 @@ from .importSecDvs import importSecDvs
 from .importAer2 import importAer2
 from .importFrames import importFrames
 from .timestamps import rezeroTimestampsForImportedDicts
+from .importHdf5 import importHdf5
 
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.
@@ -126,6 +127,8 @@ def importAe(**kwargs):
                 kwargs['fileFormat'] = 'iitnpy'
             elif ext == '.aer2':
                 kwargs['fileFormat'] = 'aer2'
+            elif ext == '.hdf5':
+                kwargs['fileFormat'] = 'hdf5'
             # etc ...
             else:
                 raise Exception("The file format cannot be determined.")
@@ -145,6 +148,8 @@ def importAe(**kwargs):
         importedData = importAer2(**kwargs)
     elif fileFormat in ['frame', 'frames', 'png', 'pngfolder', 'imagefolder']:
         importedData = importFrames(**kwargs)
+    elif fileFormat in ['hdf5', 'bimveehdf5']:
+        importedData = importHdf5(**kwargs)
     else:
         raise Exception("fileFormat: " + str(fileFormat) + " not supported.")
     #celex

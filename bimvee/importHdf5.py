@@ -15,13 +15,16 @@ Intended as part of bimvee (Batch Import, Manipulation, Visualisation and Export
 
 Using hickle to add hierarchical lists and dicts to hdf5 automatically
 https://github.com/telegraphic/hickle
-In fact, thess are just thin wrappers around hickle.dump/load, 
+In fact, these are just thin wrappers around hickle.dump/load, 
 to offer a similar export function to other export calls.
-pack/unpackWorkspaceVars are facilities that allows extra random data WIP 
-to get bundled together. All files are included in both the import and export script for convenience. 
-TODO: This script to import and pass through functions from exportHdf5
 """
 #%%
 
-# local imports
-from .exportHdf5 import *
+import hickle
+
+def importHdf5(filePathOrName='./temp.hdf5', **kwargs):
+    #TODO: Handle path with no filename
+    if filePathOrName[-5:] != '.hdf5':
+        filePathOrName = filePathOrName + '.hdf5'
+    print('importHdf5 called, targeting file path and name' + filePathOrName)
+    return hickle.load(filePathOrName)

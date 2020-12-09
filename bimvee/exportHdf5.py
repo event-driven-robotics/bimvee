@@ -17,8 +17,6 @@ Using hickle to add hierarchical lists and dicts to hdf5 automatically
 https://github.com/telegraphic/hickle
 In fact, these are just thin wrappers around hickle.dump/load, 
 to offer a similar export function to other export calls.
-pack/unpackWorkspaceVars are facilities that allows extra random data WIP 
-to get bundled together. All files are included in both the import and export script for convenience. 
 """
 
 #%%
@@ -26,7 +24,7 @@ to get bundled together. All files are included in both the import and export sc
 import hickle
 import os
 
-def exportHdf5(data, exportFilePathAndName='./temp.hdf5'):
+def exportHdf5(data, exportFilePathAndName='./temp.hdf5', **kwargs):
     if exportFilePathAndName[-5:] != '.hdf5':
         exportFilePathAndName = exportFilePathAndName + '.hdf5'
     print('exportHdf5 called, targeting file path and name' + exportFilePathAndName)
@@ -35,34 +33,10 @@ def exportHdf5(data, exportFilePathAndName='./temp.hdf5'):
         os.mkdir(absPath)
     hickle.dump(data, exportFilePathAndName)
     
-def importHdf5(filePathOrName='./temp.hdf5'):
+def importHdf5(filePathOrName='./temp.hdf5', **kwargs):
     #TODO: Handle path with no filename
     if filePathOrName[-5:] != '.hdf5':
         filePathOrName = filePathOrName + '.hdf5'
     print('importHdf5 called, targeting file path and name' + filePathOrName)
     return hickle.load(filePathOrName)
 
-#%% WIP - the following functions aren't working yet
-
-def pack(inDict, names):
-    packWorkspaceVars(inDict, names)
-    
-def unpack(inDict):
-    unpackWorkspaceVars(inDict)
-    
-def packWorkspaceVars(inDict, names):
-    if isinstance(inDict, list):
-        return packWorkspaceVars(inDict[0], names)
-    if 'temp' not in inDict['info']:
-        inDict['info']['temp'] = {}
-    if not isinstance(names, list):
-        names = [names]
-    for name in names:
-        exec('global ' + name)
-        exec("inDict['info']['temp'][name] = globals()[" + name + "]")
-
-def unpackWorkspaceVars(inDict):
-    if 'info' in inDict and 'temp' in inDict['info']:
-        for key in list(inDict['info']['temp'].keys()):
-            exec('global ' + key)
-            globals()[key] = inDict['info']['temp'].pop(key)
