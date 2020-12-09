@@ -18,6 +18,7 @@ Basic manipulations specific to event streams
 
 import numpy as np
 from tqdm import trange
+import cv2
 
 from bimvee.plotDvsContrast import getEventImage
 from bimvee.split import selectByBool
@@ -92,4 +93,63 @@ def refractoryPeriod(inDict, refractoryPeriod=0.001, **kwargs):
         else:
             toKeep[idx] = False
     outDict = selectByBool(inDict, toKeep)
+    return outDict
+
+'''
+if dict does not already have dimX and dimY fields, then add them, using the
+maximum value in each dimension.
+NOTE: This is a hap-hazard method which relies on pixels actually producing 
+events; only to be used if camera dimension is not otherwise available.
+'''
+def findDims(inDict):
+    if 'dimX' in inDict and 'dimY' in inDict:
+        return inDict
+    outDict = inDict.copy()
+    if 'dimX' not in inDict:
+        outDict['dimX'] = np.max(inDict['x']) + 1
+    if 'dimY' not in inDict:
+        outDict['dimX'] = np.max(inDict['x']) + 1
+    return outDict
+
+'''
+Converts the underlying representation of address-events to a single ndarray
+n x 3, where the first col is x, the second col is y, and the third col is all 
+ones; the dtype is np.float64. The field is called 'xyh'.
+x and y fields become 1d views of the appropriate rows.
+'''
+def convertToHomogeneousCoords(inDict):
+    outDict = inDict.copy()
+    outDict['xyh'] = np.concatenate((
+        inDict['x'][:, np.newaxis].astype(np.float64),
+        inDict['y'][:, np.newaxis].astype(np.float64),
+        np.ones((inDict['x'].shape[0]), dtype=np.float64)
+        ), axis=1)
+    outDict['x'] = outDict['xyh']['x']
+    outDict['x'] = outDict['xyh']['y']
+
+'''
+Uses opencv functions to create an undistortion map and undistort events.
+k is the intrinsic matrix; d is the distortion coefficients.
+Returns a new container with the events undistorted.
+By default, events get turned into float64; keep them as int16 with kwarg 'asInt'=True
+By default, it uses the same intrinsic matrix in the remapping - change this
+by passing in the kwarg 'kNew'
+'''
+def undistortEvents(inDict, k, d, **kwargs):
+    inDict = findDims(inDict)
+    kNew = kwargs.get('kNew', k)
+    y, x = np.meshgrid(range(inDict['dimY']), range(inDict['dimX']))
+    xy = np.concatenate((
+        inDict['x'][:, np.newaxis].astype(np.float32),
+        inDict['y'][:, np.newaxis].astype(np.float32),
+        ), axis=1)
+    undistortedPoints = cv2.undistortPoints(xy, k, d, None, kNew)
+    undistortionMap = undistortedPoints.reshape(inDict['dimX'], inDict['dimY'], 2)
+    undistortionMap = np.swapaxes(undistortionMap, 0, 1)
+    xy = undistortionMap[inDict['y'], inDict['x'], :]
+    if kwargs.get('asInt', False):
+        xy = np.round(xy).astype('np.int16')
+    outDict = inDict.copy()
+    outDict['x'] = xy[:, 0]
+    outDict['y'] = xy[:, 1]
     return outDict

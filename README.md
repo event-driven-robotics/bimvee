@@ -142,7 +142,7 @@ visualise the resulting data.
 # Dependencies:
 
 This library uses importRosbag library to import rosbag data without needing a ros installation.
-This is included as a submodule. 
+This is included as a submodule.
 
 Beyond the python standard library, the main dependencies are:
 
@@ -160,6 +160,8 @@ without reference to matplotlib, for rendering by an external application.
 
 plotDvsLastTs uses rankdata from scipy; however if it's not installed, 
 it defaults to a local definition; scipy is therefore an optional dependency.
+
+undistortEvents function in events.py uses cv2 (openCv).
 
 import/export Hdf5 functions use:
 
