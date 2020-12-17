@@ -33,6 +33,7 @@ If this is not given, then the maximum timestamp before each wrap event is used.
 #%%
 
 import numpy as np
+import math
 
 def zeroTimestampsForADataType(dataTypeDict, tsOffset=None):
     # Probably the common format is 'ts' for all dtypes, 
@@ -186,7 +187,7 @@ Takes ts where as int or float and returns it as float64, unwrapping where neces
 If you pass in wrapTime that takes precedence - make sure you pass in the right type though.
 If not, but you pass in tsBits (the number of timestamp bits), 
 then the wrapTime is 2**wrapTime.
-Otherwise, tsBits is guess by looking at the highest actual ts. 
+Otherwise, tsBits is guessed by looking at the highest actual ts. 
 '''
 
 def unwrapTimestamps(ts, **kwargs):
@@ -260,7 +261,42 @@ def mergeContainers(listOfDicts):
         for dataTypeName in outDict['data'][channelName]:
             outDict['data'][channelName][dataTypeName]['tsOffset'] = 0
     return outDict
-    
+
+
+# A function intended to find the nearest timestamp
+# adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
+def findNearest(array, value):
+    idx = np.searchsorted(array, value) # side="left" param is the default
+    if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
+        return idx-1
+    else:
+        return idx
+
+def findNearestTsIdx(inDict, tsIdeal):
+    return findNearest(inDict['ts'], tsIdeal)
+
+def getNearestEvent(inDict, tsIdeal):
+    idx = findNearest(inDict['ts'], tsIdeal)
+    return getEvent(inDict, idx)
+
+'''
+Possibly a temporary home for this utility function
+Given any dataType container dict, return a dict which just contains the data
+for the indexed event or sample
+'''
+def getEvent(inDict, idx):
+    outDict = inDict.copy()
+    numEvents = len(outDict['ts'])
+    for key in outDict.keys():
+        try:
+            if len(outDict[key]) == numEvents:
+                outDict[key] = outDict[key][idx]
+        except TypeError:
+            continue
+    return outDict
+
+
+
 #%% LEGACY CODE - timestamps for different data types present in aedat
 # There are exceptions around the timestamps for frame data to consider 
 '''

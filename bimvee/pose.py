@@ -612,6 +612,15 @@ def quatToMatSingle(quat, M=None):
     M[2, 2] = 1 - 2*x**2 - 2*y**2
     return M
 
+
+def pose6qToMatSingle(pose6q):
+    T = pose6q['point']
+    quat = pose6q['rotation']
+    M = quatToMatSingle(quat)
+    M[:3,3] = T
+    return M
+
+
 # Spherical linear interpolation, adapted from https://en.wikipedia.org/wiki/Slerp
 DOT_THRESHOLD = 0.9995
 def slerp(q1, q2, time_relative):

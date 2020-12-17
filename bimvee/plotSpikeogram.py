@@ -32,6 +32,9 @@ and minTime and maxTime are used to constrain time.
 The axes are aligned so that the coordinate points to the middle of the first
 row represented by that mark. 
 
+TODO: There are separate functions for spikeograms from skin and dvs - this
+should be generalised to all address-event datatypes (including ear, dvsLbl etc)
+
 """
 
 #%% Plot tsPix (single pixel timestamps)
@@ -109,3 +112,64 @@ def plotSpikeogram(inDict, **kwargs):
     callback = kwargs.get('callback')
     if callback is not None:
         callback(**kwargs)
+
+# TODO: Generalise with above for any address-event data
+def plotSpikeogramSkin(inDict, **kwargs):
+    # Boilerplate for descending container hierarchy
+    if isinstance(inDict, list):
+        for inDictInst in inDict:
+            plotSpikeogramSkin(inDictInst, **kwargs)
+        return
+    if 'info' in inDict: # Top level container
+        fileName = inDict['info'].get('filePathOrName', '')
+        print('plotSpikeogram was called for file ' + fileName)
+        if not inDict['data']:
+            print('The import contains no data.')
+            return
+        for channelName in inDict['data']:
+            channelData = inDict['data'][channelName]
+            if 'skinEvents' in channelData and len(channelData['skinEvents']['ts']) > 0:
+                kwargs['title'] = ' '.join([fileName, str(channelName)])
+                plotSpikeogramSkin(channelData['skinEvents'], **kwargs)
+            else:
+                print('Channel ' + channelName + ' skipped because it contains no skinEvents data')
+        return
+    # Break out data arrays for cleaner code
+    print('plotSpikeogram working: ' + kwargs['title'])
+    addr = inDict['taxel'] + inDict['bodyPart'] * 2**10 # TODO: find general solution to express address of different datatypes
+    ts = inDict['ts']
+    pol = inDict['pol']
+    # TODO: CropSpace on kwargs min/maxAddr
+    minAddr = kwargs.get('minAddr', np.min(addr))
+    maxAddr = kwargs.get('maxAddr', np.max(addr))
+    minTime = kwargs.get('minTime', kwargs.get('startTime', kwargs.get('beginTime', np.min(ts))))
+    maxTime = kwargs.get('maxTime', kwargs.get('stopTime', kwargs.get('endTime', np.max(ts))))
+    timeRange = maxTime - minTime
+    selected = np.where((ts >= minTime) & (ts <= maxTime))[0]
+    axes = kwargs.get('axes')
+    if axes is None:
+        fig, axes = plt.subplots()
+        kwargs['axes'] = axes
+
+    for idx in tqdm(selected):
+        xPos = ts[idx]
+        yPos = addr[idx]
+        if pol[idx]:
+            line = lines.Line2D([xPos, xPos], [yPos - 0.5, yPos + 0.5], 
+                                color='blue', lw=2, axes=axes)
+        else:
+            line = lines.Line2D([xPos, xPos], [yPos - 0.5, yPos + 0.5], 
+                                color='red', lw=2, axes=axes)
+        axes.add_line(line)
+    axes.set_xlim(minTime-timeRange*0.01, maxTime+timeRange*0.01)
+    axes.set_ylim(minAddr - 1, maxAddr + 1)
+    formatString = '0'+ str(int(np.log10(999))+1) + 'd'
+    numRows = maxAddr - minAddr + 1
+    theRange = range(minAddr, maxAddr, int(np.ceil(numRows/10))) # Let's have max 10 labels
+    labels = ['addr' + format(addr, formatString) for addr in theRange]
+    plt.yticks(theRange, labels)
+    
+    callback = kwargs.get('callback')
+    if callback is not None:
+        callback(**kwargs)    
+    

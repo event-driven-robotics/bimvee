@@ -122,10 +122,10 @@ def convertToHomogeneousCoords(inDict):
     outDict['xyh'] = np.concatenate((
         inDict['x'][:, np.newaxis].astype(np.float64),
         inDict['y'][:, np.newaxis].astype(np.float64),
-        np.ones((inDict['x'].shape[0]), dtype=np.float64)
+        np.ones((inDict['x'].shape[0], 1), dtype=np.float64)
         ), axis=1)
-    outDict['x'] = outDict['xyh']['x']
-    outDict['x'] = outDict['xyh']['y']
+    outDict['x'] = outDict['xyh'][:, 0]
+    outDict['y'] = outDict['xyh'][:, 1]
     return outDict
 
 '''
@@ -139,12 +139,11 @@ by passing in the kwarg 'kNew'
 def undistortEvents(inDict, k, d, **kwargs):
     inDict = findDims(inDict)
     kNew = kwargs.get('kNew', k)
-    y, x = np.meshgrid(range(inDict['dimY']), range(inDict['dimX']))
-    xy = np.concatenate((
-        inDict['x'][:, np.newaxis].astype(np.float32),
-        inDict['y'][:, np.newaxis].astype(np.float32),
-        ), axis=1)
-    undistortedPoints = cv2.undistortPoints(xy, k, d, None, kNew)
+    yGrid, xGrid = np.meshgrid(range(inDict['dimY']), range(inDict['dimX']))
+    xGrid = xGrid.reshape(-1).astype(np.float32)
+    yGrid = yGrid.reshape(-1).astype(np.float32)
+    xyGrid = np.concatenate((xGrid[:, np.newaxis], yGrid[:, np.newaxis]), axis=1)
+    undistortedPoints = cv2.undistortPoints(xyGrid, k, d, None, kNew)
     undistortionMap = undistortedPoints.reshape(inDict['dimX'], inDict['dimY'], 2)
     undistortionMap = np.swapaxes(undistortionMap, 0, 1)
     xy = undistortionMap[inDict['y'], inDict['x'], :]

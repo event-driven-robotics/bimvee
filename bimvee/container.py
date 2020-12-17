@@ -25,7 +25,6 @@ Therefore the getDataType() method allows the user to get the dict for a chosen
 dataType providing only that there's a single example. 
 """
 
-
 class Container():
     
     def __init__(self, container):
