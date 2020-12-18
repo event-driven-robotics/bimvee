@@ -540,7 +540,7 @@ def importIitYarpDataLog(**kwargs):
     if patternForVicon.findall(content):
         print('Yarp vicon dumper pattern found - passing this file to importVicon function')
         return importIitVicon(**kwargs)
-    patternForRawSkinSamples = re.compile('-1 (\d+\.\d+) (\d+\.\d+)')
+    patternForRawSkinSamples = re.compile('(\d+) (\d+\.\d+) (\d+\.\d+)')
     if patternForRawSkinSamples.findall(content):
         print('Pattern found seems to be a raw dump of analogue skin samples')
         return importIitRawSkinSamples(**kwargs)
