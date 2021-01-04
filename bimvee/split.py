@@ -351,11 +351,21 @@ def getSamplesAtTimes(inDict, times, maxTimeDiff=None, allowDuplicates=False):
 #------------------------------------------------------------------------------
 '''
 Merges multiple dicts then sorts by timestamp.
-If any singleton keys have contradictory values an error is raised.
+If strict = True (by default) then errors are raised if:
+    a) Any of the list are None, or
+    b) Any singleton keys have contradictory values an error is raised.
+If not strict, then these problems are reported but the merge continues.
 '''
-def mergeDataTypeDicts(listOfDicts):
+def mergeDataTypeDicts(listOfDicts, **kwargs):
     outDict = {}
     for inDict in listOfDicts:
+        if inDict is None:
+            problemMsg = 'List of dataType dicts contained "None"'
+            if kwargs.get('strict', True):
+                raise valueError(problemMsg)
+            else:
+                print(problemMsg)
+                continue
         for key in inDict.keys():
             if key not in outDict:
                 outDict[key] = inDict[key]
@@ -368,7 +378,11 @@ def mergeDataTypeDicts(listOfDicts):
                         outDict[key] = outDict[key] + inDict[key]
                 else: # assume singleton
                     if inDict[key] != outDict[key]:
-                        raise valueError('Singleton keys found with contradictory values')
+                        problemMsg = 'Singleton keys found with contradictory values'
+                        if kwargs.get('strict', True):
+                            raise valueError(problemMsg)
+                        else:
+                            print(problemMsg)
     return outDict
 #------------------------------------------------------------------------------
 def groupFlowTimeWindow(flowData, timeWindow):
