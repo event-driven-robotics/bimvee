@@ -4,17 +4,17 @@ Copyright (C) 2019 Event-driven Perception for Robotics
 Authors: Sim Bamford
          Aiko Dinale
          Massimiliano Iacono
-Code contributions from: 
+Code contributions from:
         Marco Monforte
         Daniel Gutierrez Galan
         Ali Dabbous
-This program is free software: you can redistribute it and/or modify it under 
-the terms of the GNU General Public License as published by the Free Software 
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with 
+You should have received a copy of the GNU General Public License along with
 this program. If not, see <https://www.gnu.org/licenses/>.
 
 Intended as part of bimvee (Batch Import, Manipulation, Visualisation and Export of Events etc)
@@ -36,17 +36,17 @@ Each channel is a dict containing:
     For imu:
         - "ts": numpy array of float - seconds
 
-    Can also handle LAE (labelled event) bottles, FLOW (dvs optical flow events), 
+    Can also handle LAE (labelled event) bottles, FLOW (dvs optical flow events),
         IMU, SKE (skin), EAR, SKS (skin samples)
 
 This function combines the import of several distinctly different cases:
     1) output directly from zynqGrabber, with all events together
         May combine samples and events in the same bottles and never contains
-        explicit IMU / LAE / FLOW events. samples such as IMU are contained 
+        explicit IMU / LAE / FLOW events. samples such as IMU are contained
         within AE type bottles.
     2) split and processed events from vPreProcess or other downstream modules
         The latter usually has distinct bottles for each datatype, and channels
-        have probably, but not definitely, been split into left and right. 
+        have probably, but not definitely, been split into left and right.
     3) output from binary event dumper.
     4) data from vicon
     5) Skin samples which have not been properly formatted as bottles
@@ -54,13 +54,13 @@ This function combines the import of several distinctly different cases:
 TODO: import frames - yarp has 2 ways of encoding - as bottles or,
 recommended, by saving e.g. pngs to a folder - support the latter
 
-There are 2 dvs codecs: 20-bit and 24-bit. 24-bit is assumed unless kwarg 
+There are 2 dvs codecs: 20-bit and 24-bit. 24-bit is assumed unless kwarg
 "codec" = "20bit" is received
 
 This document gives more principled and complete info for event decoding
 specifically from iCub:
 https://github.com/event-driven-robotics/ed-skin/blob/master/docs/technotes/TN001-Peripherals-to-HPU-Data-Encoding_rev1.pdf
-    
+
 """
 
 #%%
@@ -68,15 +68,13 @@ https://github.com/event-driven-robotics/ed-skin/blob/master/docs/technotes/TN00
 import re
 import numpy as np
 import os
-import struct
 
-# local imports
+# Local imports
 from .importIitVicon import importIitVicon
 from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
 from .split import selectByLabel
 
 
-# A parameter for decoding skin events
 def decodeEvents(data, **kwargs):
     '''
     timestamps(ts) are 32 bit integers counted with an 80 ns clock - do this conversion later
@@ -93,7 +91,7 @@ def decodeEvents(data, **kwargs):
         0000 0000 0crr yyyy yyyy rrxx xxxx xxxp ("24 bit codec")
     ... where:
             - x and y = respective coords;
-            - p = polarity; 
+            - p = polarity;
             - r = reserved for future expansion, but practically used for larger sensor formats
             - c = channel 1 = right vs 0 = left.
     APS:
@@ -123,7 +121,7 @@ def decodeEvents(data, **kwargs):
         reserved          (r: fixed to 0)
         ITD neurons id    (n: from 0 to 15)
         sensor ID         (s: fixed to b'100')
-        channel           (c: 0 -> left; 1 -> right)        
+        channel           (c: 0 -> left; 1 -> right)
     '''
     dvsBool = np.logical_not(data[:, 1] & 0xFF800000)
     apsBool = np.bool_(data[:, 1] & 0x00800000)
@@ -150,7 +148,7 @@ def decodeEvents(data, **kwargs):
         ts = dataDvs[:, 0]
         if np.isscalar(ts):
             ts = np.ones((1), dtype=np.uint32) * ts
-        pol  = ~np.bool_(dataDvs[:, 1] & 0x01) # We want True=ON=brighter, False=OFF=darker, so we negate
+        pol = ~np.bool_(dataDvs[:, 1] & 0x01)  # We want True=ON=brighter, False=OFF=darker, so we negate
         dataDvs[:, 1] >>= 1
         if kwargs.get('codec', '24bit') == '20bit':
             # If any non zero value shows up in bits 18-19 then we are sure that the new 24 bit codec is being used
@@ -160,12 +158,12 @@ def decodeEvents(data, **kwargs):
             dataDvs[:, 1] >>= 9
             y = np.uint16(dataDvs[:, 1] & 0xFF)
             dataDvs[:, 1] >>= 10
-        else: # 24bit - defaul;t
+        else:  # 24bit - default
             x = np.uint16(dataDvs[:, 1] & 0x7FF)
             dataDvs[:, 1] >>= 11
             y = np.uint16(dataDvs[:, 1] & 0x3FF)
             dataDvs[:, 1] >>= 10
-        ch  = np.uint8(dataDvs[:, 1] & 0x01)
+        ch = np.uint8(dataDvs[:, 1] & 0x01)
         outDict['dvs'] = {
             'ts': ts,
             'ch': ch,
@@ -182,13 +180,13 @@ def decodeEvents(data, **kwargs):
         dataImu[:, 1] >>= 16
         sensor = np.uint8(dataImu[:, 1] & 0x0F)
         dataImu[:, 1] >>= 6
-        ch  = np.uint8(dataImu[:, 1] & 0x01)
+        ch = np.uint8(dataImu[:, 1] & 0x01)
         outDict['imuSamples'] = {
                 'ts': ts,
                 'ch': ch,
                 'sensor': sensor,
                 'value': value}
-    
+
     if np.any(skinBool):
         dataSkin = data[skinBool, :]
         ts = np.uint32(dataSkin[:, 0])
@@ -211,7 +209,7 @@ def decodeEvents(data, **kwargs):
                 'bodyPart': bodyPart,
                 'taxel': taxel,
                 'pol': polarity}
-    
+
     if np.any(earBool):
         dataEar = data[earBool, :]
         ts = np.uint32(dataEar[:, 0])
@@ -240,9 +238,12 @@ def decodeEvents(data, **kwargs):
 
 
 def getOrInsertDefault(inDict, arg, default):
-    # get an arg from a dict.
-    # If the the dict doesn't contain the arg, return the default, 
-    # and also insert the default into the dict
+    """
+    Get an arg from a dict.
+
+    If the the dict doesn't contain the arg, return the default.
+    Also insert the default into the dict
+    """
     value = inDict.get(arg, default)
     if value == default:
         inDict[arg] = default
@@ -259,7 +260,7 @@ def samplesToImu(inDict, **kwargs):
         3: - (negative) Gyro Y      4: Gyro X      5: Gyro Z
         6: Temperature
         7: - (negative) Mag Y       8: Mag X       9: Mag Z
-    
+
     For the IMU on STEFI, (which is: ICM-20948):
     gyro full scale is +/-2000 degrees per second,
     accelerometer full scale is +/-2 g.
@@ -277,7 +278,7 @@ def samplesToImu(inDict, **kwargs):
     tsAll = inDict['ts']
     sensorAll = inDict['sensor'].astype(np.int16)
     valueAll = inDict['value']
-    wrapIds = np.where((sensorAll[1:]-sensorAll[:-1])<1)[0]
+    wrapIds = np.where((sensorAll[1:]-sensorAll[:-1]) < 1)[0]
     numImu = len(wrapIds) + 1
     tsOut = np.zeros((numImu), dtype=np.float64)
     acc = np.zeros((numImu, 3), dtype=np.int16)
@@ -289,7 +290,7 @@ def samplesToImu(inDict, **kwargs):
     for ts, sensor, value in zip(tsAll, sensorAll, valueAll):
         if sensor <= sensorPrev:
             imuPtr += 1
-            tsOut[imuPtr] = ts # Just take the first ts for a group of samples
+            tsOut[imuPtr] = ts  # Just take the first ts for a group of samples
         sensorPrev = sensor
         if sensor == 0:
             acc[imuPtr, 1] = -value
@@ -309,7 +310,7 @@ def samplesToImu(inDict, **kwargs):
             mag[imuPtr, 1] = -value
         elif sensor == 8:
             mag[imuPtr, 0] = value
-        elif sensor== 9:
+        elif sensor == 9:
             mag[imuPtr, 2] = value
     acc = acc.astype(np.float64) / accConversionFactor
     angV = angV.astype(np.float64) / angVConversionFactor
@@ -327,12 +328,12 @@ def samplesToImu(inDict, **kwargs):
 
 '''
 Similarly to imu data, skin samples are delivered in batches with each of the
-192 taxels sampled once in a repeating pattern, each with its own timestamp. 
+192 taxels sampled once in a repeating pattern, each with its own timestamp.
 Group these together into mult-dimensional samples each with a single timestamp.
 We use the observation that groups start with taxel 213 to simplify this.
 TODO: Use a more robust method of identifying groups.
 We reject any data that doesn't form a complete group.
-taxelOrder is included so that the ordered samples can later be mapped to their respective addresses. 
+taxelOrder is included so that the ordered samples can later be mapped to their respective addresses.
 '''
 def groupSkinSamples(inDict):
     wrapIds = np.where((inDict['taxel'] == 213))[0]
@@ -343,10 +344,11 @@ def groupSkinSamples(inDict):
             'pressure': pressure,
             'taxelOrder': taxelOrder}
 
+
 '''
 For a batch of events for a given dataType, and the container of all events for
 that dataType so far, add the batch to the container.
-The first batch for each data type gets used as the model to which all further 
+The first batch for each data type gets used as the model to which all further
 batches get added.
 A container is a dict of numpy arrays. As these arrays need to be expanded to
 fit the new data, they are doubled in size. This limits to O(log(n)) the
@@ -390,6 +392,7 @@ def cropArraysToNumEvents(inDict):
         inDict[fieldName] = inDict[fieldName][:numEvents]
     return inDict
 
+
 '''
     Zero timestamps.
     Split by channel: The iit yarp format assumes that the channel bit
@@ -432,27 +435,28 @@ def globalPostProcessing(inDict, **kwargs):
     outDict['info']['fileFormat'] = 'iityarp'
     return outDict
 
+
 '''
-Having imported data from the either a datadumper log or a bin file, 
+Having imported data from the either a datadumper log or a bin file,
 carry out common post-processing steps:
-    eliminate dict keys which have no data
-    IMU special handling: convert samples to IMU (because up to 10 consecutive
-                                        samples define single imu read-out)
-    Unwrap timestamps and convert to seconds
-    Then there is a call to global post processing for splitting by channel
-    timestamp zeroing and formation as a top-level container.
+    1) Eliminate dict keys which have no data
+    2) IMU special handling: convert samples to IMU (because up to 10 consecu-
+       tive samples define single imu read-out)
+    3) Unwrap timestamps and convert to seconds
+    4) Call to global post processing for splitting by channel, timestamp zero-
+       ing and formation as a top-level container.
 '''
 def importPostProcessing(inDict, **kwargs):
-    dataTypes = list(inDict.keys()) # List out the datatypes before this loop
-                                    # because the loop changes the dict
+    dataTypes = list(inDict.keys())  # List out the datatypes before this loop
+                                     # because the loop changes the dict
     for dataType in dataTypes:
         # Eliminate dataTypes which didn't have any events
         if inDict[dataType] is None:
             del inDict[dataType]
         else:
-        # Iron out any time-wraps which occurred
+            # Iron out any time-wraps which occurred and convert to seconds
             inDict[dataType]['ts'] = unwrapTimestamps(inDict[dataType]['ts'],
-                                    **kwargs) * 0.00000008 # Convert to seconds
+                                                      **kwargs) * 0.00000008
             # Special handling for imu data
             if dataType == 'imuSamples':
                 if kwargs.get('convertSamplesToImu', True):
@@ -470,12 +474,12 @@ def importIitYarpBinaryDataLog(**kwargs):
     importFromByte = kwargs.get('importFromByte', 0)
     importMaxBytes = kwargs.get('importMaxBytes')
     if importMaxBytes is not None:
-        importMaxBytes -= np.mod(importMaxBytes, 8) # Events are 8 bytes long
+        importMaxBytes -= np.mod(importMaxBytes, 8)  # Events are 8 bytes long
     with open(kwargs['filePathOrName'], 'rb') as file:
         file.seek(importFromByte)
         if importMaxBytes is not None:
             events = file.read(importMaxBytes)
-            #TODO: check if importMaxBytes is "feasible" (not beyond the file size)?
+            # TODO: check if importMaxBytes is "feasible" (not beyond the file size)?
         else:
             events = file.read()
         events = np.frombuffer(events, np.uint32)
@@ -484,9 +488,10 @@ def importIitYarpBinaryDataLog(**kwargs):
         if file.read(1) is None:
             kwargs['importedToByte'] = 'EOF'
         else:
-            kwargs['importedToByte'] = file.tell() - 2 
+            kwargs['importedToByte'] = file.tell() - 2
             # - 2 compensates for the small read-ahead just performed to test EOF
     return importPostProcessing(outDict, **kwargs)
+
 
 '''
 Some files from the 'Old MTB' (As of 2020_12 mounted on iCub) where skin is dumped
@@ -500,7 +505,7 @@ def importIitRawSkinSamples(**kwargs):
         importToByte += importFromByte
     with open(kwargs['filePathOrName'], 'r') as file:
         file.seek(importFromByte)
-        importedToByte = 'EOF' # default if the following loop exits normally
+        importedToByte = 'EOF'  # default if the following loop exits normally
         line = file.readline()
         currentPointer = 0
         skinSamples = None
@@ -518,15 +523,15 @@ def importIitRawSkinSamples(**kwargs):
                 assert numSamples == 192
                 ts = float(numbers[1])
                 samples = np.array(numbers[2:], dtype=np.float64)[np.newaxis, :]
-                newSample = {'ts': np.ones((1), dtype = np.float64) * ts,
+                newSample = {'ts': np.ones((1), dtype=np.float64) * ts,
                              'pressure': samples}
                 skinSamples = appendBatch(skinSamples, newSample)
-            except ValueError: # sometimes finding malformed packets at the end of files - ignoring
+            except ValueError:  # sometimes finding malformed packets at the end of files - ignoring
                 print('Failed to interpret a line')
                 line = file.readline()
                 continue
             line = file.readline()
-    skinSamples['ts'] = unwrapTimestamps(skinSamples['ts']) # will this ork on float values?
+    skinSamples['ts'] = unwrapTimestamps(skinSamples['ts'])  # will this ork on float values?
     outDict = {'skinSamples': cropArraysToNumEvents(skinSamples)}
     kwargs['importedToByte'] = importedToByte
     return globalPostProcessing(outDict, **kwargs)
@@ -536,7 +541,7 @@ def importIitYarpDataLog(**kwargs):
     # Check if format suggests data from vicon dumper
     patternForVicon = re.compile('(\d+) (\d+\.\d+) \((.*)\)')
     with open(kwargs['filePathOrName'], 'r') as inFile:
-        content = inFile.readline() # Look at first line of file
+        content = inFile.readline()  # Look at first line of file
     if patternForVicon.findall(content):
         print('Yarp vicon dumper pattern found - passing this file to importVicon function')
         return importIitVicon(**kwargs)
@@ -548,7 +553,7 @@ def importIitYarpDataLog(**kwargs):
     dvs = None
     dvsLbl = None
     dvsFlow = None
-    imuSamples = None # Imu Sample is an intermediate datatype - later it gets converted to IMU etc
+    imuSamples = None  # Imu Sample is an intermediate datatype - later it gets converted to IMU etc
     skinEvents = None
     skinSamples = None
     ear = None
@@ -560,7 +565,7 @@ def importIitYarpDataLog(**kwargs):
         importToByte += importFromByte
     with open(kwargs['filePathOrName'], 'r') as file:
         file.seek(importFromByte)
-        importedToByte = 'EOF' # default if the following loop exits normally
+        importedToByte = 'EOF'  # default if the following loop exits normally
         line = file.readline()
         currentPointer = 0
         while line:
@@ -572,8 +577,8 @@ def importIitYarpDataLog(**kwargs):
                     currentPointer = file.tell()
             found = pattern.match(line)
             # The following values would be useful for indexing the input file:
-            #bottlenumber = np.uint32(found[1])
-            #timestamp = np.float64(found[2])
+            # bottlenumber = np.uint32(found[1])
+            # timestamp = np.float64(found[2])
             bottleType = found[3]
             if bottleType not in ['AE', 'IMUS', 'LAE', 'FLOW', 'EAR', 'SKS', 'SKE']:
                 print('Unknown bottle type: ' + bottleType)
@@ -583,7 +588,7 @@ def importIitYarpDataLog(**kwargs):
                 events = np.array(found[4].split(' '), dtype=np.uint32)
                 '''
                 The following block handles unusual bottle format for labelled
-                events and flow events, which all end up being treated as 
+                events and flow events, which all end up being treated as
                 'dvs' type events. In those cases there are extra words in
                 the bottle for each event.
                 '''
@@ -611,10 +616,10 @@ def importIitYarpDataLog(**kwargs):
                     numEventsInBatch = int(len(events) / 4)
                     events = events.reshape(numEventsInBatch, 4)
                     outDict = decodeEvents(events, **kwargs)
-                    skinSampleBatch = outDict.pop('skinEvents') # pop these so they don't get treated as skin events, below
+                    skinSampleBatch = outDict.pop('skinEvents')  # pop these so they don't get treated as skin events, below
                     skinSampleBatch['value'] = np.mod(events[:, 3], 2**16)
                     skinSamples = appendBatch(skinSamples, skinSampleBatch)
-                else: # bottleType in ['AE', 'IMUS', 'SKE', 'EAR', 'APS']
+                else:  # bottleType in ['AE', 'IMUS', 'SKE', 'EAR', 'APS']
                     numEventsInBatch = int(len(events) / 2)
                     events = events.reshape(numEventsInBatch, 2)
                     outDict = decodeEvents(events[:, :2], **kwargs)
@@ -624,7 +629,7 @@ def importIitYarpDataLog(**kwargs):
                     ear = appendBatch(ear, outDict['ear'])
                     skinEvents = appendBatch(skinEvents, outDict['skinEvents'])
                     aps = appendBatch(aps, outDict['aps'])
-            except ValueError: # sometimes finding malformed packets at the end of files - ignoring
+            except ValueError:  # sometimes finding malformed packets at the end of files - ignoring
                 line = file.readline()
                 continue
             line = file.readline()
@@ -633,8 +638,8 @@ def importIitYarpDataLog(**kwargs):
     outDict = {
         'dvs': cropArraysToNumEvents(dvs),
         'dvsLbl': cropArraysToNumEvents(dvsLbl),
-        'flow': cropArraysToNumEvents(dvsFlow), # TODO: 'flow' is a poor name, considering we also have dense flow maps
-        'imuSamples': cropArraysToNumEvents(imuSamples), # Imu Sample is an intermediate datatype - later it gets converted to IMU etc
+        'flow': cropArraysToNumEvents(dvsFlow),  # TODO: 'flow' is a poor name, considering we also have dense flow maps
+        'imuSamples': cropArraysToNumEvents(imuSamples),  # Imu Sample is an intermediate datatype - later it gets converted to IMU etc
         'skinEvents': cropArraysToNumEvents(skinEvents),
         'skinSamples': cropArraysToNumEvents(skinSamples),
         'ear': cropArraysToNumEvents(ear),
@@ -660,11 +665,11 @@ def importIitYarpInfoLog(**kwargs):
 
 def importIitYarpRecursive(**kwargs):
     '''
-    This function works in the following way for efficiency when importing 
+    This function works in the following way for efficiency when importing
     very large files:
     - Import events bottle by bottle
-    - Create arrays to hold the first 1024 values then extend the array size 
-    exponentially while importing, finally cropping these arrays. 
+    - Create arrays to hold the first 1024 values then extend the array size
+    exponentially while importing, finally cropping these arrays.
     kwargs is augmented where necessary and becomes the "info" dict of the output.
     '''
     path = getOrInsertDefault(kwargs, 'filePathOrName', '.')
@@ -703,4 +708,3 @@ def importIitYarp(**kwargs):
     if len(importedDicts) == 1:
         importedDicts = importedDicts[0]
     return importedDicts
-
