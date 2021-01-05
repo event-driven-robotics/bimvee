@@ -18,8 +18,8 @@ You should have received a copy of the GNU General Public License along with
 this program. If not, see <https://www.gnu.org/licenses/>.
 
 Intended as part of bimvee (Batch Import, Manipulation, Visualisation and Export of Events etc)
-importIitYarp opens a data.log file, initially assumed to contain 24-bit encoded data from ATIS.
-Returns a list of dicts, where each dict contains
+`importIitYarp` opens a `data.log` file, initially assumed to contain 24-bit encoded data from ATIS.
+Returns a list of dicts, where each dict contains:
 {'info': {},
  'data': {
          channel0: {} (usually the 'left' channel)
@@ -36,20 +36,20 @@ Each channel is a dict containing:
     For imu:
         - "ts": numpy array of float - seconds
 
-    Can also handle LAE (labelled event) bottles, FLOW (dvs optical flow events),
-        IMU, SKE (skin), EAR, SKS (skin samples)
+    Can also handle LAE (labelled events), FLOW (dvs optical flow events),
+    IMU (imu samples), SKE (skin events), EAR (auditory events), SKS (skin samples)
 
 This function combines the import of several distinctly different cases:
-    1) output directly from zynqGrabber, with all events together
+    1) Output directly from zynqGrabber, with all events together.
         May combine samples and events in the same bottles and never contains
-        explicit IMU / LAE / FLOW events. samples such as IMU are contained
+        explicit IMU / LAE / FLOW events. Samples such as IMU are contained
         within AE type bottles.
-    2) split and processed events from vPreProcess or other downstream modules
+    2) Split and processed events from vPreProcess or other downstream modules.
         The latter usually has distinct bottles for each datatype, and channels
         have probably, but not definitely, been split into left and right.
-    3) output from binary event dumper.
-    4) data from vicon
-    5) Skin samples which have not been properly formatted as bottles
+    3) Output from binary event dumper.
+    4) Data from Vicon.
+    5) Skin samples which have not been properly formatted as bottles.
 
 TODO: import frames - yarp has 2 ways of encoding - as bottles or,
 recommended, by saving e.g. pngs to a folder - support the latter
@@ -57,13 +57,12 @@ recommended, by saving e.g. pngs to a folder - support the latter
 There are 2 dvs codecs: 20-bit and 24-bit. 24-bit is assumed unless kwarg
 "codec" = "20bit" is received
 
-This document gives more principled and complete info for event decoding
-specifically from iCub:
+This document gives more principled and complete info for event decoding specifically from iCub:
 https://github.com/event-driven-robotics/ed-skin/blob/master/docs/technotes/TN001-Peripherals-to-HPU-Data-Encoding_rev1.pdf
 
 """
 
-#%%
+# %%
 
 import re
 import numpy as np
@@ -76,8 +75,10 @@ from .split import selectByLabel
 
 
 def decodeEvents(data, **kwargs):
-    '''
-    timestamps(ts) are 32 bit integers counted with an 80 ns clock - do this conversion later
+    """
+    Decode the binary patterns in `data` to the corresponding event type.
+
+    Timestamps (ts) are 32 bit integers counted with an 80 ns clock - do this conversion later.
     There is then a 32 bit data payload.
     The following patterns mark the different data types (MSB left - LSB right):
         0000 0XXX XXXX XXXX: dvs
@@ -85,7 +86,7 @@ def decodeEvents(data, **kwargs):
         0001 0XXX XXXX XXXX: skin
         0010 0XXX XXXX XXXX: imu
         0100 0XXX XXXX XXXX: ear
-    DVS events are encoded as 32 bits with x,y,channel(ch)(c) and polarity(pol)(p)
+    DVS events are encoded as 32 bits with x, y, channel (ch)(c) and polarity (pol)(p)
     in two possible configuration as shown below:
         0000 0000 000c 00yy yyyy yyxx xxxx xxxp ("20-bit codec" - this codec is now deprecated but useful to load old datasets)
         0000 0000 0crr yyyy yyyy rrxx xxxx xxxp ("24 bit codec")
@@ -122,7 +123,7 @@ def decodeEvents(data, **kwargs):
         ITD neurons id    (n: from 0 to 15)
         sensor ID         (s: fixed to b'100')
         channel           (c: 0 -> left; 1 -> right)
-    '''
+    """
     dvsBool = np.logical_not(data[:, 1] & 0xFF800000)
     apsBool = np.bool_(data[:, 1] & 0x00800000)
     skinBool = np.bool_(data[:, 1] & 0x01000000)
@@ -239,10 +240,10 @@ def decodeEvents(data, **kwargs):
 
 def getOrInsertDefault(inDict, arg, default):
     """
-    Get an arg from a dict.
+    Get the value specified by `arg` from the dictionary `inDict`.
 
-    If the the dict doesn't contain the arg, return the default.
-    Also insert the default into the dict
+    If `inDict` doesn't contain `arg`, return `default`.
+    Also insert `default` into `inDict`.
     """
     value = inDict.get(arg, default)
     if value == default:
@@ -251,22 +252,26 @@ def getOrInsertDefault(inDict, arg, default):
 
 
 def samplesToImu(inDict, **kwargs):
-    '''
-    Input is a dict containing ts, sensor, and value.
+    """
+    Group IMU samples together into multi-dimensional samples.
+
+    `inDict` is a dictionary containing `ts`, `sensor`, and `value`.
     Assume these are IMU samples, and compile them (up to) 10 at a time.
-    Output is ts, acc, angV, temp and mag
-    'Sensor' is defined as:
+
+    `outDict` is a dictionary containing `ts`, `acc`, `angV`, `temp` and `mag`.
+
+    The `sensor` key is defined as:
         0: - (negative) Accel Y     1: Accel X     2: Accel Z
         3: - (negative) Gyro Y      4: Gyro X      5: Gyro Z
         6: Temperature
         7: - (negative) Mag Y       8: Mag X       9: Mag Z
 
     For the IMU on STEFI, (which is: ICM-20948):
-    gyro full scale is +/-2000 degrees per second,
-    accelerometer full scale is +/-2 g.
-    temp - 333.87 - but does it zero at 0K or at room temperature? (+21deg)
-    mag - full scale is +/- 4900 uT
-    '''
+        - gyro full scale is +/-2000 degrees per second
+        - accelerometer full scale is +/-2 g
+        - temp - 333.87 but does it zero at 0K or at room temperature? (+21deg)
+        - mag full scale is +/- 4900 uT
+    """
     accConversionFactor = kwargs.get('accConversionFactor', (32768 / 2) / 9.80665)
     angVConversionFactor = kwargs.get('angVConversionFactor', (32768 / 250) * (180 / np.pi))
     tempConversionFactor = kwargs.get('tempConversionFactor', 333.87)
@@ -326,16 +331,23 @@ def samplesToImu(inDict, **kwargs):
     return outDict
 
 
-'''
-Similarly to imu data, skin samples are delivered in batches with each of the
-192 taxels sampled once in a repeating pattern, each with its own timestamp.
-Group these together into mult-dimensional samples each with a single timestamp.
-We use the observation that groups start with taxel 213 to simplify this.
-TODO: Use a more robust method of identifying groups.
-We reject any data that doesn't form a complete group.
-taxelOrder is included so that the ordered samples can later be mapped to their respective addresses.
-'''
 def groupSkinSamples(inDict):
+    """
+    Group skin samples together into multi-dimensional samples.
+
+    Similarly to imu data, skin samples are delivered in batches with each of
+    the 192 taxels sampled once in a repeating pattern, each with its own time-
+    stamp. Group these together into multi-dimensional samples each with a sin-
+    gle timestamp. We use the observation that groups start with taxel 213 to
+    simplify this.
+
+    TODO: Use a more robust method of identifying groups.
+
+    Note: We reject any data that doesn't form a complete group!
+
+    The output dictionary includes a key `taxelOrder` so that the ordered sam-
+    ples can later be mapped to their respective addresses.
+    """
     wrapIds = np.where((inDict['taxel'] == 213))[0]
     pressure = inDict['value'][wrapIds[0]:wrapIds[-1]].reshape(-1, 192)
     taxelOrder = inDict['taxel'][wrapIds[0]:wrapIds[1]]
@@ -345,18 +357,22 @@ def groupSkinSamples(inDict):
             'taxelOrder': taxelOrder}
 
 
-'''
-For a batch of events for a given dataType, and the container of all events for
-that dataType so far, add the batch to the container.
-The first batch for each data type gets used as the model to which all further
-batches get added.
-A container is a dict of numpy arrays. As these arrays need to be expanded to
-fit the new data, they are doubled in size. This limits to O(log(n)) the
-number of times we need to resize the arrays and it limits to nx4 the amount of
-memory used. An alternative would be to build lists and then convert to numpy
-at the end.
-'''
 def appendBatch(mainDict, batch):
+    """
+    Append `batch` of events to the dictionary `mainDict`.
+
+    For a batch of events for a given `dataType`, and the container of all
+    events for that `dataType` so far, add the batch to the container.
+
+    The first batch for each data type gets used as the model to which all
+    further batches get added.
+
+    A container is a dict of numpy arrays. As these arrays need to be expanded
+    to fit the new data, they are doubled in size. This limits to O(log(n)) the
+    number of times we need to resize the arrays and it limits to nx4 the amount
+    of memory used. An alternative would be to build lists and then convert to
+    numpy at the end.
+    """
     if batch is None:
         return mainDict
     numEventsBatch = len(batch['ts'])
@@ -385,6 +401,7 @@ def appendBatch(mainDict, batch):
 
 
 def cropArraysToNumEvents(inDict):
+    """Crop each array of `inDict` up to the number of events in `inDict`."""
     if inDict is None:
         return None
     numEvents = inDict.pop('numEvents')
@@ -393,12 +410,17 @@ def cropArraysToNumEvents(inDict):
     return inDict
 
 
-'''
-    Zero timestamps.
-    Split by channel: The iit yarp format assumes that the channel bit
-    corresponds to 'left' and 'right' sensors, so it's handled explicitly here
-'''
 def globalPostProcessing(inDict, **kwargs):
+    """
+    Carry out global post-processing steps on the imported dictionary `inDict`.
+
+    Main steps:
+        1) Zero timestamps.
+        2) Split by channel - The iit yarp format assumes that the channel bit
+           corresponds to `left` and `right` sensors, so it's handled explici-
+           tly here.
+        3) Construct output dictionary.
+    """
     # zero time by default (keeping the offset)
     if getOrInsertDefault(kwargs, 'zeroTimestamps', True):
         zeroTimestampsForAChannel(inDict)
@@ -436,19 +458,24 @@ def globalPostProcessing(inDict, **kwargs):
     return outDict
 
 
-'''
-Having imported data from the either a datadumper log or a bin file,
-carry out common post-processing steps:
-    1) Eliminate dict keys which have no data
-    2) IMU special handling: convert samples to IMU (because up to 10 consecu-
-       tive samples define single imu read-out)
-    3) Unwrap timestamps and convert to seconds
-    4) Call to global post processing for splitting by channel, timestamp zero-
-       ing and formation as a top-level container.
-'''
 def importPostProcessing(inDict, **kwargs):
-    dataTypes = list(inDict.keys())  # List out the datatypes before this loop
-                                     # because the loop changes the dict
+    """
+    Carry out post-processing steps on the imported dictionary `inDict`.
+
+    These are common steps for data imported both from `data.log` and from bin-
+    ary file.
+
+    Main steps:
+        1) Eliminate dict keys which have no data
+        2) Unwrap timestamps and convert to seconds
+        3) IMU data special handling - convert samples to IMU (because up to 10
+           consecutive samples define single imu read-out)
+        4) Skin data special handling - ...
+        5) Call to global post processing for splitting by channel, timestamp
+           zeroing and formation as a top-level container.
+    """
+    # List out the datatypes here because the for loop changes the dict
+    dataTypes = list(inDict.keys())
     for dataType in dataTypes:
         # Eliminate dataTypes which didn't have any events
         if inDict[dataType] is None:
@@ -464,13 +491,14 @@ def importPostProcessing(inDict, **kwargs):
                 else:
                     inDict['sample'] = inDict.pop('imuSamples')
                     # TODO: The name "sample" is too vague
-            # Special handling for imu data
+            # Special handling for skin data
             if dataType == 'skinSamples':
                 inDict['skinSamples'] = groupSkinSamples(inDict['skinSamples'])
     return globalPostProcessing(inDict, **kwargs)
 
 
 def importIitYarpBinaryDataLog(**kwargs):
+    """Import data in IIT Yarp format from a binary file."""
     importFromByte = kwargs.get('importFromByte', 0)
     importMaxBytes = kwargs.get('importMaxBytes')
     if importMaxBytes is not None:
@@ -493,12 +521,14 @@ def importIitYarpBinaryDataLog(**kwargs):
     return importPostProcessing(outDict, **kwargs)
 
 
-'''
-Some files from the 'Old MTB' (As of 2020_12 mounted on iCub) where skin is dumped
-it creates a quite different bottle format :
-    bottleNumber(int - actually alway -1) ts(float already in seconds) sample1(float) sample2(float) ...
-'''
 def importIitRawSkinSamples(**kwargs):
+    """
+    Import raw skin samples expressed in IIT Yarp format.
+
+    Some files from the 'Old MTB' (As of 2020_12 mounted on iCub) where skin is
+    dumped it creates a quite different bottle format:
+        bottleNumber(int - actually alway -1) ts(float already in seconds) sample1(float) sample2(float) ...
+    """
     importFromByte = kwargs.get('importFromByte', 0)
     importToByte = kwargs.get('importMaxBytes')
     if importToByte is not None:
@@ -538,6 +568,7 @@ def importIitRawSkinSamples(**kwargs):
 
 
 def importIitYarpDataLog(**kwargs):
+    """Import data in IIT Yarp format from a `data.log` file."""
     # Check if format suggests data from vicon dumper
     patternForVicon = re.compile('(\d+) (\d+\.\d+) \((.*)\)')
     with open(kwargs['filePathOrName'], 'r') as inFile:
@@ -649,8 +680,13 @@ def importIitYarpDataLog(**kwargs):
     return importPostProcessing(outDict, **kwargs)
 
 
-# From the info.log we want the time that the channel connected; we assume this is the first decimal found
 def importIitYarpInfoLog(**kwargs):
+    """
+    Import `info.log` from data collected in IIT Yarp format.
+
+    From the `info.log` we want the time that the channel connected; we assume
+    this is the first decimal found.
+    """
     # Read file
     filePathOrName = kwargs.get('filePathOrName')
     print('Examining info.log: ' + filePathOrName)
@@ -664,14 +700,18 @@ def importIitYarpInfoLog(**kwargs):
 
 
 def importIitYarpRecursive(**kwargs):
-    '''
-    This function works in the following way for efficiency when importing
-    very large files:
+    """
+    Import data in IIT Yarp format in a recursive manner.
+
+    This function works in the following way for efficiency when importing very
+    large files:
     - Import events bottle by bottle
     - Create arrays to hold the first 1024 values then extend the array size
-    exponentially while importing, finally cropping these arrays.
-    kwargs is augmented where necessary and becomes the "info" dict of the output.
-    '''
+      exponentially while importing, finally cropping these arrays.
+
+    Note: `kwargs` is augmented where necessary and becomes the "info" dict of
+    the output.
+    """
     path = getOrInsertDefault(kwargs, 'filePathOrName', '.')
     print('importIitYarp trying path: ' + path)
     if not os.path.exists(path):
@@ -700,6 +740,7 @@ def importIitYarpRecursive(**kwargs):
 
 
 def importIitYarp(**kwargs):
+    """Import data in IIT Yarp format."""
     importedDicts = importIitYarpRecursive(**kwargs)
     if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
         # Optional: start the timestamps at zero for the first event
