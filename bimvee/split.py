@@ -362,7 +362,7 @@ def mergeDataTypeDicts(listOfDicts, **kwargs):
         if inDict is None:
             problemMsg = 'List of dataType dicts contained "None"'
             if kwargs.get('strict', True):
-                raise valueError(problemMsg)
+                raise ValueError(problemMsg)
             else:
                 print(problemMsg)
                 continue
