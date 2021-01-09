@@ -57,9 +57,9 @@ recommended, by saving e.g. pngs to a folder - support the latter
 There are 2 dvs codecs: 20-bit and 24-bit. 24-bit is assumed unless kwarg
 "codec" = "20bit" is received
 
-This document gives more principled and complete info for event decoding specifically from iCub:
-https://github.com/event-driven-robotics/ed-skin/blob/master/docs/technotes/TN001-Peripherals-to-HPU-Data-Encoding_rev1.pdf
-
+More information about event decoding are available in the event-driven reposi-
+tory on GitHub:
+    https://github.com/robotology/event-driven/blob/master/documentation/eventcodecs.md
 """
 
 # %%
