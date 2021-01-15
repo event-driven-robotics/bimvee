@@ -37,6 +37,7 @@ cropSpace works from optional min/max|X/Y/Z parameters;
 #%%
 import numpy as np
 from itertools import compress
+from math import fabs
 
 # local imports
 from .timestamps import rezeroTimestampsForImportedDicts
@@ -303,7 +304,8 @@ def cropTemporal(inDict, **kwargs):
 # adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
 def find_nearest(array, value):
     idx = np.searchsorted(array, value) # side="left" param is the default
-    if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
+    if idx > 0 and (idx == len(array) or
+                    fabs(value - array[idx-1]) < fabs(value - array[idx])):
         return idx-1
     else:
         return idx
@@ -358,10 +360,11 @@ If not strict, then these problems are reported but the merge continues.
 '''
 def mergeDataTypeDicts(listOfDicts, **kwargs):
     outDict = {}
+    strict = kwargs.get('strict', True)
     for inDict in listOfDicts:
         if inDict is None:
             problemMsg = 'List of dataType dicts contained "None"'
-            if kwargs.get('strict', True):
+            if strict:
                 raise ValueError(problemMsg)
             else:
                 print(problemMsg)
@@ -379,8 +382,8 @@ def mergeDataTypeDicts(listOfDicts, **kwargs):
                 else: # assume singleton
                     if inDict[key] != outDict[key]:
                         problemMsg = 'Singleton keys found with contradictory values'
-                        if kwargs.get('strict', True):
-                            raise valueError(problemMsg)
+                        if strict:
+                            raise ValueError(problemMsg)
                         else:
                             print(problemMsg)
     return outDict
