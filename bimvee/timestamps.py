@@ -57,18 +57,41 @@ def getFirstTimestampForAChannel(channelDict):
             pass
     return firstTimestamp
 
-def zeroTimestampsForAChannel(channelDict, tsOffset=None):
+def zeroTimestampsForAChannelInSitu(channelDict, tsOffset=None):
     if tsOffset is None:
         tsOffset = -getFirstTimestampForAChannel(channelDict)
     for dtypeName in channelDict:
-        # Probably the common format is 'ts' for all dtypes, 
-        # but handle any exceptions here, example: if dtypeName == 'frame':
         try:
             channelDict[dtypeName]['ts'] = channelDict[dtypeName]['ts'] + tsOffset
             channelDict[dtypeName]['tsOffset'] = tsOffset
         except KeyError:
             # This dataType doesn't have a ts; no problem. 
             pass
+
+
+'''
+Old behaviour was in situ - the same dicts were altered;
+This is retained as default behaviour for now for backwards compatibility
+TODO: deprecate old behaviour
+'''
+def zeroTimestampsForAChannel(channelDict, tsOffset=None, inSitu=True):
+    if inSitu:
+        zeroTimestampsForAChannelInSitu(channelDict, tsOffset)
+        return 
+    if tsOffset is None:
+        tsOffset = -getFirstTimestampForAChannel(channelDict)
+    newChannelDict = {}
+    for dataTypeName in channelDict.keys():
+        newDataTypeDict = channelDict[dataTypeName].copy()
+        try:
+            newDataTypeDict['ts'] = newDataTypeDict['ts'] + tsOffset
+            newDataTypeDict['tsOffset'] = tsOffset
+        except KeyError:
+            # This dataType doesn't have a ts; no problem. 
+            pass
+        newChannelDict[dataTypeName] = newDataTypeDict
+    return newChannelDict
+
 
 ''' 
 This function receives a single importedDict from importing one file. 
