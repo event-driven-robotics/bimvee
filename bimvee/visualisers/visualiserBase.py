@@ -38,14 +38,25 @@ Nothing stops the calling function from applying a color mask to an output in lu
 
 import numpy as np
 
-# Local imports
 
-# Importing child classes lets this one module be referenced for all imports
-from .visualisers.visualiserDvs import VisualiserDvs
-from .visualisers.visualiserFrame import VisualiserFrame
-from .visualisers.visualiserPoint3 import VisualiserPoint3
-from .visualisers.visualiserPose6q import VisualiserPose6q
-from .visualisers.visualiserBoundingBoxes import VisualiserBoundingBoxes
-from .visualisers.visualiserOpticFlow import VisualiserOpticFlow
-from .visualisers.visualiserImu import VisualiserImu
+class Visualiser:
+    
+    __data = None
+    data_type = None
+
+    def __init__(self, data):
+        self.set_data(data)
+
+    def set_data(self, data):
+        self.__data = {}
+        self.__data.update(data)
+        
+    def get_frame(self, time, timeWindow, **kwargs):
+        return np.zeros((1, 1), dtype=np.uint8)
+
+    def get_b_box(self, time, with_labels=True):
+        return [[0, 0, 0, 0]]
+
+    def get_colorfmt(self):
+        return 'luminance'
 

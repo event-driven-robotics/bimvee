@@ -23,29 +23,40 @@ Each subclass should implement basic methods: get_dims, get_frame, get_colorfmt
 Implementing set_data allows the visualiser to do some preparation for visualisation
 when it receives new data.
 
-In general get_frame takes two args: time, and time_window.
-In general one could think about representing data in an interpolated way or not.
-For example, with poses, imu etc, one could interpolate between samples, 
-or one could simply choose the sample which is nearest in time.
-Likewise for frames. 
-The time_window parameter says how much data to take around the sample point for event-type data.
-It might be possible to develop visualisations for other types of data that make use of the concept of a time window. 
-
-colorfmt is a choice between luminance and rgb. 
-If luminance, then the frame returned should have dim 2 = 3.
-Nothing stops the calling function from applying a color mask to an output in luminance format.      
+VisualiserBoundingBoxes doesn't actually create a visualisation but rather
+queries the data for the bounding boxes within the time window and passes
+these out for visualisation as an overlay.
 """
 
 import numpy as np
 
 # Local imports
+from .visualiserBase import Visualiser
 
-# Importing child classes lets this one module be referenced for all imports
-from .visualisers.visualiserDvs import VisualiserDvs
-from .visualisers.visualiserFrame import VisualiserFrame
-from .visualisers.visualiserPoint3 import VisualiserPoint3
-from .visualisers.visualiserPose6q import VisualiserPose6q
-from .visualisers.visualiserBoundingBoxes import VisualiserBoundingBoxes
-from .visualisers.visualiserOpticFlow import VisualiserOpticFlow
-from .visualisers.visualiserImu import VisualiserImu
 
+class VisualiserBoundingBoxes(Visualiser):
+
+    data_type = 'boundingBoxes'
+
+    def __init__(self, data):
+        self.set_data(data)
+
+    def set_data(self, data):
+        self.__data = {}
+        self.__data.update(data)
+
+    def get_frame(self, time, timeWindow, **kwargs):
+        if self.__data is None:
+            return [[0, 0, 0, 0]]
+        gt_bb = self.__data
+        box_index = np.searchsorted(gt_bb['ts'], time)
+        if box_index == gt_bb['ts'].shape[0] or abs(gt_bb['ts'][box_index] - time) > timeWindow:
+            return [[0, 0, 0, 0]]
+        indices = gt_bb['ts'] == gt_bb['ts'][box_index]
+        boxes = np.column_stack((gt_bb['minY'][indices], gt_bb['minX'][indices],
+                                 gt_bb['maxY'][indices], gt_bb['maxX'][indices])).astype(np.int)
+        if kwargs['with_labels'] and 'label' in gt_bb.keys():
+            labels = gt_bb['label'][indices].astype(np.int)
+            boxes = np.column_stack([boxes, labels])
+
+        return boxes

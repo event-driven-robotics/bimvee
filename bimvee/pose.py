@@ -616,6 +616,31 @@ def quatToMatSingle(quat, M=None):
     return M
 
 
+'''
+# following:
+#https://stackoverflow.com/questions/24197182/efficient-quaternion-angular-velocity
+def deltaRotationAsQuat(angV):
+    vectorOfHalfAngle = angV * 0.5
+    norm = np.linalg.norm(vectorOfHalfAngle) # magnitude
+    if (norm > 0):
+        norm *= np.sin(norm) / norm
+        return np.insert(vectorOfHalfAngle, 0, np.cos(norm))
+    else:
+        return np.insert(vectorOfHalfAngle, 0, 1)
+'''
+
+
+'''
+A treatment of instantaneous angular velocities from an imu for the purposes
+of visualisation
+def angularVelocityToRotMat(angV):
+    return linalg.expm(np.array(
+        [[0, -angV[2], angV[1]],
+         [angV[2], 0, -angV[0]],
+         [-angV[1], angV[0], 0]])
+'''
+
+
 def pose6qToMatSingle(pose6q):
     T = pose6q['point']
     quat = pose6q['rotation']
