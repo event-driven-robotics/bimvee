@@ -23,7 +23,17 @@ Each subclass should implement basic methods: get_dims, get_frame, get_colorfmt
 Implementing set_data allows the visualiser to do some preparation for visualisation
 when it receives new data.
 
-VisualiserImu is for visualising imu data.
+VisualiserImu is for visualising imu data. A single 'cursor' is plotted, with
+orthogonal unit lines pointing in x (red) y (green) and z (blue) directions.
+The position of the cursor w.r.t. the centre of the visualisation indicates
+linear acceleration; the orientation of the cursor indicates angular velocity.
+The gain of the orientation can be altered using the kwarg 'rotation_scale' -
+this interprets an input on a scale from 0 to 100 (default 50) as a multiplier
+exponentially distributed in the range 0.01 through 1 (default) to 100.
+The 'smoothing' kwarg (default = 0) increases the number of samples either side
+which are averaged to produce the sample visualised. The input, expected to be
+in the range 0 - 100, is interpretted as an exponentially distributed sample number
+reaching around 117 samples each side, i.e. 235 samples in total.
 """
 
 import numpy as np
