@@ -710,7 +710,6 @@ def quaternionProductArray(q1, q2):
     x(q1,0) * x(q2,3) + x(q1,1) * x(q2,2) - x(q1,2) * x(q2,1) + x(q1,3) * x(q2,0)
     ), axis=1)
 
-
 def quaternionConjugateSingle(q):
     return np.array([q[0], -q[1], -q[2], -q[3]])
 

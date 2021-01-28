@@ -93,6 +93,47 @@ def zeroTimestampsForAChannel(channelDict, tsOffset=None, inSitu=True):
     return newChannelDict
 
 
+'''
+This function is similar to rezeroTimestampsForAnImportedDict below,
+but doesn't assume the info/data level of the dict structure.
+Also it doesn't modify dicts in situ but rather creates new ones.
+'''
+def rezeroTimestampsForMultipleChannels(inDict):
+    # Find largest (i.e. least negative) offset
+    tsOffset = np.float64(-np.inf)
+    for channelName in inDict:
+        for dataType in inDict[channelName]:
+            tsOffset = max(
+                tsOffset,
+                inDict[channelName][dataType].get('tsOffset', -np.inf))
+    # Now we have the least negative tsOffset, iterate through all, reapplying it
+    outDict = {}
+    for channelName in inDict:
+        outDict[channelName] = {}
+        for dataType in inDict[channelName]:
+            outDict[channelName][dataType] = inDict[channelName][dataType].copy()
+            try:
+                tsOffsetCurrent = outDict[channelName][dataType].get('tsOffset', 0.0)
+                outDict[channelName][dataType]['ts'] = (
+                    outDict[channelName][dataType]['ts'] +
+                    tsOffset - tsOffsetCurrent)
+                outDict[channelName][dataType]['tsOffset'] = tsOffset
+            except KeyError:
+                # This dataType doesn't have a ts; no problem. 
+                pass
+    return outDict, tsOffset
+
+'''
+First zero timestamps for each channel individually, and then realign them all jointly
+'''
+def zeroTimestampsForMultipleChannels(inDict):
+    intermediateDict = {}
+    for channelName in inDict:
+        intermediateDict[channelName] = zeroTimestampsForAChannel(
+            inDict[channelName], inSitu=False)
+    return rezeroTimestampsForMultipleChannels(intermediateDict)
+
+    
 ''' 
 This function receives a single importedDict from importing one file. 
 It is focused on the problem of aligning data between multiple datatypes,
@@ -108,7 +149,9 @@ which says how much time was added to the 'ts' field.
 This function aligns these so that the first event across the file is at ts = 0.
 The tsOffset needed to achieve this is then added to the info branch of the dict
 as tsOffsetFromData.
-'''    
+TODO: Rebuild by calling rezeroTimestampsForMultipleChannels, above; this would
+also remove in-situ modification behaviour.
+'''
 def rezeroTimestampsForAnImportedDict(importedDict):
     # Find largest (i.e. least negative) offset
     tsOffset = np.float64(-np.inf)
