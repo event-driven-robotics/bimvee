@@ -39,6 +39,7 @@ time is linearly interpolated between the two nearest poses.
 
 import numpy as np
 import math
+import cv2
 
 # Local imports
 from ..geometry import quat2RotM, slerp
@@ -137,10 +138,10 @@ class VisualiserPose6q(Visualiser):
         if 'bodyId' in data:
             # split pose data by label, for ease of reference during rendering
             internalData['bodyId'] = data['bodyId']
-            self.__data = splitByLabel(internalData, 'bodyId', outList=True)
+            self.__data = splitByLabel(internalData, 'bodyId', outList=False)
             self.labels = np.unique(data['bodyId'])
         else:
-            self.__data = [internalData]
+            self.__data = {'': internalData}
             
     def project3dTo2d(self, x=0, y=0, z=0, **kwargs):
         smallestRenderDim = kwargs.get('smallestRenderDim', 1) 
@@ -158,7 +159,7 @@ class VisualiserPose6q(Visualiser):
 
     def project_pose(self, point, rotation, image, **kwargs):
         if point is None:
-            return image
+            return image, None
         # Unpack
         pointX = point[0]
         pointY = point[1]
@@ -188,7 +189,7 @@ class VisualiserPose6q(Visualiser):
             draw_line(image[:, :, 0], projX, projY, xVectorProjX, xVectorProjY)
             draw_line(image[:, :, 1], projX, projY, yVectorProjX, yVectorProjY)
             draw_line(image[:, :, 2], projX, projY, zVectorProjX, zVectorProjY)
-        return image
+        return image, (projX, projY)
     
     def get_frame(self, time, timeWindow, **kwargs):
         allData = self.__data
@@ -207,7 +208,8 @@ class VisualiserPose6q(Visualiser):
         chp = 20 # Cross Hair Proportion for following expression
         image[int(rY/2 - rY/chp): int(rY/2 + rY/chp), int(rX/2), :] = 128
         image[int(rY/2), int(rX/2 - rX/chp): int(rX/2 + rX/chp), :] = 128
-        for data in allData:
+        for dataKey in allData.keys():
+            data = allData[dataKey]
             # Note, for the following, this follows library function pose6qInterp, but is broken out here, because of slight behavioural differences.
             idxPre = np.searchsorted(data['ts'], time, side='right') - 1
             timePre = data['ts'][idxPre]
@@ -240,7 +242,17 @@ class VisualiserPose6q(Visualiser):
                     poseIdx = findNearest(data['ts'], time)
                     point = data['point'][poseIdx, :]
                     rotation = data['rotation'][poseIdx, :]
-            image = self.project_pose(point, rotation, image, **kwargs)
+            image, coords = self.project_pose(point, rotation, image, **kwargs)
+            if kwargs.get('label_multiple_bodies', True) and coords is not None:
+                cv2.putText(
+                     image, #numpy array on which text is written
+                     dataKey, #text
+                     coords, #position at which writing has to start
+                     cv2.FONT_HERSHEY_SIMPLEX, #font family
+                     0.2, #font size
+                     (255, 255, 255, 255), #font color
+                     1) #font stroke
+
         
         # Allow for arbitrary post-production on image with a callback
         # TODO: as this is boilerplate, it could be pushed into pie syntax ...
