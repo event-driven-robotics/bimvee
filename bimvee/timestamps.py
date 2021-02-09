@@ -299,14 +299,23 @@ Sort a dict containing ts according to ts, applying the new sort order to all
 the fields where axis 0 
 '''
 def sortDataTypeDictByTime(inDict):
-    ts = inDict['ts']
+    try:
+        ts = inDict['ts']
+    except KeyError:
+        return inDict
     ids = np.argsort(ts) 
     numEvents = ts.shape[0]
     outDict = {}
     for fieldName in inDict.keys():
         try:
-            assert len(inDict[fieldName]) == numEvents
-            outDict[fieldName] = inDict[fieldName][ids]
+            if isinstance(inDict[fieldName], list):
+                assert len(inDict[fieldName]) == numEvents
+                outDict[fieldName] = [inDict[fieldName][idx] for idx in ids]
+            elif isinstance(inDict[fieldName], np.ndarray):
+                assert len(inDict[fieldName]) == numEvents
+                outDict[fieldName] = inDict[fieldName][ids]
+            else:
+                outDict[fieldName] = inDict[fieldName]
         except (AssertionError, TypeError):
             outDict[fieldName] = inDict[fieldName]
     return outDict

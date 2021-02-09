@@ -40,7 +40,7 @@ from itertools import compress
 from math import fabs
 
 # local imports
-from .timestamps import rezeroTimestampsForImportedDicts
+from .timestamps import rezeroTimestampsForImportedDicts, sortDataTypeDictByTime
 
 # In selectByLabel, the field from which a value is selected already exists in the iDict
 def selectByLabel(inDict, labelName, labelValue):
@@ -386,6 +386,7 @@ def mergeDataTypeDicts(listOfDicts, **kwargs):
                             raise ValueError(problemMsg)
                         else:
                             print(problemMsg)
+    outDict = sortDataTypeDictByTime(outDict)
     return outDict
 #------------------------------------------------------------------------------
 def groupFlowTimeWindow(flowData, timeWindow):
