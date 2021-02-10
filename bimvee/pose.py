@@ -808,7 +808,7 @@ def averageOfQuaternions(allQ, w=None):
     # Sort by largest eigenvalue
     eigenVectors = eigenVectors[:,eigenValues.argsort()[::-1]]
     # return the real part of the largest eigenvector (has only real part)
-    return eigenVectors[:,0]
+    return np.real(eigenVectors[:,0])
 
 '''
 iitVicon can produce consecutive pose samples with same ts, point and rotation
