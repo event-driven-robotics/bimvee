@@ -119,14 +119,15 @@ def getEventImageForTimeRange(events, **kwargs):
     return getEventImage(events, **kwargs)
 
 
-# This function accepts a dict of events and returns an event-image
-# formed by collecting count number of events in the past/future from time ts
-# direction =
-# -1: look back in the past;
-# 0: look equally to past and future;
-# 1: look to the future
-
-def getEventImageByCount(events, **kwargs):
+'''
+This function accepts a dict of events and returns a new event dict
+formed by collecting count number of events in the past/future from time ts
+direction:
+  -1: look back in the past;
+  0: look equally to past and future;
+  1: look to the future
+'''
+def getEventsByCount(events, **kwargs):
     direction = kwargs.get('direction', -1)  # default direction is past
     ts = kwargs.get('ts', 0)
     count = kwargs.get('count', 0)
@@ -148,6 +149,19 @@ def getEventImageByCount(events, **kwargs):
         'x': events['x'][firstEventId : lastEventId + 1],
         'pol': events['pol'][firstEventId : lastEventId]
     }
+    return selectedEvents, startOrEndTime
+
+
+'''
+This function accepts a dict of events and returns an event-image
+formed by collecting count number of events in the past/future from time ts
+direction:
+  -1: look back in the past;
+  0: look equally to past and future;
+  1: look to the future
+'''
+def getEventImageByCount(events, **kwargs):
+    selectedEvents, startOrEndTime = getEventsByCount(events, **kwargs)
     return getEventImage(selectedEvents, **kwargs), startOrEndTime
 
 
