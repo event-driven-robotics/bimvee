@@ -41,6 +41,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import log10, floor
 
+from .split import selectByRange
+
 
 def roundToSf(x, sig=3):
     try:
@@ -89,12 +91,12 @@ def getEventImage(events, **kwargs):
         eventImagePos = np.histogram2d(events['y'][events['pol']], 
                                      events['x'][events['pol']], 
                                      bins=[dimY, dimX],
-                                     range=[[0, dimY-1], [0, dimX-1]]
+                                     range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
                                      )[0]
         eventImageNeg = np.histogram2d(events['y'][~events['pol']], 
                                      events['x'][~events['pol']],
                                      bins=[dimY, dimX],
-                                     range=[[0, dimY-1], [0, dimX-1]]
+                                     range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
                                      )[0]
         if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
             eventImage = eventImagePos - eventImageNeg
@@ -106,7 +108,7 @@ def getEventImage(events, **kwargs):
         eventImage = np.histogram2d(events['y'],
                                     events['x'],
                                     bins=[dimY, dimX],
-                                    range=[[0, dimY - 1], [0, dimX - 1]]
+                                    range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
                                     )[0]
     # Clip the values according to the contrast
     contrast = kwargs.get('contrast', 3)
@@ -144,11 +146,7 @@ def getEventsByCount(events, **kwargs):
         startOrEndTime = events['ts'][startOrEndEventId]
         firstEventId = min(seedEventId, startOrEndEventId)
         lastEventId = max(seedEventId, startOrEndEventId)
-    selectedEvents = {
-        'y': events['y'][firstEventId : lastEventId + 1],
-        'x': events['x'][firstEventId : lastEventId + 1],
-        'pol': events['pol'][firstEventId : lastEventId]
-    }
+    selectedEvents = selectByRange(events, firstEventId, lastEventId + 1)
     return selectedEvents, startOrEndTime
 
 
