@@ -108,7 +108,7 @@ def findDims(inDict):
     if 'dimX' not in inDict:
         outDict['dimX'] = np.max(inDict['x']) + 1
     if 'dimY' not in inDict:
-        outDict['dimX'] = np.max(inDict['x']) + 1
+        outDict['dimY'] = np.max(inDict['y']) + 1
     return outDict
 
 '''
