@@ -30,15 +30,15 @@ mean, where n is the 'threshold kwarg, with default value 3
 def removeHotPixels(inDict, **kwargs):
     # boilerplate to get down to dvs container
     if isinstance(inDict, list):
-        for inDictSingle in inDict:
-            removeHotPixels(inDictSingle, **kwargs)
-        return
+        return [removeHotPixels(inDictSingle, **kwargs)
+                for inDictSingle in inDict]
     if not isinstance(inDict, dict):
-        return
+        return inDict
     if 'ts' not in inDict:
+        outDict = {}
         for key in inDict.keys():
-            removeHotPixels(inDict[key], **kwargs)
-        return
+            outDict[key] = removeHotPixels(inDict[key], **kwargs)
+        return outDict
     # From this point onwards, it's a data-type container
     if 'pol' not in inDict:
         return
@@ -65,15 +65,15 @@ doing the filter and then merging again is quite a lot slower than this.
 def refractoryPeriod(inDict, refractoryPeriod=0.001, **kwargs):
     # boilerplate to get down to dvs container
     if isinstance(inDict, list):
-        for inDictSingle in inDict:
-            removeHotPixels(inDictSingle, **kwargs)
-        return
+        return [refractoryPeriod(inDictSingle, **kwargs)
+                for inDictSingle in inDict]
     if not isinstance(inDict, dict):
-        return
+        return inDict
     if 'ts' not in inDict:
+        outDict = {}
         for key in inDict.keys():
-            removeHotPixels(inDict[key], **kwargs)
-        return
+            outDict[key] = refractoryPeriod(inDict[key], **kwargs)
+        return outDict
     # From this point onwards, it's a data-type container
     if 'pol' not in inDict:
         return
