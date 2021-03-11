@@ -48,7 +48,7 @@ from tqdm import tqdm
 
 # TODO: This code is very inefficient for large numbers of events
 # better to iterate once for each pixel
-def plotSpikeogram(inDict, **kwargs):
+def plotSpikeogramDvs(inDict, **kwargs):
     # Boilerplate for descending container hierarchy
     if isinstance(inDict, list):
         for inDictInst in inDict:
@@ -234,3 +234,37 @@ def plotSpikeogramEar(inDict, **kwargs):
     callback = kwargs.get('callback')
     if callback is not None:
         callback(**kwargs)
+        
+#%% Genericised function
+        
+'''
+Input is a single dataType dict, with a 'ts' and an 'addr' field.
+If there is a 'pol' field then do the polarised plot
+'addr' is expected to be an integer.
+TODO: optionally, there can be an array of labels for the addresses - 
+we can use this to label spike data from any source.
+Following pyNavis, we use a scatterplot instead of plotting lines for each spike.
+
+'''
+
+def plotSpikeogram(inDict, **kwargs):
+    # TODO: could add boilerplate to descent through dict hierarchy
+    # Here we a ssume a single datatype dict
+    axes = kwargs.get('axes')
+    if axes is None:
+        fig, axes = plt.subplots()
+        kwargs['axes'] = axes # This line only relevant for callback
+    if 'pol' in inDict:
+        on = inDict['pol']
+        if np.any(on):
+            ff = inDict['ts'][on]
+            gg = inDict['addr'][on].astype(np.float64)
+            axes.scatter(ff, gg, color='b')
+        off = ~on
+        if np.any(off):
+            axes.scatter(inDict['ts'][off], inDict['addr'][off].astype(np.float64), color='r')
+    else:
+        axes.scatter(inDict['ts'], inDict['addr'])
+    return axes
+
+

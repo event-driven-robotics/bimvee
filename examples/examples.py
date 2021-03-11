@@ -16,15 +16,11 @@ This script contains a set of examples of how to use the functions of the bimvee
 In each case, change the file paths as required to point toyour own example data.
 """
 
-#%% Preliminaries - set your paths as necessary
+#%% Preliminaries - set your paths as necessary, or change working directory
 
 import os, sys # A system-specific prefix, for working between linux and windows
 prefix = 'C:/' if os.name == 'nt' else '/home/sbamford/'
-    
-sys.path.append(os.path.join(prefix, 'repos/event-driven-python-dev/python/libraries/bimvee')) # A path to this library
-#sys.path.insert(0, os.path.join(prefix, 'repos/event-driven-python-dev/python/libraries/bimvee')) # A path to this library
-
-#%% IMPORT FUNCTIONS
+sys.path.insert(0, os.path.join(prefix, 'repos/bimvee'))
 
 #%% Import from yarp
 
