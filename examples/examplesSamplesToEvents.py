@@ -110,5 +110,5 @@ axes = plotSpikeogram(outDict)
 import matplotlib.pyplot as plt
 
 axes.plot(ts, taxelData)
-                
-                          
+
+

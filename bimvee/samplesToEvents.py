@@ -95,6 +95,7 @@ def samplesToEvents(inDict, **kwargs):
         last_val = values[0]
         ON_spikes = []
         OFF_spikes = []
+        values = values.astype(np.float64) # TODO: consider if this is necessary
         delta_input = np.diff(values)
         dt = np.diff(ts)
         m = delta_input/dt
