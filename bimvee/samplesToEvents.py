@@ -232,8 +232,6 @@ def samplesToEvents(inDict, **kwargs):
                         first_event_sample = True
         # Now we have lists of ON and OFF times - convert to a single sorted
         #dataType dict, including a 'pol' field
-        if not ON_spikes:
-            x = 1
         ON_spikes = np.array(ON_spikes, dtype = np.float64)
         onDict = {'ts': ON_spikes,
                   'pol': np.ones_like(ON_spikes, dtype=np.bool)

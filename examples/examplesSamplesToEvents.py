@@ -96,7 +96,7 @@ inDict = {'ts': ts,
           'value': taxelData}
 outDict = samplesToEvents(inDict,
                           refractoryPeriod = 0.01,
-                          threshold = 5.)
+                          threshold = 5000.)
 
 if 'addr' not in outDict:
     outDict['addr'] = np.zeros_like(outDict['ts'], dtype=np.int32)
