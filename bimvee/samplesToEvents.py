@@ -34,12 +34,13 @@ If instead relative thresholding is desired, then for the most general treatment
 the samples should be converted to the log domain prior to calling this function.
 TODO: this could be internalised.
 
-For each sensor, the following treatment is performed.
+For each sensor, the following treatment should be performed.
 Sample the first value. Move forward, applying any drift, until a threshold
 crossing is found, taking into consideration any drift value.
 Commit an event of the appropriate type at the appropriate linearly interpolated
 time. Then move forward by the refractory period, before resampling the signal
 at that moment. Repeat.
+TODO: drift not yet implemented.
 
 TODO: ...
     drift and refractory periods may be randomised by sensor.
@@ -49,7 +50,7 @@ TODO: ...
 Note: The code is somewhat inefficient in that it doesn't make use of array
 operations across multiple sensors. On the other hand, it's probably a better
 starting point for a Cuda implementation, providing only that we are genuinely
-converting data in batch (not live, one data-frame at a time).
+converting data in batch.
 '''
 """
 
