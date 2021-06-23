@@ -137,6 +137,22 @@ def importAe(**kwargs):
     fileFormat = kwargs.get('fileFormat').lower()
     if fileFormat in ['iityarp', 'yarp', 'iit', 'log', 'yarplog']: 
         importedData = importIitYarp(**kwargs)
+        if "ground_truth.csv" in os.listdir(kwargs.get('filePathOrName')):
+            import numpy as np
+            import csv
+            with open(os.path.join(kwargs.get('filePathOrName'), 'ground_truth.csv'), 'r') as f:
+                gt_reader = csv.reader(f)
+                gt = []
+                for line in gt_reader:
+                    gt.append(line)
+            gt = np.array(gt).astype(int)
+            timestamps = (gt[:, -1]) / 1000
+            importedData['data']['right']['boundingBoxes'] = {}
+            importedData['data']['right']['boundingBoxes']['ts'] = timestamps
+            importedData['data']['right']['boundingBoxes']['minY'] = gt[:, 1]
+            importedData['data']['right']['boundingBoxes']['minX'] = gt[:, 0]
+            importedData['data']['right']['boundingBoxes']['maxY'] = gt[:, 3]
+            importedData['data']['right']['boundingBoxes']['maxX'] = gt[:, 2]
     elif fileFormat in ['rpgdvsros', 'rosbag', 'rpg', 'ros', 'bag', 'rpgdvs']:
         importedData = importRpgDvsRos(**kwargs)
     elif fileFormat in ['iitnpy', 'npy', 'numpy']:
