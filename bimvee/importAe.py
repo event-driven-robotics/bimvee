@@ -146,13 +146,16 @@ def importAe(**kwargs):
                 for line in gt_reader:
                     gt.append(line)
             gt = np.array(gt).astype(int)
-            timestamps = (gt[:, -1]) / 1000
+            timestamps = (gt[:, -2]) / 1000
+            argsort = np.argsort(timestamps)
+            gt = gt[argsort]
             importedData['data']['right']['boundingBoxes'] = {}
-            importedData['data']['right']['boundingBoxes']['ts'] = timestamps
+            importedData['data']['right']['boundingBoxes']['ts'] = timestamps[argsort]
             importedData['data']['right']['boundingBoxes']['minY'] = gt[:, 1]
             importedData['data']['right']['boundingBoxes']['minX'] = gt[:, 0]
             importedData['data']['right']['boundingBoxes']['maxY'] = gt[:, 3]
             importedData['data']['right']['boundingBoxes']['maxX'] = gt[:, 2]
+            importedData['data']['right']['boundingBoxes']['label'] = gt[:, -1]
     elif fileFormat in ['rpgdvsros', 'rosbag', 'rpg', 'ros', 'bag', 'rpgdvs']:
         importedData = importRpgDvsRos(**kwargs)
     elif fileFormat in ['iitnpy', 'npy', 'numpy']:
