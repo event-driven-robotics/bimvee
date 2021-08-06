@@ -380,6 +380,41 @@ def exportSample(dataFile, data, bottleNumber, **kwargs):
         ptr = nextPtr
         bottleNumber += 1
     dataFile.write('\n'.join(bottleStrs))
+    
+    
+def encodeSkeleton(inData, **kwargs):
+    data = np.array([], dtype = np.uint32)
+    for i in range(len(inData['ts'])):
+        for key in inData:
+            if(key != 'ts'):
+                data = np.append(data, inData[key][i].astype(np.uint32))
+ 
+    data = data.flatten().tolist()
+    data = list(map(str, data))
+    return data
+
+def exportSkeleton(dataFile, data, bottleNumber, **kwargs):
+    # preconvert numpy arrays into bottle-ready data
+    print('Converting skeleton arrays to bottle-ready string format ...')
+    eventsAsListOfStrings = encodeSkeleton(data, **kwargs)
+    print('Breaking into bottles by time')
+    # Output skeleton data bottle by bottle.
+    minTimeStepPerBottle = kwargs.get('minTimeStepPerBottle', 2e-3)
+    numEvents = len(data['ts'])
+    ptr = 0
+    pbar = tqdm(total=numEvents, position=0, leave=True)
+    bottleStrs = []
+    while ptr < numEvents:
+        firstTs = data['ts'][ptr]
+        nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
+        pbar.update(nextPtr-ptr)
+        bottleStrs.append(str(bottleNumber) + ' ' +
+                        '{0:.6f}'.format(firstTs) + ' SKLT (' +
+                        ' '.join(eventsAsListOfStrings[ptr*13*2 : nextPtr*13*2]) + ')')
+        ptr = nextPtr
+        bottleNumber += 1
+    dataFile.write('\n'.join(bottleStrs))
+    
 
 def exportIitYarp(importedDict, **kwargs):
     exportFilePath = kwargs.get('exportFilePath', './')
@@ -406,7 +441,7 @@ def exportIitYarp(importedDict, **kwargs):
         dataTypes = importedDict['data'][channelName].keys()
         for dataType in dataTypes:
             if dataTypesToExport is None or dataType in dataTypesToExport: # , 'pose6', 'imu'
-                if dataType not in ['dvs', 'frame', 'imu', 'sample']:
+                if dataType not in ['dvs', 'frame', 'imu', 'sample', 'skeleton']:
                     print('unknown datatype')
                     continue # Exclude unknown datatypes
                 channelNameAndDataType = channelName + dataType # This is used as a new channel name
@@ -465,6 +500,11 @@ def exportIitYarp(importedDict, **kwargs):
                             exportSample(dataFile, data, bottleNumberStart, **kwargs)
                         else:
                             exportSample(dataFile, data, 0, **kwargs)
+                    elif dataType == 'skeleton':
+                        if writeMode == 'a':
+                            exportSkeleton(dataFile, data, bottleNumberStart, **kwargs)
+                        else:
+                            exportSkeleton(dataFile, data, 0, **kwargs)
             else:
                 print("datatype: ", dataType, " not handled yet")
     if kwargs.get('viewerApp', True):
