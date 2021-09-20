@@ -156,10 +156,12 @@ def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     # 0000 0000 tcrr yyyy yyyy rrxx xxxx xxxp    (r = reserved)
     # t = 0 to indicate events
     # Ignoring channel though
-    zeroedts = ts - ts[0]
-    zeroedts = zeroedts / 0.00000008
-    zeroedts = zeroedts.astype(np.uint32) # Timestamp wrapping occurs here
-    zeroedts = np.expand_dims(zeroedts, 1)
+    if (kwargs.get('zeroTimestamps', True)):
+        zeroedts = ts - ts[0]
+        ts = zeroedts
+    ts = ts / 0.00000008
+    ts = ts.astype(np.uint32) # Timestamp wrapping occurs here
+    ts = np.expand_dims(ts, 1)
     x = x.astype(np.uint32)
     y = y.astype(np.uint32)
     pol = (~pol).astype(np.uint32)
@@ -172,7 +174,7 @@ def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
         ch = ch.astype(np.uint32)
     ae = (ch << 22) + (y << 12) + (x << 1) + pol
     ae = np.expand_dims(ae, 1)
-    data = np.concatenate([zeroedts, ae], axis=1)
+    data = np.concatenate([ts, ae], axis=1)
     data = data.flatten().tolist()
     data = list(map(str, data))
     return data
