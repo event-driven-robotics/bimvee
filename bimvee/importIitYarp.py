@@ -67,6 +67,7 @@ tory on GitHub:
 import re
 import numpy as np
 import os
+import csv
 
 # Local imports
 from .importIitVicon import importIitVicon
@@ -723,6 +724,7 @@ def importIitYarpRecursive(**kwargs):
     files = sorted(os.listdir(path))
     importedDicts = []
     tsOffset = None
+    boundingBoxes = None
     for file in files:
         filePathOrName = os.path.join(path, file)
         kwargs['filePathOrName'] = filePathOrName
@@ -734,12 +736,37 @@ def importIitYarpRecursive(**kwargs):
             importedDicts.append(importIitYarpDataLog(**kwargs))
         if file == 'info.log':
             tsOffset = importIitYarpInfoLog(**kwargs)
+        if file == 'ground_truth.csv':
+            boundingBoxes = importBoundingBoxes(**kwargs)
     if len(importedDicts) == 0:
         print('    "data.log" file not found')
-    elif tsOffset is not None:
+        return importedDicts
+    if tsOffset is not None:
         importedDicts[-1]['info']['tsOffsetFromInfo'] = tsOffset
+    if boundingBoxes is not None:
+        if len(importedDicts) == 1:
+            keys = list(importedDicts[-1]['data'])
+            if len(keys) == 1:
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes'] = {}
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['ts'] = boundingBoxes[:, 4] / 1000
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['minY'] = boundingBoxes[:, 1]
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['minX'] = boundingBoxes[:, 0]
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['maxY'] = boundingBoxes[:, 3]
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['maxX'] = boundingBoxes[:, 2]
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['label'] = boundingBoxes[:, -1]
+            else:
+                # TODO If more than one channel is present we don't know which one to assign the ground truth
+                print(f'Found channels {keys}. Don\'t know which one to assign ground truth. Skipping.')
     return importedDicts
 
+def importBoundingBoxes(**kwargs):
+    with open(kwargs.get('filePathOrName'), 'r') as f:
+        gt_reader = csv.reader(f)
+        gt = []
+        for line in gt_reader:
+            gt.append(line)
+    gt = np.array(gt).astype(int)
+    return gt[np.argsort(gt[:, 4])]
 
 def importIitYarp(**kwargs):
     """Import data in IIT Yarp format."""
