@@ -46,7 +46,7 @@ class VisualiserBoundingBoxes(Visualiser):
         self.__data.update(data)
 
     def get_frame(self, time, timeWindow, **kwargs):
-        if self.__data is None:
+        if self.__data is None or not kwargs['show_bounding_boxes']:
             return [[0, 0, 0, 0]]
         gt_bb = self.__data
         box_index = np.searchsorted(gt_bb['ts'], time)
