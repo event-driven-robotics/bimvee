@@ -46,7 +46,7 @@ class VisualiserBoundingBoxes(Visualiser):
         self.__data.update(data)
 
     def get_frame(self, time, timeWindow, **kwargs):
-        if self.__data is None or not kwargs['show_bounding_boxes']:
+        if self.__data is None or not kwargs.get('show_bounding_boxes', True):
             return [[0, 0, 0, 0]]
         gt_bb = self.__data
         box_index = np.searchsorted(gt_bb['ts'], time)
@@ -55,7 +55,7 @@ class VisualiserBoundingBoxes(Visualiser):
         indices = gt_bb['ts'] == gt_bb['ts'][box_index]
         boxes = np.column_stack((gt_bb['minY'][indices], gt_bb['minX'][indices],
                                  gt_bb['maxY'][indices], gt_bb['maxX'][indices])).astype(np.int)
-        if kwargs['with_labels'] and 'label' in gt_bb.keys():
+        if kwargs.get('with_labels', True) and 'label' in gt_bb.keys():
             labels = gt_bb['label'][indices].astype(np.int)
             boxes = np.column_stack([boxes, labels])
 
