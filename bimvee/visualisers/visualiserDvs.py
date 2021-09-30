@@ -54,7 +54,7 @@ class VisualiserDvs(Visualiser):
         image = getEventImageForTimeRange(data, **kwargs)
         # Post processing to get image into uint8 with correct scale
         contrast = kwargs.get('contrast', 3)
-        if kwargs.get('polarised', (kwargs.get('polarized'), True)):
+        if kwargs.get('image_type') == 'polarized':
             image = ((image + contrast) / contrast / 2 * 255).astype(np.uint8)
         else:
             image = (image / contrast * 255).astype(np.uint8)
