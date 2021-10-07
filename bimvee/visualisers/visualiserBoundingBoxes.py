@@ -45,6 +45,9 @@ class VisualiserBoundingBoxes(Visualiser):
         self.__data = {}
         self.__data.update(data)
 
+    def get_data(self):
+        return self.__data
+
     def get_frame(self, time, timeWindow, **kwargs):
         if self.__data is None or not kwargs.get('show_bounding_boxes', True):
             return [[0, 0, 0, 0]]
