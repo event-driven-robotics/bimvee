@@ -35,7 +35,6 @@ from .visualiserBase import Visualiser
 
 
 class VisualiserBoundingBoxes(Visualiser):
-
     data_type = 'boundingBoxes'
 
     def __init__(self, data):
@@ -63,3 +62,12 @@ class VisualiserBoundingBoxes(Visualiser):
             boxes = np.column_stack([boxes, labels])
 
         return boxes
+
+    def get_settings(self):
+        settings = {'with_labels': {'type': 'boolean',
+                                    'default': True
+                                    },
+                    'show_bounding_boxes': {'type': 'boolean',
+                                            'default': True
+                                            }}
+        return settings
