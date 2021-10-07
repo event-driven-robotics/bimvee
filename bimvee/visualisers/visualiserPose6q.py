@@ -46,18 +46,20 @@ from ..geometry import quat2RotM, slerp
 from ..split import splitByLabel
 from .visualiserBase import Visualiser
 
+
 # A function intended to find the nearest timestamp
 # adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
 def findNearest(array, value):
-    idx = np.searchsorted(array, value) # side="left" param is the default
+    idx = np.searchsorted(array, value)  # side="left" param is the default
     if idx > 0 and ( \
-            idx == len(array) or \
-            math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
-        return idx-1
+                    idx == len(array) or \
+                    math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])):
+        return idx - 1
     else:
         return idx
 
-#%% Two helper functions for pose visualiser
+
+# %% Two helper functions for pose visualiser
 
 # adapted from https://stackoverflow.com/questions/50387606/python-draw-line-between-two-coordinates-in-a-matrix
 def draw_line(mat, x0, y0, x1, y1):
@@ -77,10 +79,11 @@ def draw_line(mat, x0, y0, x1, y1):
     x = np.arange(x0, x1 + 1)
     y = np.round(((y1 - y0) / (x1 - x0)) * (x - x0) + y0).astype(x.dtype)
     # Write intermediate coordinates
-    toKeep = np.logical_and(x >= 0, 
-                            np.logical_and(x<mat.shape[1], 
-                                           np.logical_and(y >= 0, y<mat.shape[0])))
+    toKeep = np.logical_and(x >= 0,
+                            np.logical_and(x < mat.shape[1],
+                                           np.logical_and(y >= 0, y < mat.shape[0])))
     mat[y[toKeep], x[toKeep]] = 255
+
 
 def rotateUnitVectors(rotM, unitLength=1.0):
     xVec = np.expand_dims(np.array([unitLength, 0, 0, 1]), axis=1)
@@ -91,8 +94,7 @@ def rotateUnitVectors(rotM, unitLength=1.0):
 
 
 class VisualiserPose6q(Visualiser):
-
-    renderX = 200 # TODO Hardcoded
+    renderX = 200  # TODO Hardcoded
     renderY = 200
     labels = None
     data_type = 'pose6q'
@@ -107,6 +109,7 @@ class VisualiserPose6q(Visualiser):
         y[-0.5:0.5]
         z[1:2]
     '''
+
     def set_data(self, data):
         # scale and offset point data so that it remains proportional 
         # but stays in the range 0-1 for all dimensions
@@ -122,7 +125,7 @@ class VisualiserPose6q(Visualiser):
         centreX = (minX + maxX) / 2
         centreY = (minY + maxY) / 2
         centreZ = (minZ + maxZ) / 2
-        largestDim = max(maxX-minX, maxY-minY, maxZ-minZ)
+        largestDim = max(maxX - minX, maxY - minY, maxZ - minZ)
         if largestDim == 0:
             largestDim = 1
 
@@ -142,9 +145,9 @@ class VisualiserPose6q(Visualiser):
             self.labels = np.unique(data['bodyId'])
         else:
             self.__data = {'': internalData}
-            
+
     def project3dTo2d(self, x=0, y=0, z=0, **kwargs):
-        smallestRenderDim = kwargs.get('smallestRenderDim', 1) 
+        smallestRenderDim = kwargs.get('smallestRenderDim', 1)
         windowFill = kwargs.get('windowFill', 0.9)
         if kwargs.get('perspective', True):
             # Move z out by 1, so that the data is between 1 and 2 distant in z
@@ -190,13 +193,13 @@ class VisualiserPose6q(Visualiser):
             draw_line(image[:, :, 1], projX, projY, yVectorProjX, yVectorProjY)
             draw_line(image[:, :, 2], projX, projY, zVectorProjX, zVectorProjY)
         return image, (projX, projY)
-    
+
     def get_frame(self, time, timeWindow, **kwargs):
         allData = self.__data
         if allData is None:
             print('Warning: data is not set')
-            return np.zeros((1, 1), dtype=np.uint8) # This should not happen
-        image = np.zeros((self.renderY, self.renderX, 3), dtype = np.uint8)
+            return np.zeros((1, 1), dtype=np.uint8)  # This should not happen
+        image = np.zeros((self.renderY, self.renderX, 3), dtype=np.uint8)
         # Put a grey box around the edge of the image
         image[0, :, :] = 128
         image[-1, :, :] = 128
@@ -205,9 +208,9 @@ class VisualiserPose6q(Visualiser):
         # Put a grey crosshair in the centre of the image
         rY = self.renderY
         rX = self.renderX
-        chp = 20 # Cross Hair Proportion for following expression
-        image[int(rY/2 - rY/chp): int(rY/2 + rY/chp), int(rX/2), :] = 128
-        image[int(rY/2), int(rX/2 - rX/chp): int(rX/2 + rX/chp), :] = 128
+        chp = 20  # Cross Hair Proportion for following expression
+        image[int(rY / 2 - rY / chp): int(rY / 2 + rY / chp), int(rX / 2), :] = 128
+        image[int(rY / 2), int(rX / 2 - rX / chp): int(rX / 2 + rX / chp), :] = 128
         for dataKey in allData.keys():
             data = allData[dataKey]
             # Note, for the following, this follows library function pose6qInterp, but is broken out here, because of slight behavioural differences.
@@ -218,7 +221,7 @@ class VisualiserPose6q(Visualiser):
                 # to interpolate 
                 point = data['point'][idxPre, :]
                 rotation = data['rotation'][idxPre, :]
-            elif idxPre < 0 or (idxPre >= len(data['ts'])-1):
+            elif idxPre < 0 or (idxPre >= len(data['ts']) - 1):
                 # In this edge-case of the time at the beginning or end, 
                 # don't show any pose
                 point = None
@@ -230,40 +233,47 @@ class VisualiserPose6q(Visualiser):
                     qPost = data['rotation'][idxPre + 1, :]
                     timeRel = (time - timePre) / (timePost - timePre)
                     rotation = slerp(qPre, qPost, timeRel)
-                    locPre = data['point'][idxPre, :] 
+                    locPre = data['point'][idxPre, :]
                     locPost = data['point'][idxPre + 1, :]
-                    point = locPre * (1-timeRel) + locPost * timeRel
+                    point = locPre * (1 - timeRel) + locPost * timeRel
                     timeDist = min(time - timePre, timePost - time)
                     if timeDist > timeWindow / 2:
                         # Warn the viewer that this interpolation is 
                         # based on data beyond the timeWindow
-                        image[:30,:30,0] = 255 # TODO: Hardcoded
-                else: # No interpolation, so just choose the sample which is nearest in time
+                        image[:30, :30, 0] = 255  # TODO: Hardcoded
+                else:  # No interpolation, so just choose the sample which is nearest in time
                     poseIdx = findNearest(data['ts'], time)
                     point = data['point'][poseIdx, :]
                     rotation = data['rotation'][poseIdx, :]
             image, coords = self.project_pose(point, rotation, image, **kwargs)
             if kwargs.get('label_multiple_bodies', True) and coords is not None:
                 cv2.putText(
-                     image, #numpy array on which text is written
-                     dataKey, #text
-                     coords, #position at which writing has to start
-                     cv2.FONT_HERSHEY_SIMPLEX, #font family
-                     0.2, #font size
-                     (255, 255, 255, 255), #font color
-                     1) #font stroke
+                    image,  # numpy array on which text is written
+                    dataKey,  # text
+                    coords,  # position at which writing has to start
+                    cv2.FONT_HERSHEY_SIMPLEX,  # font family
+                    0.2,  # font size
+                    (255, 255, 255, 255),  # font color
+                    1)  # font stroke
 
-        
         # Allow for arbitrary post-production on image with a callback
         # TODO: as this is boilerplate, it could be pushed into pie syntax ...
         if kwargs.get('callback', None) is not None:
             kwargs['image'] = image
             image = kwargs['callback'](**kwargs)
         return image
-    
-    def get_dims(self):        
+
+    def get_dims(self):
         return self.renderX, self.renderY
 
     def get_colorfmt(self):
         return 'rgb'
 
+    def get_settings(self):
+        settings = {'interpolate': {'type': 'boolean',
+                                    'default': True
+                                    },
+                    'perspective': {'type': 'boolean',
+                                    'default': True
+                                    }}
+        return settings

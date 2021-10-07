@@ -35,8 +35,8 @@ import numpy as np
 from ..plotDvsContrast import getEventImageForTimeRange
 from .visualiserBase import Visualiser
 
-class VisualiserDvs(Visualiser):
 
+class VisualiserDvs(Visualiser):
     data_type = 'dvs'
 
     def set_data(self, data):
@@ -47,8 +47,8 @@ class VisualiserDvs(Visualiser):
     # respects the time_window parameter 
     def get_frame(self, time, timeWindow, **kwargs):
         data = self.__data
-        kwargs['startTime'] = time - timeWindow/2
-        kwargs['stopTime'] = time + timeWindow/2
+        kwargs['startTime'] = time - timeWindow / 2
+        kwargs['stopTime'] = time + timeWindow / 2
         kwargs['dimX'] = data['dimX']
         kwargs['dimY'] = data['dimY']
         image = getEventImageForTimeRange(data, **kwargs)
@@ -68,16 +68,33 @@ class VisualiserDvs(Visualiser):
     def get_dims(self):
         try:
             data = self.__data
-        except AttributeError: # data hasn't been set yet
+        except AttributeError:  # data hasn't been set yet
             return 1, 1
         if 'dimX' in data:
-            x = data['dimX'] 
+            x = data['dimX']
         else:
             x = np.max(data['x']) + 1
             data['dimX'] = x
         if 'dimY' in data:
-            y = data['dimY'] 
+            y = data['dimY']
         else:
             y = np.max(data['y']) + 1
             data['dimY'] = y
         return x, y
+
+    def get_settings(self):
+        settings = {'image_type': {'type': 'value_list',
+                                   'default': 'binary',
+                                   'values': ['count', 'binary', 'not_polarized', 'time_image']
+                                   },
+                    'contrast': {'type': 'range',
+                                 'default': 3,
+                                 'min': 1,
+                                 'max': 20,
+                                 'step': 1
+                                 },
+                    'pol_to_show': {'type': 'value_list',
+                                    'default': 'Both',
+                                    'values': ['Pos', 'Neg', 'Both']
+                                    }}
+        return settings
