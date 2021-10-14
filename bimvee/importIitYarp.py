@@ -748,25 +748,20 @@ def importIitYarpRecursive(**kwargs):
             keys = list(importedDicts[-1]['data'])
             if len(keys) == 1:
                 importedDicts[-1]['data'][keys[0]]['boundingBoxes'] = {}
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['ts'] = boundingBoxes[:, 4] / 1000
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['ts'] = boundingBoxes[:, 0]
                 importedDicts[-1]['data'][keys[0]]['boundingBoxes']['minY'] = boundingBoxes[:, 1]
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['minX'] = boundingBoxes[:, 0]
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['minX'] = boundingBoxes[:, 2]
                 importedDicts[-1]['data'][keys[0]]['boundingBoxes']['maxY'] = boundingBoxes[:, 3]
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['maxX'] = boundingBoxes[:, 2]
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['label'] = boundingBoxes[:, -1]
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['maxX'] = boundingBoxes[:, 4]
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['label'] = boundingBoxes[:, 5]
             else:
                 # TODO If more than one channel is present we don't know which one to assign the ground truth
                 print(f'Found channels {keys}. Don\'t know which one to assign ground truth. Skipping.')
     return importedDicts
 
 def importBoundingBoxes(**kwargs):
-    with open(kwargs.get('filePathOrName'), 'r') as f:
-        gt_reader = csv.reader(f)
-        gt = []
-        for line in gt_reader:
-            gt.append(line)
-    gt = np.array(gt).astype(int)
-    return gt[np.argsort(gt[:, 4])]
+    gt = np.loadtxt(kwargs.get('filePathOrName'))
+    return gt[np.argsort(gt[:, 0])]
 
 def importIitYarp(**kwargs):
     """Import data in IIT Yarp format."""
