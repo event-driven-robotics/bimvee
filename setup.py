@@ -17,7 +17,7 @@ setup(
   description = 'Batch Import, Manipulation, Visualisation and Export of Events etc',
   long_description=long_description,
   long_description_content_type='text/markdown',
-  author = 'Event-driven Perception for Robotics group at Istituto Italiano di Tecnologia: Simeon Bamford, Suman Ghosh, Aiko Dinale, Massimiliano Iaconi, Ander Arriandiaga, etc',
+  author = 'Event-driven Perception for Robotics group at Istituto Italiano di Tecnologia: Simeon Bamford, Suman Ghosh, Aiko Dinale, Massimiliano Iacono, Ander Arriandiaga, etc',
   author_email = 'simbamford@gmail.com',
   url = 'https://github.com/event-driven-robotics/bimvee',
   download_url = 'https://github.com/event-driven-robotics/bimvee_pkg/archive/v1.0.tar.gz',
