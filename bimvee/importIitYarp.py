@@ -73,7 +73,7 @@ import csv
 from .importIitVicon import importIitVicon
 from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
 from .split import selectByLabel
-
+from bimvee.importBoundingBoxes import importBoundingBoxes
 
 def decodeEvents(data, **kwargs):
     """
@@ -747,21 +747,11 @@ def importIitYarpRecursive(**kwargs):
         if len(importedDicts) == 1:
             keys = list(importedDicts[-1]['data'])
             if len(keys) == 1:
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes'] = {}
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['ts'] = boundingBoxes[:, 0]
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['minY'] = boundingBoxes[:, 1]
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['minX'] = boundingBoxes[:, 2]
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['maxY'] = boundingBoxes[:, 3]
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['maxX'] = boundingBoxes[:, 4]
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes']['label'] = boundingBoxes[:, 5]
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes'] = boundingBoxes
             else:
                 # TODO If more than one channel is present we don't know which one to assign the ground truth
                 print(f'Found channels {keys}. Don\'t know which one to assign ground truth. Skipping.')
     return importedDicts
-
-def importBoundingBoxes(**kwargs):
-    gt = np.loadtxt(kwargs.get('filePathOrName'))
-    return gt[np.argsort(gt[:, 0])]
 
 def importIitYarp(**kwargs):
     """Import data in IIT Yarp format."""

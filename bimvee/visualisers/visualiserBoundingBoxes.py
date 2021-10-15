@@ -86,7 +86,7 @@ class VisualiserBoundingBoxes(Visualiser):
             if kwargs.get('with_labels', True) and 'label' in gt_bb.keys():
                 labels = gt_bb['label'][indices].astype(np.int)
                 boxes = np.column_stack([boxes, labels])
-
+        boxes = np.unique(boxes, axis=0)
         return boxes
 
     def get_settings(self):
