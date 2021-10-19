@@ -71,10 +71,10 @@ class VisualiserBoundingBoxes(Visualiser):
                 if i0 < 0 or i1 >= len(ts):
                     continue
 
-                minY_interp = minY[i0] + ((minY[i1] - minY[i0]) / abs(ts[i1] - ts[i0])) * time
-                minX_interp = minX[i0] + ((minX[i1] - minX[i0]) / abs(ts[i1] - ts[i0])) * time
-                maxY_interp = maxY[i0] + ((maxY[i1] - maxY[i0]) / abs(ts[i1] - ts[i0])) * time
-                maxX_interp = maxX[i0] + ((maxX[i1] - maxX[i0]) / abs(ts[i1] - ts[i0])) * time
+                minY_interp = minY[i0] + ((minY[i1] - minY[i0]) / abs(ts[i1] - ts[i0])) * (time - ts[i0])
+                minX_interp = minX[i0] + ((minX[i1] - minX[i0]) / abs(ts[i1] - ts[i0])) * (time - ts[i0])
+                maxY_interp = maxY[i0] + ((maxY[i1] - maxY[i0]) / abs(ts[i1] - ts[i0])) * (time - ts[i0])
+                maxX_interp = maxX[i0] + ((maxX[i1] - maxX[i0]) / abs(ts[i1] - ts[i0])) * (time - ts[i0])
                 if kwargs.get('with_labels', True) and 'label' in gt_bb.keys():
                     boxes.append((minY_interp, minX_interp, maxY_interp, maxX_interp, label))
                 else:
