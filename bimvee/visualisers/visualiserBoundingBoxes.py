@@ -68,8 +68,24 @@ class VisualiserBoundingBoxes(Visualiser):
 
                 i1 = np.searchsorted(ts, time)
                 i0 = i1 - 1
-                if i0 < 0 or i1 >= len(ts):
-                    continue
+                if i0 < 0:
+                    if abs(ts[0] - time) < timeWindow:
+                        if kwargs.get('with_labels', True) and 'label' in gt_bb.keys():
+                            boxes.append((minY[0], minX[0], maxY[0], maxX[0], label))
+                        else:
+                            boxes.append((minY[0], minX[0], maxY[0], maxX[0]))
+                        continue
+                    else:
+                        continue
+                if i1 >= len(ts):
+                    if abs(ts[-1] - time) < timeWindow:
+                        if kwargs.get('with_labels', True) and 'label' in gt_bb.keys():
+                            boxes.append((minY[-1], minX[-1], maxY[-1], maxX[-1], label))
+                        else:
+                            boxes.append((minY[-1], minX[-1], maxY[-1], maxX[-1]))
+                        continue
+                    else:
+                        continue
 
                 minY_interp = minY[i0] + ((minY[i1] - minY[i0]) / abs(ts[i1] - ts[i0])) * (time - ts[i0])
                 minX_interp = minX[i0] + ((minX[i1] - minX[i0]) / abs(ts[i1] - ts[i0])) * (time - ts[i0])
