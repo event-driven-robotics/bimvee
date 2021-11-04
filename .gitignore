@@ -3,3 +3,4 @@ dist
 bimvee.egg-info
 build
 /bimvee/.pylint.d/*.stats
+.idea/

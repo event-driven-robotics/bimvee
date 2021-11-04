@@ -75,7 +75,8 @@ def getEventsInTimeRange(events, **kwargs):
     return {
         'y': events['y'][ids],
         'x': events['x'][ids],
-        'pol': events['pol'][ids]
+        'pol': events['pol'][ids],
+        'ts': events['ts'][ids]
     }
 
 
@@ -87,7 +88,7 @@ def getEventImage(events, **kwargs):
     except ValueError:  # no defined dims and events arrays are empty
         dimX = 1
         dimY = 1
-    if kwargs.get('polarised', (kwargs.get('polarized'), True)):
+    if kwargs.get('image_type') == 'count':
         eventImagePos = np.histogram2d(events['y'][events['pol']], 
                                      events['x'][events['pol']], 
                                      bins=[dimY, dimX],
@@ -104,12 +105,25 @@ def getEventImage(events, **kwargs):
             eventImage = eventImagePos
         elif kwargs.get('pol_to_show') == 'Neg':
             eventImage = - eventImageNeg
-    else:
+    elif kwargs.get('image_type') == 'not_polarized':
         eventImage = np.histogram2d(events['y'],
                                     events['x'],
                                     bins=[dimY, dimX],
                                     range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
                                     )[0]
+    elif kwargs.get('image_type') == 'time_image':
+        eventImage = np.zeros((dimY, dimX))
+        eventImage[events['y'], events['x']] = (events['ts'] - events['ts'][0])
+        eventImage = eventImage / eventImage.max()
+    elif kwargs.get('image_type') == 'binary':
+        eventImage = np.zeros((dimY, dimX))
+        if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
+            eventImage[events['y'], events['x']] = (events['pol'].astype(int) * 2 - 1)
+        elif kwargs.get('pol_to_show') == 'Pos':
+            eventImage[events['y'][events['pol']], events['x'][events['pol']]] = 1
+        elif kwargs.get('pol_to_show') == 'Neg':
+            eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = -1
+
     # Clip the values according to the contrast
     contrast = kwargs.get('contrast', 3)
     eventImage = np.clip(eventImage, -contrast, contrast)
