@@ -37,6 +37,8 @@ from struct import unpack
 
 # Local imports
 from .timestamps import zeroTimestampsForADataType
+from bimvee.importBoundingBoxes import importBoundingBoxes
+import os
 
 def importDatHeaders(dat):
 
@@ -265,7 +267,9 @@ def importProph(**kwargs):
     }
     outDict['info'].update(file_info)
     print('Done.')
-
+    gt_file = os.path.join(os.path.dirname(filePathOrName), 'ground_truth.csv')
+    if os.path.exists(gt_file):
+        outDict['data']['ch0']['boundingBoxes'] = importBoundingBoxes(filePathOrName=gt_file)
     return outDict
 
 # Legacy name for importProph

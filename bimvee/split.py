@@ -75,6 +75,22 @@ def selectByBool(inDict, selectedEvents):
             outDict[fieldName] = inDict[fieldName]
     return outDict
 
+
+def selectByRange(inDict, firstIdx=0, lastIdx=None):
+    if lastIdx is None:
+        lastIdx = len(inDict['ts'])
+    outDict = {}
+    if firstIdx >= lastIdx:
+        return outDict
+    for fieldName in inDict.keys():
+        try:
+            assert len(inDict[fieldName]) == len(inDict['ts'])
+            outDict[fieldName] = inDict[fieldName][firstIdx:lastIdx]
+        except (AssertionError, TypeError): # TypeError for case that value has no len(); #AssertionError, in case it does but that len is not the same as the ts len.
+            outDict[fieldName] = inDict[fieldName]
+    return outDict
+
+
 # Choose a field and split the dict into dicts each of which contain a unique
 # value for that field
 # if param outList is true, return a list of dicts,otherwise return a dict

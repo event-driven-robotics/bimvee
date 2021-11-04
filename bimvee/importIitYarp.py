@@ -67,12 +67,13 @@ tory on GitHub:
 import re
 import numpy as np
 import os
+import csv
 
 # Local imports
 from .importIitVicon import importIitVicon
 from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
 from .split import selectByLabel
-
+from bimvee.importBoundingBoxes import importBoundingBoxes
 
 def decodeEvents(data, **kwargs):
     """
@@ -482,8 +483,10 @@ def importPostProcessing(inDict, **kwargs):
             del inDict[dataType]
         else:
             # Iron out any time-wraps which occurred and convert to seconds
+            isGen1 = (inDict[dataType]['x'] < 304).all() and (inDict[dataType]['y'] < 240).all()
+            clock_time = 0.00000008 if isGen1 else 0.000001
             inDict[dataType]['ts'] = unwrapTimestamps(inDict[dataType]['ts'],
-                                                      **kwargs) * 0.00000008
+                                                      **kwargs) * clock_time
             # Special handling for imu data
             if dataType == 'imuSamples':
                 if kwargs.get('convertSamplesToImu', True):
@@ -721,6 +724,7 @@ def importIitYarpRecursive(**kwargs):
     files = sorted(os.listdir(path))
     importedDicts = []
     tsOffset = None
+    boundingBoxes = None
     for file in files:
         filePathOrName = os.path.join(path, file)
         kwargs['filePathOrName'] = filePathOrName
@@ -732,12 +736,22 @@ def importIitYarpRecursive(**kwargs):
             importedDicts.append(importIitYarpDataLog(**kwargs))
         if file == 'info.log':
             tsOffset = importIitYarpInfoLog(**kwargs)
+        if file == 'ground_truth.csv':
+            boundingBoxes = importBoundingBoxes(**kwargs)
     if len(importedDicts) == 0:
         print('    "data.log" file not found')
-    elif tsOffset is not None:
+        return importedDicts
+    if tsOffset is not None:
         importedDicts[-1]['info']['tsOffsetFromInfo'] = tsOffset
+    if boundingBoxes is not None:
+        if len(importedDicts) == 1:
+            keys = list(importedDicts[-1]['data'])
+            if len(keys) == 1:
+                importedDicts[-1]['data'][keys[0]]['boundingBoxes'] = boundingBoxes
+            else:
+                # TODO If more than one channel is present we don't know which one to assign the ground truth
+                print(f'Found channels {keys}. Don\'t know which one to assign ground truth. Skipping.')
     return importedDicts
-
 
 def importIitYarp(**kwargs):
     """Import data in IIT Yarp format."""

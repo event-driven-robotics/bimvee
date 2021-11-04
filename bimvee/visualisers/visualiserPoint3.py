@@ -38,14 +38,12 @@ the viewer described above.
 
 import numpy as np
 
-
 # Local imports
 from .visualiserBase import Visualiser
 
 
 class VisualiserPoint3(Visualiser):
-
-    renderX = 300 # TODO Hardcoded
+    renderX = 300  # TODO Hardcoded
     renderY = 300
     labels = None
     data_type = 'point3'
@@ -60,6 +58,7 @@ class VisualiserPoint3(Visualiser):
         y[-0.5:0.5]
         z[1:2]
     '''
+
     def set_data(self, data):
         # scale and offset point data so that it remains proportional 
         # but stays in the range 0-1 for all dimensions
@@ -75,7 +74,7 @@ class VisualiserPoint3(Visualiser):
         centreX = (minX + maxX) / 2
         centreY = (minY + maxY) / 2
         centreZ = (minZ + maxZ) / 2
-        largestDim = max(maxX-minX, maxY-minY, maxZ-minZ)
+        largestDim = max(maxX - minX, maxY - minY, maxZ - minZ)
         if largestDim == 0:
             largestDim = 1
 
@@ -88,7 +87,7 @@ class VisualiserPoint3(Visualiser):
                         'point': pointScaled
                         }
         self.__data = internalData
-            
+
     def project3dTo2d(self, x=0, y=0, z=0, **kwargs):
         smallestRenderDim = kwargs.get('smallestRenderDim', 1)
         windowFill = kwargs.get('windowFill', 0.9)
@@ -111,20 +110,20 @@ class VisualiserPoint3(Visualiser):
         pointY = point[1]
         pointZ = point[2]
         # Project the location
-        projX, projY = self.project3dTo2d(x=pointX, y=pointY, z=pointZ, 
-            smallestRenderDim=self.smallestRenderDim, **kwargs)
+        projX, projY = self.project3dTo2d(x=pointX, y=pointY, z=pointZ,
+                                          smallestRenderDim=self.smallestRenderDim, **kwargs)
         try:
             image[projY, projX, :] = 255
-        except IndexError: # perspective or other projection issues cause out of bounds? ignore
+        except IndexError:  # perspective or other projection issues cause out of bounds? ignore
             pass
         return image
-    
+
     def get_frame(self, time, timeWindow, **kwargs):
         data = self.__data
         if data is None:
             print('Warning: data is not set')
-            return np.zeros((1, 1), dtype=np.uint8) # This should not happen
-        image = np.zeros((self.renderY, self.renderX, 3), dtype = np.uint8)
+            return np.zeros((1, 1), dtype=np.uint8)  # This should not happen
+        image = np.zeros((self.renderY, self.renderX, 3), dtype=np.uint8)
         # Put a grey box around the edge of the image
         image[0, :, :] = 128
         image[-1, :, :] = 128
@@ -133,9 +132,9 @@ class VisualiserPoint3(Visualiser):
         # Put a grey crosshair in the centre of the image
         rY = self.renderY
         rX = self.renderY
-        chp = 20 # Cross Hair Proportion for following expression
-        image[int(rY/2 - rY/chp): int(rY/2 + rY/chp), int(rX/2), :] = 128        
-        image[int(rY/2), int(rX/2 - rX/chp): int(rX/2 + rX/chp), :] = 128        
+        chp = 20  # Cross Hair Proportion for following expression
+        image[int(rY / 2 - rY / chp): int(rY / 2 + rY / chp), int(rX / 2), :] = 128
+        image[int(rY / 2), int(rX / 2 - rX / chp): int(rX / 2 + rX / chp), :] = 128
         firstIdx = np.searchsorted(data['ts'], time - timeWindow)
         lastIdx = np.searchsorted(data['ts'], time + timeWindow)
         points = data['point'][firstIdx:lastIdx, :]
@@ -149,27 +148,45 @@ class VisualiserPoint3(Visualiser):
         sinA = np.sin(roll)
         sinB = np.sin(yaw)
         sinC = np.sin(pitch)
-        rotMat = np.array([[cosA*cosB, cosA*sinB*sinC-sinA*cosC, cosA*sinB*cosC+sinA*sinC],
-                           [sinA*cosB, sinA*sinB*sinC+cosA*cosC, sinA*sinB*cosC-cosA*sinC],
-                           [-sinB, cosB*sinC, cosB*cosC]], 
-                            dtype=np.float64)
+        rotMat = np.array([[cosA * cosB, cosA * sinB * sinC - sinA * cosC, cosA * sinB * cosC + sinA * sinC],
+                           [sinA * cosB, sinA * sinB * sinC + cosA * cosC, sinA * sinB * cosC - cosA * sinC],
+                           [-sinB, cosB * sinC, cosB * cosC]],
+                          dtype=np.float64)
         points = points - 0.5
         points = np.matmul(rotMat, points.transpose()).transpose()
         points = points + 0.5
 
         for row in points:
-            image = self.point_to_image(row, image, **kwargs)                
-        
-        # Allow for arbitrary post-production on image with a callback
+            image = self.point_to_image(row, image, **kwargs)
+
+            # Allow for arbitrary post-production on image with a callback
         # TODO: as this is boilerplate, it could be pushed into pie syntax ...
         if kwargs.get('callback', None) is not None:
             kwargs['image'] = image
             image = kwargs['callback'](**kwargs)
         return image
-    
-    def get_dims(self):        
+
+    def get_dims(self):
         return self.renderX, self.renderY
 
     def get_colorfmt(self):
         return 'rgb'
 
+    def get_settings(self):
+        settings = {'perspective': {'type': 'boolean',
+                                    'default': True
+                                    },
+                    'yaw': {'type': 'range',
+                            'default': 0,
+                            'min': -90,
+                            'max': 90,
+                            'step': 1
+                            },
+                    'pitch': {'type': 'range',
+                              'default': 0,
+                              'min': -90,
+                              'max': 90,
+                              'step': 1
+                              }}
+
+        return settings

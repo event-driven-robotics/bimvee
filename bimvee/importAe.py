@@ -66,6 +66,7 @@ from .importAer2 import importAer2
 from .importFrames import importFrames
 from .timestamps import rezeroTimestampsForImportedDicts
 from .importHdf5 import importHdf5
+from .importProph import importProph
 
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.
@@ -117,8 +118,8 @@ def importAe(**kwargs):
         else:
             # Guess the file format based on file extension
             ext = os.path.splitext(filePathOrName)[1]
-            if ext == '.aedat' or ext == '.dat':
-                kwargs['fileFormat'] = 'aedat'
+            if ext == '.dat' or ext == '.raw':
+                kwargs['fileFormat'] = 'dat'
             elif ext == '.bag':
                 kwargs['fileFormat'] = 'rosbag'
             elif ext == '.bin':
@@ -129,19 +130,23 @@ def importAe(**kwargs):
                 kwargs['fileFormat'] = 'aer2'
             elif ext == '.hdf5':
                 kwargs['fileFormat'] = 'hdf5'
+            elif ext == '.log':
+                kwargs['fileFormat'] = 'iit'
             # etc ...
             else:
                 raise Exception("The file format cannot be determined.")
     # Let the fileformat parameter dictate the file or folder format
     fileFormat = kwargs.get('fileFormat').lower()
-    if fileFormat in ['iityarp', 'yarp', 'iit', 'log', 'yarplog']: 
+    if fileFormat in ['iityarp', 'yarp', 'iit', 'log', 'yarplog']:
+        if not os.path.isdir(kwargs['filePathOrName']):
+            kwargs['filePathOrName'] = os.path.dirname(kwargs['filePathOrName'])
         importedData = importIitYarp(**kwargs)
     elif fileFormat in ['rpgdvsros', 'rosbag', 'rpg', 'ros', 'bag', 'rpgdvs']:
         importedData = importRpgDvsRos(**kwargs)
     elif fileFormat in ['iitnpy', 'npy', 'numpy']:
         importedData = importIitNumpy(**kwargs)
-    #elif fileFormat in ['iniaedat', 'aedat', 'dat', 'jaer', 'caer', 'ini', 'inivation', 'inilabs']:
-    #    importedData = importIniAedat(kwargs)
+    elif fileFormat in ['dat', 'raw']:
+        importedData = importProph(**kwargs)
     elif fileFormat in ['secdvs', 'bin', 'samsung', 'sec', 'gen3']:
         importedData = importSecDvs(**kwargs)
     elif fileFormat in ['aer2']:

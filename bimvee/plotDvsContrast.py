@@ -41,6 +41,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import log10, floor
 
+from .split import selectByRange
+
 
 def roundToSf(x, sig=3):
     try:
@@ -73,7 +75,8 @@ def getEventsInTimeRange(events, **kwargs):
     return {
         'y': events['y'][ids],
         'x': events['x'][ids],
-        'pol': events['pol'][ids]
+        'pol': events['pol'][ids],
+        'ts': events['ts'][ids]
     }
 
 
@@ -85,16 +88,16 @@ def getEventImage(events, **kwargs):
     except ValueError:  # no defined dims and events arrays are empty
         dimX = 1
         dimY = 1
-    if kwargs.get('polarised', (kwargs.get('polarized'), True)):
+    if kwargs.get('image_type') == 'count':
         eventImagePos = np.histogram2d(events['y'][events['pol']], 
                                      events['x'][events['pol']], 
                                      bins=[dimY, dimX],
-                                     range=[[0, dimY-1], [0, dimX-1]]
+                                     range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
                                      )[0]
         eventImageNeg = np.histogram2d(events['y'][~events['pol']], 
                                      events['x'][~events['pol']],
                                      bins=[dimY, dimX],
-                                     range=[[0, dimY-1], [0, dimX-1]]
+                                     range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
                                      )[0]
         if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
             eventImage = eventImagePos - eventImageNeg
@@ -102,12 +105,25 @@ def getEventImage(events, **kwargs):
             eventImage = eventImagePos
         elif kwargs.get('pol_to_show') == 'Neg':
             eventImage = - eventImageNeg
-    else:
+    elif kwargs.get('image_type') == 'not_polarized':
         eventImage = np.histogram2d(events['y'],
                                     events['x'],
                                     bins=[dimY, dimX],
-                                    range=[[0, dimY - 1], [0, dimX - 1]]
+                                    range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
                                     )[0]
+    elif kwargs.get('image_type') == 'time_image':
+        eventImage = np.zeros((dimY, dimX))
+        eventImage[events['y'], events['x']] = (events['ts'] - events['ts'][0])
+        eventImage = eventImage / eventImage.max()
+    elif kwargs.get('image_type') == 'binary':
+        eventImage = np.zeros((dimY, dimX))
+        if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
+            eventImage[events['y'], events['x']] = (events['pol'].astype(int) * 2 - 1)
+        elif kwargs.get('pol_to_show') == 'Pos':
+            eventImage[events['y'][events['pol']], events['x'][events['pol']]] = 1
+        elif kwargs.get('pol_to_show') == 'Neg':
+            eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = -1
+
     # Clip the values according to the contrast
     contrast = kwargs.get('contrast', 3)
     eventImage = np.clip(eventImage, -contrast, contrast)
@@ -119,14 +135,15 @@ def getEventImageForTimeRange(events, **kwargs):
     return getEventImage(events, **kwargs)
 
 
-# This function accepts a dict of events and returns an event-image
-# formed by collecting count number of events in the past/future from time ts
-# direction =
-# -1: look back in the past;
-# 0: look equally to past and future;
-# 1: look to the future
-
-def getEventImageByCount(events, **kwargs):
+'''
+This function accepts a dict of events and returns a new event dict
+formed by collecting count number of events in the past/future from time ts
+direction:
+  -1: look back in the past;
+  0: look equally to past and future;
+  1: look to the future
+'''
+def getEventsByCount(events, **kwargs):
     direction = kwargs.get('direction', -1)  # default direction is past
     ts = kwargs.get('ts', 0)
     count = kwargs.get('count', 0)
@@ -143,11 +160,20 @@ def getEventImageByCount(events, **kwargs):
         startOrEndTime = events['ts'][startOrEndEventId]
         firstEventId = min(seedEventId, startOrEndEventId)
         lastEventId = max(seedEventId, startOrEndEventId)
-    selectedEvents = {
-        'y': events['y'][firstEventId : lastEventId + 1],
-        'x': events['x'][firstEventId : lastEventId + 1],
-        'pol': events['pol'][firstEventId : lastEventId]
-    }
+    selectedEvents = selectByRange(events, firstEventId, lastEventId + 1)
+    return selectedEvents, startOrEndTime
+
+
+'''
+This function accepts a dict of events and returns an event-image
+formed by collecting count number of events in the past/future from time ts
+direction:
+  -1: look back in the past;
+  0: look equally to past and future;
+  1: look to the future
+'''
+def getEventImageByCount(events, **kwargs):
+    selectedEvents, startOrEndTime = getEventsByCount(events, **kwargs)
     return getEventImage(selectedEvents, **kwargs), startOrEndTime
 
 
