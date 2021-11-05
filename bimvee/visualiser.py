@@ -48,4 +48,4 @@ from .visualisers.visualiserPose6q import VisualiserPose6q
 from .visualisers.visualiserBoundingBoxes import VisualiserBoundingBoxes
 from .visualisers.visualiserOpticFlow import VisualiserOpticFlow
 from .visualisers.visualiserImu import VisualiserImu
-from .visualisers.visualiserHPE import VisualiserHPE
+from .visualisers.visualiserSkeleton import VisualiserSkeleton

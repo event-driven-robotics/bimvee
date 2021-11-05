@@ -74,6 +74,7 @@ from .importIitVicon import importIitVicon
 from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
 from .split import selectByLabel
 from bimvee.importBoundingBoxes import importBoundingBoxes
+from bimvee.importSkeleton import importSkeleton
 
 def decodeEvents(data, **kwargs):
     """
@@ -483,7 +484,7 @@ def importPostProcessing(inDict, **kwargs):
             del inDict[dataType]
         else:
             # Iron out any time-wraps which occurred and convert to seconds
-            isGen1 = (inDict[dataType]['x'] < 304).all() and (inDict[dataType]['y'] < 240).all()
+            isGen1 = (inDict[dataType]['x'] < 346).all() and (inDict[dataType]['y'] < 260).all()
             clock_time = 0.00000008 if isGen1 else 0.000001
             inDict[dataType]['ts'] = unwrapTimestamps(inDict[dataType]['ts'],
                                                       **kwargs) * clock_time
@@ -725,6 +726,7 @@ def importIitYarpRecursive(**kwargs):
     importedDicts = []
     tsOffset = None
     boundingBoxes = None
+    skeleton = None
     for file in files:
         filePathOrName = os.path.join(path, file)
         kwargs['filePathOrName'] = filePathOrName
@@ -738,20 +740,29 @@ def importIitYarpRecursive(**kwargs):
             tsOffset = importIitYarpInfoLog(**kwargs)
         if file == 'ground_truth.csv':
             boundingBoxes = importBoundingBoxes(**kwargs)
+        if file == 'skeleton.pkl':
+            skeleton = importSkeleton(**kwargs)
     if len(importedDicts) == 0:
         print('    "data.log" file not found')
         return importedDicts
     if tsOffset is not None:
         importedDicts[-1]['info']['tsOffsetFromInfo'] = tsOffset
     if boundingBoxes is not None:
-        if len(importedDicts) == 1:
-            keys = list(importedDicts[-1]['data'])
-            if len(keys) == 1:
-                importedDicts[-1]['data'][keys[0]]['boundingBoxes'] = boundingBoxes
-            else:
-                # TODO If more than one channel is present we don't know which one to assign the ground truth
-                print(f'Found channels {keys}. Don\'t know which one to assign ground truth. Skipping.')
+        addGroundTruth(boundingBoxes, importedDicts, 'boundingBoxes')
+    if skeleton is not None:
+        addGroundTruth(skeleton, importedDicts, 'skeleton')
     return importedDicts
+
+
+def addGroundTruth(groundTruth, importedDicts, name):
+    if len(importedDicts) == 1:
+        keys = list(importedDicts[-1]['data'])
+        if len(keys) == 1:
+            importedDicts[-1]['data'][keys[0]][name] = groundTruth
+        else:
+            # TODO If more than one channel is present we don't know which one to assign the ground truth
+            print(f'Found channels {keys}. Don\'t know which one to assign ground truth. Skipping.')
+
 
 def importIitYarp(**kwargs):
     """Import data in IIT Yarp format."""
