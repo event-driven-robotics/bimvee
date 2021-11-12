@@ -740,7 +740,7 @@ def importIitYarpRecursive(**kwargs):
             tsOffset = importIitYarpInfoLog(**kwargs)
         if file == 'ground_truth.csv':
             boundingBoxes = importBoundingBoxes(**kwargs)
-        if file == 'skeleton.pkl':
+        if file == 'skeleton.json':
             skeleton = importSkeleton(**kwargs)
     if len(importedDicts) == 0:
         print('    "data.log" file not found')
