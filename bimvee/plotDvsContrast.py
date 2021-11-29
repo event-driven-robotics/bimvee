@@ -88,52 +88,56 @@ def getEventImage(events, **kwargs):
     except ValueError:  # no defined dims and events arrays are empty
         dimX = 1
         dimY = 1
-    if kwargs.get('image_type') == 'count':
-        eventImagePos = np.histogram2d(events['y'][events['pol']], 
-                                     events['x'][events['pol']], 
-                                     bins=[dimY, dimX],
-                                     range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
-                                     )[0]
-        eventImageNeg = np.histogram2d(events['y'][~events['pol']], 
-                                     events['x'][~events['pol']],
-                                     bins=[dimY, dimX],
-                                     range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
-                                     )[0]
-        if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
-            eventImage = eventImagePos - eventImageNeg
-        elif kwargs.get('pol_to_show') == 'Pos':
-            eventImage = eventImagePos
-        elif kwargs.get('pol_to_show') == 'Neg':
-            eventImage = - eventImageNeg
-    elif kwargs.get('image_type') == 'not_polarized':
-        eventImage = np.histogram2d(events['y'],
-                                    events['x'],
-                                    bins=[dimY, dimX],
-                                    range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
-                                    )[0]
-    elif kwargs.get('image_type') == 'time_image':
-        eventImage = np.zeros((dimY, dimX))
-        eventImage[events['y'], events['x']] = (events['ts'] - events['ts'][0])
-        eventImage = eventImage / eventImage.max()
-    elif kwargs.get('image_type') == 'binary':
-        eventImage = np.zeros((dimY, dimX))
-        if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
-            eventImage[events['y'], events['x']] = (events['pol'].astype(int) * 2 - 1)
-        elif kwargs.get('pol_to_show') == 'Pos':
-            eventImage[events['y'][events['pol']], events['x'][events['pol']]] = 1
-        elif kwargs.get('pol_to_show') == 'Neg':
-            eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = -1
-    elif kwargs.get('image_type') == 'coloured':
-        pos_colour = [255, 0, 0]
-        neg_colour = [0, 0, 255]
-        eventImage = np.full((dimY, dimX, 3), 255, dtype=np.uint8)
-        if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
-            eventImage[events['y'], events['x']] = [pos_colour if p else neg_colour for p in events['pol']]
-        elif kwargs.get('pol_to_show') == 'Pos':
-            eventImage[events['y'][events['pol']], events['x'][events['pol']]] = pos_colour
-        elif kwargs.get('pol_to_show') == 'Neg':
-            eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = neg_colour
-
+    try:
+        if kwargs.get('image_type') == 'count':
+            eventImagePos = np.histogram2d(events['y'][events['pol']],
+                                         events['x'][events['pol']],
+                                         bins=[dimY, dimX],
+                                         range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
+                                         )[0]
+            eventImageNeg = np.histogram2d(events['y'][~events['pol']],
+                                         events['x'][~events['pol']],
+                                         bins=[dimY, dimX],
+                                         range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
+                                         )[0]
+            if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
+                eventImage = eventImagePos - eventImageNeg
+            elif kwargs.get('pol_to_show') == 'Pos':
+                eventImage = eventImagePos
+            elif kwargs.get('pol_to_show') == 'Neg':
+                eventImage = - eventImageNeg
+        elif kwargs.get('image_type') == 'not_polarized':
+            eventImage = np.histogram2d(events['y'],
+                                        events['x'],
+                                        bins=[dimY, dimX],
+                                        range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
+                                        )[0]
+        elif kwargs.get('image_type') == 'time_image':
+            eventImage = np.zeros((dimY, dimX))
+            eventImage[events['y'], events['x']] = (events['ts'] - events['ts'][0])
+            eventImage = eventImage / eventImage.max()
+        elif kwargs.get('image_type') == 'binary':
+            eventImage = np.zeros((dimY, dimX))
+            if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
+                eventImage[events['y'], events['x']] = (events['pol'].astype(int) * 2 - 1)
+            elif kwargs.get('pol_to_show') == 'Pos':
+                eventImage[events['y'][events['pol']], events['x'][events['pol']]] = 1
+            elif kwargs.get('pol_to_show') == 'Neg':
+                eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = -1
+        elif kwargs.get('image_type') == 'coloured':
+            pos_colour = [255, 0, 0]
+            neg_colour = [0, 0, 255]
+            eventImage = np.full((dimY, dimX, 3), 255, dtype=np.uint8)
+            if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
+                eventImage[events['y'], events['x']] = [pos_colour if p else neg_colour for p in events['pol']]
+            elif kwargs.get('pol_to_show') == 'Pos':
+                eventImage[events['y'][events['pol']], events['x'][events['pol']]] = pos_colour
+            elif kwargs.get('pol_to_show') == 'Neg':
+                eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = neg_colour
+    except ValueError:
+        pass
+    except IndexError:
+        pass
     # Clip the values according to the contrast
     if not kwargs.get('image_type') == 'coloured':
         contrast = kwargs.get('contrast', 3)
