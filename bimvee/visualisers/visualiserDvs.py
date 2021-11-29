@@ -38,6 +38,7 @@ from .visualiserBase import Visualiser
 
 class VisualiserDvs(Visualiser):
     data_type = 'dvs'
+    coloured = False
 
     def set_data(self, data):
         self.__data = {}
@@ -46,6 +47,7 @@ class VisualiserDvs(Visualiser):
     # TODO: There can be methods which better choose the best frame, or which create a visualisation which
     # respects the time_window parameter 
     def get_frame(self, time, timeWindow, **kwargs):
+        self.coloured = kwargs['image_type'] == 'coloured'
         data = self.__data
         kwargs['startTime'] = time - timeWindow / 2
         kwargs['stopTime'] = time + timeWindow / 2
@@ -54,7 +56,9 @@ class VisualiserDvs(Visualiser):
         image = getEventImageForTimeRange(data, **kwargs)
         # Post processing to get image into uint8 with correct scale
         contrast = kwargs.get('contrast', 3)
-        if kwargs.get('image_type') == 'count' or kwargs.get('image_type') == 'binary':
+        if kwargs.get('image_type') == 'coloured':
+            pass
+        elif kwargs.get('image_type') == 'count' or kwargs.get('image_type') == 'binary':
             image = ((image + contrast) / contrast / 2 * 255).astype(np.uint8)
         else:
             image = (image / contrast * 255).astype(np.uint8)
@@ -85,7 +89,7 @@ class VisualiserDvs(Visualiser):
     def get_settings(self):
         settings = {'image_type': {'type': 'value_list',
                                    'default': 'binary',
-                                   'values': ['count', 'binary', 'not_polarized', 'time_image']
+                                   'values': ['count', 'binary', 'not_polarized', 'time_image', 'coloured']
                                    },
                     'contrast': {'type': 'range',
                                  'default': 3,
@@ -98,3 +102,6 @@ class VisualiserDvs(Visualiser):
                                     'values': ['Pos', 'Neg', 'Both']
                                     }}
         return settings
+
+    def get_colorfmt(self):
+        return 'rgb' if self.coloured else 'luminance'

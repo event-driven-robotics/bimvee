@@ -123,10 +123,21 @@ def getEventImage(events, **kwargs):
             eventImage[events['y'][events['pol']], events['x'][events['pol']]] = 1
         elif kwargs.get('pol_to_show') == 'Neg':
             eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = -1
+    elif kwargs.get('image_type') == 'coloured':
+        pos_colour = [255, 0, 0]
+        neg_colour = [0, 0, 255]
+        eventImage = np.full((dimY, dimX, 3), 255, dtype=np.uint8)
+        if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
+            eventImage[events['y'], events['x']] = [pos_colour if p else neg_colour for p in events['pol']]
+        elif kwargs.get('pol_to_show') == 'Pos':
+            eventImage[events['y'][events['pol']], events['x'][events['pol']]] = pos_colour
+        elif kwargs.get('pol_to_show') == 'Neg':
+            eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = neg_colour
 
     # Clip the values according to the contrast
-    contrast = kwargs.get('contrast', 3)
-    eventImage = np.clip(eventImage, -contrast, contrast)
+    if not kwargs.get('image_type') == 'coloured':
+        contrast = kwargs.get('contrast', 3)
+        eventImage = np.clip(eventImage, -contrast, contrast)
     return eventImage
 
 

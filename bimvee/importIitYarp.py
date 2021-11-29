@@ -480,7 +480,7 @@ def importPostProcessing(inDict, **kwargs):
     dataTypes = list(inDict.keys())
     for dataType in dataTypes:
         # Eliminate dataTypes which didn't have any events
-        if inDict[dataType] is None:
+        if inDict[dataType] is None or not dataType == 'dvs': # TODO find a better way to handle not dvs data
             del inDict[dataType]
         else:
             # Iron out any time-wraps which occurred and convert to seconds
