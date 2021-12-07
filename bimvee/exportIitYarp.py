@@ -386,8 +386,9 @@ def encodeSkeleton(inData, **kwargs):
     data = np.array([], dtype = np.uint32)
     for i in range(len(inData['ts'])):
         for key in inData:
-            if(key != 'ts'):
-                data = np.append(data, inData[key][i].astype(np.uint32))
+            if(key == 'ts'):
+                continue
+            data = np.append(data, inData[key][i].astype(np.uint32))
  
     data = data.flatten().tolist()
     data = list(map(str, data))
@@ -404,13 +405,24 @@ def exportSkeleton(dataFile, data, bottleNumber, **kwargs):
     ptr = 0
     pbar = tqdm(total=numEvents, position=0, leave=True)
     bottleStrs = []
+
+    # get number of joints
+    joints_num = len(data.keys()) - 1  # assuming a dictionary with one key per joint and additional key for timestamps
+
+    # get coordinates dimension
+    key_list = list(data.keys())
+    if data[key_list[0]].shape == 2:  # if shape == 2, the key is a joint key
+        coord_dim = data[key_list[0]].shape[1]
+    else:  # if shape != 2, then key is 'ts'
+        coord_dim = data[key_list[1]].shape[1]
+
     while ptr < numEvents:
         firstTs = data['ts'][ptr]
         nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
         pbar.update(nextPtr-ptr)
         bottleStrs.append(str(bottleNumber) + ' ' +
                         '{0:.6f}'.format(firstTs) + ' SKLT (' +
-                        ' '.join(eventsAsListOfStrings[ptr*13*2 : nextPtr*13*2]) + ')')
+                        ' '.join(eventsAsListOfStrings[ptr * joints_num * coord_dim : nextPtr * joints_num * coord_dim]) + ')')
         ptr = nextPtr
         bottleNumber += 1
     dataFile.write('\n'.join(bottleStrs))
