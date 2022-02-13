@@ -101,8 +101,11 @@ def importAe(**kwargs):
                 resultsList = []
                 for subName in listDir:
                     kwargs['filePathOrName'] = os.path.join(filePathOrName, subName)
-                    result = importAe(**kwargs)
-                    if  isinstance(result, list):
+                    try:
+                        result = importAe(**kwargs)
+                    except ValueError:
+                        continue
+                    if isinstance(result, list):
                         resultsList = resultsList + result
                     else:
                         resultsList.append(result)
@@ -130,12 +133,16 @@ def importAe(**kwargs):
                 kwargs['fileFormat'] = 'aer2'
             elif ext == '.hdf5':
                 kwargs['fileFormat'] = 'hdf5'
+            elif ext == '.log':
+                kwargs['fileFormat'] = 'iit'
             # etc ...
             else:
-                raise Exception("The file format cannot be determined.")
+                raise ValueError("The file format cannot be determined.")
     # Let the fileformat parameter dictate the file or folder format
     fileFormat = kwargs.get('fileFormat').lower()
-    if fileFormat in ['iityarp', 'yarp', 'iit', 'log', 'yarplog']: 
+    if fileFormat in ['iityarp', 'yarp', 'iit', 'log', 'yarplog']:
+        if not os.path.isdir(kwargs['filePathOrName']):
+            kwargs['filePathOrName'] = os.path.dirname(kwargs['filePathOrName'])
         importedData = importIitYarp(**kwargs)
     elif fileFormat in ['rpgdvsros', 'rosbag', 'rpg', 'ros', 'bag', 'rpgdvs']:
         importedData = importRpgDvsRos(**kwargs)

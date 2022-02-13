@@ -67,12 +67,14 @@ tory on GitHub:
 import re
 import numpy as np
 import os
+import csv
 
 # Local imports
 from .importIitVicon import importIitVicon
 from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimestampsForImportedDicts
 from .split import selectByLabel
-
+from bimvee.importBoundingBoxes import importBoundingBoxes
+from bimvee.importSkeleton import importSkeleton
 
 def decodeEvents(data, **kwargs):
     """
@@ -478,12 +480,14 @@ def importPostProcessing(inDict, **kwargs):
     dataTypes = list(inDict.keys())
     for dataType in dataTypes:
         # Eliminate dataTypes which didn't have any events
-        if inDict[dataType] is None:
+        if inDict[dataType] is None or not dataType == 'dvs': # TODO find a better way to handle not dvs data
             del inDict[dataType]
         else:
             # Iron out any time-wraps which occurred and convert to seconds
+            isGen1 = (inDict[dataType]['x'] < 346).all() and (inDict[dataType]['y'] < 260).all()
+            clock_time = 0.00000008 if isGen1 else 0.000001
             inDict[dataType]['ts'] = unwrapTimestamps(inDict[dataType]['ts'],
-                                                      **kwargs) * 0.00000008
+                                                      **kwargs) * clock_time
             # Special handling for imu data
             if dataType == 'imuSamples':
                 if kwargs.get('convertSamplesToImu', True):
@@ -721,6 +725,8 @@ def importIitYarpRecursive(**kwargs):
     files = sorted(os.listdir(path))
     importedDicts = []
     tsOffset = None
+    boundingBoxes = None
+    skeleton = None
     for file in files:
         filePathOrName = os.path.join(path, file)
         kwargs['filePathOrName'] = filePathOrName
@@ -732,11 +738,30 @@ def importIitYarpRecursive(**kwargs):
             importedDicts.append(importIitYarpDataLog(**kwargs))
         if file == 'info.log':
             tsOffset = importIitYarpInfoLog(**kwargs)
+        if file == 'ground_truth.csv':
+            boundingBoxes = importBoundingBoxes(**kwargs)
+        if file == 'skeleton.json':
+            skeleton = importSkeleton(**kwargs)
     if len(importedDicts) == 0:
         print('    "data.log" file not found')
-    elif tsOffset is not None:
+        return importedDicts
+    if tsOffset is not None:
         importedDicts[-1]['info']['tsOffsetFromInfo'] = tsOffset
+    if boundingBoxes is not None:
+        addGroundTruth(boundingBoxes, importedDicts, 'boundingBoxes')
+    if skeleton is not None:
+        addGroundTruth(skeleton, importedDicts, 'skeleton')
     return importedDicts
+
+
+def addGroundTruth(groundTruth, importedDicts, name):
+    if len(importedDicts) == 1:
+        keys = list(importedDicts[-1]['data'])
+        if len(keys) == 1:
+            importedDicts[-1]['data'][keys[0]][name] = groundTruth
+        else:
+            # TODO If more than one channel is present we don't know which one to assign the ground truth
+            print(f'Found channels {keys}. Don\'t know which one to assign ground truth. Skipping.')
 
 
 def importIitYarp(**kwargs):

@@ -44,28 +44,31 @@ from scipy import linalg
 from ..split import splitByLabel
 from .visualiserBase import Visualiser
 
+
 # A function intended to find the nearest timestamp
 # adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
 def findNearest(array, value):
-    idx = np.searchsorted(array, value) # side="left" param is the default
+    idx = np.searchsorted(array, value)  # side="left" param is the default
     if idx > 0 and ( \
-            idx == len(array) or \
-            math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
-        return idx-1
+                    idx == len(array) or \
+                    math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])):
+        return idx - 1
     else:
         return idx
+
 
 def angularVelocityToRotMat(angV):
     try:
         return linalg.expm(np.array(
-        [[0, -angV[2], angV[1]],
-         [angV[2], 0, -angV[0]],
-         [-angV[1], angV[0], 0]]))
+            [[0, -angV[2], angV[1]],
+             [angV[2], 0, -angV[0]],
+             [-angV[1], angV[0], 0]]))
     except OverflowError:
         print('rotation conversion overflow')
         return np.eye(3)
 
-#%% Two helper functions for pose visualiser
+
+# %% Two helper functions for pose visualiser
 
 # adapted from https://stackoverflow.com/questions/50387606/python-draw-line-between-two-coordinates-in-a-matrix
 def draw_line(mat, x0, y0, x1, y1):
@@ -85,10 +88,11 @@ def draw_line(mat, x0, y0, x1, y1):
     x = np.arange(x0, x1 + 1)
     y = np.round(((y1 - y0) / (x1 - x0)) * (x - x0) + y0).astype(x.dtype)
     # Write intermediate coordinates
-    toKeep = np.logical_and(x >= 0, 
-                            np.logical_and(x<mat.shape[1], 
-                                           np.logical_and(y >= 0, y<mat.shape[0])))
+    toKeep = np.logical_and(x >= 0,
+                            np.logical_and(x < mat.shape[1],
+                                           np.logical_and(y >= 0, y < mat.shape[0])))
     mat[y[toKeep], x[toKeep]] = 255
+
 
 def rotateUnitVectors(rotM, unitLength=1.0):
     xVec = np.expand_dims(np.array([unitLength, 0, 0]), axis=1)
@@ -99,8 +103,7 @@ def rotateUnitVectors(rotM, unitLength=1.0):
 
 
 class VisualiserImu(Visualiser):
-
-    renderX = 200 # TODO Hardcoded
+    renderX = 200  # TODO Hardcoded
     renderY = 200
     labels = None
     data_type = 'imu'
@@ -115,6 +118,7 @@ class VisualiserImu(Visualiser):
         y[-0.5:0.5]
         z[1:2]
     '''
+
     def set_data(self, data):
         # scale and offset point data so that it remains proportional 
         # but stays in the range 0-1 for all dimensions
@@ -130,11 +134,11 @@ class VisualiserImu(Visualiser):
 
         pointScaled = data['acc'] / largestDim / 2 + 0.5
         self.__data = {'ts': data['ts'],
-                        'point': pointScaled,
-                        'rotation': data['angV']}
-            
+                       'point': pointScaled,
+                       'rotation': data['angV']}
+
     def project3dTo2d(self, x=0, y=0, z=0, **kwargs):
-        smallestRenderDim = kwargs.get('smallestRenderDim', 1) 
+        smallestRenderDim = kwargs.get('smallestRenderDim', 1)
         windowFill = kwargs.get('windowFill', 0.9)
         if kwargs.get('perspective', True):
             # Move z out by 1, so that the data is between 1 and 2 distant in z
@@ -178,13 +182,13 @@ class VisualiserImu(Visualiser):
         draw_line(image[:, :, 1], projX, projY, yVectorProjX, yVectorProjY)
         draw_line(image[:, :, 2], projX, projY, zVectorProjX, zVectorProjY)
         return image
-    
+
     def get_frame(self, time, timeWindow, **kwargs):
         data = self.__data
         if data is None:
             print('Warning: data is not set')
-            return np.zeros((1, 1), dtype=np.uint8) # This should not happen
-        image = np.zeros((self.renderY, self.renderX, 3), dtype = np.uint8)
+            return np.zeros((1, 1), dtype=np.uint8)  # This should not happen
+        image = np.zeros((self.renderY, self.renderX, 3), dtype=np.uint8)
         # Put a grey box around the edge of the image
         image[0, :, :] = 128
         image[-1, :, :] = 128
@@ -193,13 +197,13 @@ class VisualiserImu(Visualiser):
         # Put a grey crosshair in the centre of the image
         rY = self.renderY
         rX = self.renderX
-        chp = 20 # Cross Hair Proportion for following expression
-        image[int(rY/2 - rY/chp): int(rY/2 + rY/chp), int(rX/2), :] = 128
-        image[int(rY/2), int(rX/2 - rX/chp): int(rX/2 + rX/chp), :] = 128
+        chp = 20  # Cross Hair Proportion for following expression
+        image[int(rY / 2 - rY / chp): int(rY / 2 + rY / chp), int(rX / 2), :] = 128
+        image[int(rY / 2), int(rX / 2 - rX / chp): int(rX / 2 + rX / chp), :] = 128
         # Note, for the following, this follows library function pose6qInterp, but is broken out here, because of slight behavioural differences.
         idxPre = np.searchsorted(data['ts'], time, side='right') - 1
         timePre = data['ts'][idxPre]
-        if idxPre < 0 or (idxPre >= len(data['ts'])-1):
+        if idxPre < 0 or (idxPre >= len(data['ts']) - 1):
             # In this edge-case of the time at the beginning or end,
             # don't show any pose
             return image
@@ -221,12 +225,29 @@ class VisualiserImu(Visualiser):
             point = data['point'][poseIdx, :]
             rotation = data['rotation'][poseIdx, :]
         image = self.project_pose(point, rotation, image, **kwargs)
-        
+
         return image
-    
+
     def get_dims(self):
         return self.renderX, self.renderY
 
     def get_colorfmt(self):
         return 'rgb'
 
+    def get_settings(self):
+        settings = {'perspective': {'type': 'boolean',
+                                    'default': True
+                                    },
+                    'rotation_scale': {'type': 'range',
+                                       'default': 50,
+                                       'min': 0,
+                                       'max': 100,
+                                       'step': 1
+                                       },
+                    'smoothing': {'type': 'range',
+                                  'default': 0,
+                                  'min': 0,
+                                  'max': 100,
+                                  'step': 1
+                                  }}
+        return settings
