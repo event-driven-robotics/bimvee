@@ -818,7 +818,7 @@ def addGroundTruth(groundTruth, importedDicts, name):
 def importIitYarp(**kwargs):
     """Import data in IIT Yarp format."""
     importedDicts = importIitYarpRecursive(**kwargs)
-    if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
+    if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', False)): # TODO check if this is needed in all case. Setting to false for now
         # Optional: start the timestamps at zero for the first event
         # This is done collectively for all the concurrent imports
         rezeroTimestampsForImportedDicts(importedDicts)
