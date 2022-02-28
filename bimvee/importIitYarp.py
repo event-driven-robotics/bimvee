@@ -810,6 +810,10 @@ def addGroundTruth(groundTruth, importedDicts, name):
         keys = list(importedDicts[-1]['data'])
         if len(keys) == 1:
             importedDicts[-1]['data'][keys[0]][name] = groundTruth
+            try:
+                importedDicts[-1]['data'][keys[0]][name]['tsOffset'] = -importedDicts[-1]['info']['tsOffsetFromInfo'] # TODO check if this is always valid
+            except KeyError:
+                pass
         else:
             # TODO If more than one channel is present we don't know which one to assign the ground truth
             print(f'Found channels {keys}. Don\'t know which one to assign ground truth. Skipping.')
@@ -818,7 +822,7 @@ def addGroundTruth(groundTruth, importedDicts, name):
 def importIitYarp(**kwargs):
     """Import data in IIT Yarp format."""
     importedDicts = importIitYarpRecursive(**kwargs)
-    if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', False)): # TODO check if this is needed in all case. Setting to false for now
+    if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
         # Optional: start the timestamps at zero for the first event
         # This is done collectively for all the concurrent imports
         rezeroTimestampsForImportedDicts(importedDicts)
