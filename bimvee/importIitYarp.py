@@ -76,6 +76,7 @@ from .split import selectByLabel
 from bimvee.importBoundingBoxes import importBoundingBoxes
 from bimvee.importSkeleton import importSkeleton
 
+
 def decodeEvents(data, **kwargs):
     """
     Decode the binary patterns in `data` to the corresponding event type.
@@ -145,7 +146,7 @@ def decodeEvents(data, **kwargs):
         'skinEvents': None,
         'imuSamples': None,
         'ear': None,
-        }
+    }
     if np.any(dvsBool):
         dataDvs = data[dvsBool, :]
         ts = dataDvs[:, 0]
@@ -162,7 +163,7 @@ def decodeEvents(data, **kwargs):
             y = np.uint16(dataDvs[:, 1] & 0xFF)
             dataDvs[:, 1] >>= 10
         else:  # 24bit - default
-            x = np.uint16(dataDvs[:, 1] & 0x7FF)
+            x = np.uint16(dataDvs[:, 1] & 0x3FF)
             dataDvs[:, 1] >>= 11
             y = np.uint16(dataDvs[:, 1] & 0x3FF)
             dataDvs[:, 1] >>= 10
@@ -185,10 +186,10 @@ def decodeEvents(data, **kwargs):
         dataImu[:, 1] >>= 6
         ch = np.uint8(dataImu[:, 1] & 0x01)
         outDict['imuSamples'] = {
-                'ts': ts,
-                'ch': ch,
-                'sensor': sensor,
-                'value': value}
+            'ts': ts,
+            'ch': ch,
+            'sensor': sensor,
+            'value': value}
 
     if np.any(skinBool):
         dataSkin = data[skinBool, :]
@@ -199,19 +200,19 @@ def decodeEvents(data, **kwargs):
         dataSkin[:, 1] >>= 1
         taxel = np.uint16(dataSkin[:, 1] & 0x3FF)
         dataSkin[:, 1] >>= 12
-#        crossBase = np.uint8(dataSkin[:, 1] & 0x01)
+        #        crossBase = np.uint8(dataSkin[:, 1] & 0x01)
         dataSkin[:, 1] >>= 3
         bodyPart = np.uint8(dataSkin[:, 1] & 0x07)
         dataSkin[:, 1] >>= 6
         side = np.uint8(dataSkin[:, 1] & 0x01)
-#        dataSkin[:, 1] >>= 1
-#        eventType = np.uint8(dataSkin[:, 1] & 0x01)
+        #        dataSkin[:, 1] >>= 1
+        #        eventType = np.uint8(dataSkin[:, 1] & 0x01)
         outDict['skinEvents'] = {
-                'ts': ts,
-                'side': side,
-                'bodyPart': bodyPart,
-                'taxel': taxel,
-                'pol': polarity}
+            'ts': ts,
+            'side': side,
+            'bodyPart': bodyPart,
+            'taxel': taxel,
+            'pol': polarity}
 
     if np.any(earBool):
         dataEar = data[earBool, :]
@@ -230,13 +231,13 @@ def decodeEvents(data, **kwargs):
         dataEar[:, 1] >>= 10
         channel = np.uint8(dataEar[:, 1] & 0x01)
         outDict['ear'] = {
-                'ts': ts,
-                'ch': channel,
-                'itdNeuronIds': itdNeuronIds,
-                'auditoryModel': auditoryModel,
-                'xsoType': xsoType,
-                'freq': frequencyChannel,
-                'pol': polarity}
+            'ts': ts,
+            'ch': channel,
+            'itdNeuronIds': itdNeuronIds,
+            'auditoryModel': auditoryModel,
+            'xsoType': xsoType,
+            'freq': frequencyChannel,
+            'pol': polarity}
     return outDict
 
 
@@ -285,7 +286,7 @@ def samplesToImu(inDict, **kwargs):
     tsAll = inDict['ts']
     sensorAll = inDict['sensor'].astype(np.int16)
     valueAll = inDict['value']
-    wrapIds = np.where((sensorAll[1:]-sensorAll[:-1]) < 1)[0]
+    wrapIds = np.where((sensorAll[1:] - sensorAll[:-1]) < 1)[0]
     numImu = len(wrapIds) + 1
     tsOut = np.zeros((numImu), dtype=np.float64)
     acc = np.zeros((numImu, 3), dtype=np.int16)
@@ -324,12 +325,12 @@ def samplesToImu(inDict, **kwargs):
     temp = temp.astype(np.float64) / tempConversionFactor - tempConversionOffset
     mag = mag.astype(np.float64) / magConversionFactor
     outDict = {
-            'ts': tsOut,
-            'acc': acc,
-            'angV': angV,
-            'temp': temp,
-            'mag': mag,
-            }
+        'ts': tsOut,
+        'acc': acc,
+        'angV': angV,
+        'temp': temp,
+        'mag': mag,
+    }
     return outDict
 
 
@@ -394,10 +395,10 @@ def appendBatch(mainDict, batch):
     for fieldName in batch.keys():
         if mainDict[fieldName].ndim == 2:
             mainDict[fieldName][numEventsMain:numEventsMain + numEventsBatch, :] = \
-            batch[fieldName]
+                batch[fieldName]
         else:
             mainDict[fieldName][numEventsMain:numEventsMain + numEventsBatch] = \
-            batch[fieldName]
+                batch[fieldName]
     mainDict['numEvents'] = numEventsMain + numEventsBatch
     return mainDict
 
@@ -455,7 +456,7 @@ def globalPostProcessing(inDict, **kwargs):
     outDict = {
         'info': kwargs,
         'data': channels
-        }
+    }
     outDict['info']['fileFormat'] = 'iityarp'
     return outDict
 
@@ -480,7 +481,7 @@ def importPostProcessing(inDict, **kwargs):
     dataTypes = list(inDict.keys())
     for dataType in dataTypes:
         # Eliminate dataTypes which didn't have any events
-        if inDict[dataType] is None or not dataType == 'dvs': # TODO find a better way to handle not dvs data
+        if inDict[dataType] is None or not dataType == 'dvs':  # TODO find a better way to handle not dvs data
             del inDict[dataType]
         else:
             # Iron out any time-wraps which occurred and convert to seconds
@@ -571,19 +572,37 @@ def importIitRawSkinSamples(**kwargs):
     return globalPostProcessing(outDict, **kwargs)
 
 
+def fromStringNested(
+        in_string):  # Copied from https://github.com/robotology/yarp/blob/3d6e3f258db7755a3c44dd1e62c303cc36c49a8f/src/libYARP_os/src/yarp/os/impl/Storable.cpp
+    back = False
+    output = b''
+    for b in in_string:
+        b = b.to_bytes(1, byteorder='big')
+        if b == b'\\':
+            if not back:
+                back = True
+            else:
+                output += b
+                back = False
+        else:
+            if back:
+                if b == b'n':
+                    output += b'\n'
+                elif b == b'r':
+                    output += b'\r'
+                elif b == b'0':
+                    output += b'\0'
+                else:
+                    output += b
+            else:
+                output += b
+            back = False
+    return output
+
+
 def importIitYarpDataLog(**kwargs):
     """Import data in IIT Yarp format from a `data.log` file."""
     # Check if format suggests data from vicon dumper
-    patternForVicon = re.compile('(\d+) (\d+\.\d+) \((.*)\)')
-    with open(kwargs['filePathOrName'], 'r') as inFile:
-        content = inFile.readline()  # Look at first line of file
-    if patternForVicon.findall(content):
-        print('Yarp vicon dumper pattern found - passing this file to importVicon function')
-        return importIitVicon(**kwargs)
-    patternForRawSkinSamples = re.compile('(\d+) (\d+\.\d+) (\d+\.\d+)')
-    if patternForRawSkinSamples.findall(content):
-        print('Pattern found seems to be a raw dump of analogue skin samples')
-        return importIitRawSkinSamples(**kwargs)
     # Create dicts for each possible datatype
     dvs = None
     dvsLbl = None
@@ -593,93 +612,125 @@ def importIitYarpDataLog(**kwargs):
     skinSamples = None
     ear = None
     aps = None
-    pattern = re.compile('(\d+) (\d+\.\d+) ([A-Z]+) \((.*)\)')
     importFromByte = kwargs.get('importFromByte', 0)
     importToByte = kwargs.get('importMaxBytes')
-    if importToByte is not None:
-        importToByte += importFromByte
-    with open(kwargs['filePathOrName'], 'r') as file:
-        file.seek(importFromByte)
-        importedToByte = 'EOF'  # default if the following loop exits normally
-        line = file.readline()
-        currentPointer = 0
-        while line:
-            if importToByte is not None:
-                if file.tell() > importToByte:
-                    importedToByte = currentPointer - 1
-                    break
-                else:
-                    currentPointer = file.tell()
-            found = pattern.match(line)
-            # The following values would be useful for indexing the input file:
-            # bottlenumber = np.uint32(found[1])
-            # timestamp = np.float64(found[2])
-            bottleType = found[3]
-            if bottleType not in ['AE', 'IMUS', 'LAE', 'FLOW', 'EAR', 'SKS', 'SKE']:
-                print('Unknown bottle type: ' + bottleType)
-                line = file.readline()
-                continue
-            try:
-                events = np.array(found[4].split(' '), dtype=np.uint32)
-                '''
-                The following block handles unusual bottle format for labelled
-                events and flow events, which all end up being treated as
-                'dvs' type events. In those cases there are extra words in
-                the bottle for each event.
-                '''
-                if bottleType == 'LAE':
-                    numEventsInBatch = int(len(events) / 3)
-                    events = events.reshape(numEventsInBatch, 3)
-                    outDict = decodeEvents(events[:, :2], **kwargs)
-                    dvsBatch = outDict['dvs']
-                    dvsBatch['lbl'] = events[:, 2]
-                    dvsLbl = appendBatch(dvsLbl, dvsBatch)
-                elif bottleType == 'FLOW':
-                    numEventsInBatch = int(len(events) / 4)
-                    events = events.reshape(numEventsInBatch, 4)
-                    outDict = decodeEvents(events[:, :2], **kwargs)
-                    dvsBatch = outDict['dvs']
-                    dvsBatch['vx'] = events[:, 2].view(dtype=np.float32)
-                    dvsBatch['vy'] = events[:, 3].view(dtype=np.float32)
-                    dvsFlow = appendBatch(dvsFlow, dvsBatch)
-                elif bottleType == 'SKS':
-                    ''' Skin samples are encoded with 4 words:
-                        [ts, address, ts, analogue_sample(least-sig. 16 bits)]
-                        The address is encoded the same as for skin events
-                        we ignore the second timestamp
-                    '''
-                    numEventsInBatch = int(len(events) / 4)
-                    events = events.reshape(numEventsInBatch, 4)
-                    outDict = decodeEvents(events, **kwargs)
-                    skinSampleBatch = outDict.pop('skinEvents')  # pop these so they don't get treated as skin events, below
-                    skinSampleBatch['value'] = np.mod(events[:, 3], 2**16)
-                    skinSamples = appendBatch(skinSamples, skinSampleBatch)
-                else:  # bottleType in ['AE', 'IMUS', 'SKE', 'EAR', 'APS']
-                    numEventsInBatch = int(len(events) / 2)
-                    events = events.reshape(numEventsInBatch, 2)
-                    outDict = decodeEvents(events[:, :2], **kwargs)
-                    dvsBatch = outDict['dvs']
-                    dvs = appendBatch(dvs, dvsBatch)
-                    imuSamples = appendBatch(imuSamples, outDict['imuSamples'])
-                    ear = appendBatch(ear, outDict['ear'])
-                    skinEvents = appendBatch(skinEvents, outDict['skinEvents'])
-                    aps = appendBatch(aps, outDict['aps'])
-            except ValueError:  # sometimes finding malformed packets at the end of files - ignoring
-                line = file.readline()
-                continue
+    importedToByte = 'EOF'  # default if the following loop exits normally
+
+    try:
+        with open(kwargs['filePathOrName'], 'r') as inFile:
+            content = inFile.readline()  # Look at first line of file
+            patternForVicon = re.compile('(\d+) (\d+\.\d+) \((.*)\)')
+            if patternForVicon.findall(content):
+                print('Yarp vicon dumper pattern found - passing this file to importVicon function')
+                return importIitVicon(**kwargs)
+            patternForRawSkinSamples = re.compile('(\d+) (\d+\.\d+) (\d+\.\d+)')
+            if patternForRawSkinSamples.findall(content):
+                print('Pattern found seems to be a raw dump of analogue skin samples')
+                return importIitRawSkinSamples(**kwargs)
+
+        pattern = re.compile('(\d+) (\d+\.\d+) ([A-Z]+) \((.*)\)')
+        if importToByte is not None:
+            importToByte += importFromByte
+        with open(kwargs['filePathOrName'], 'r') as file:
+            file.seek(importFromByte)
             line = file.readline()
+            currentPointer = 0
+            while line:
+                if importToByte is not None:
+                    if file.tell() > importToByte:
+                        importedToByte = currentPointer - 1
+                        break
+                    else:
+                        currentPointer = file.tell()
+                found = pattern.match(line)
+                # The following values would be useful for indexing the input file:
+                # bottlenumber = np.uint32(found[1])
+                # timestamp = np.float64(found[2])
+                bottleType = found[3]
+                if bottleType not in ['AE', 'IMUS', 'LAE', 'FLOW', 'EAR', 'SKS', 'SKE']:
+                    print('Unknown bottle type: ' + bottleType)
+                    line = file.readline()
+                    continue
+                try:
+                    events = np.array(found[4].split(' '), dtype=np.uint32)
+                    '''
+                    The following block handles unusual bottle format for labelled
+                    events and flow events, which all end up being treated as
+                    'dvs' type events. In those cases there are extra words in
+                    the bottle for each event.
+                    '''
+                    if bottleType == 'LAE':
+                        numEventsInBatch = int(len(events) / 3)
+                        events = events.reshape(numEventsInBatch, 3)
+                        outDict = decodeEvents(events[:, :2], **kwargs)
+                        dvsBatch = outDict['dvs']
+                        dvsBatch['lbl'] = events[:, 2]
+                        dvsLbl = appendBatch(dvsLbl, dvsBatch)
+                    elif bottleType == 'FLOW':
+                        numEventsInBatch = int(len(events) / 4)
+                        events = events.reshape(numEventsInBatch, 4)
+                        outDict = decodeEvents(events[:, :2], **kwargs)
+                        dvsBatch = outDict['dvs']
+                        dvsBatch['vx'] = events[:, 2].view(dtype=np.float32)
+                        dvsBatch['vy'] = events[:, 3].view(dtype=np.float32)
+                        dvsFlow = appendBatch(dvsFlow, dvsBatch)
+                    elif bottleType == 'SKS':
+                        ''' Skin samples are encoded with 4 words:
+                            [ts, address, ts, analogue_sample(least-sig. 16 bits)]
+                            The address is encoded the same as for skin events
+                            we ignore the second timestamp
+                        '''
+                        numEventsInBatch = int(len(events) / 4)
+                        events = events.reshape(numEventsInBatch, 4)
+                        outDict = decodeEvents(events, **kwargs)
+                        skinSampleBatch = outDict.pop(
+                            'skinEvents')  # pop these so they don't get treated as skin events, below
+                        skinSampleBatch['value'] = np.mod(events[:, 3], 2 ** 16)
+                        skinSamples = appendBatch(skinSamples, skinSampleBatch)
+                    else:  # bottleType in ['AE', 'IMUS', 'SKE', 'EAR', 'APS']
+                        numEventsInBatch = int(len(events) / 2)
+                        events = events.reshape(numEventsInBatch, 2)
+                        outDict = decodeEvents(events[:, :2], **kwargs)
+                        dvsBatch = outDict['dvs']
+                        dvs = appendBatch(dvs, dvsBatch)
+                        imuSamples = appendBatch(imuSamples, outDict['imuSamples'])
+                        ear = appendBatch(ear, outDict['ear'])
+                        skinEvents = appendBatch(skinEvents, outDict['skinEvents'])
+                        aps = appendBatch(aps, outDict['aps'])
+                except ValueError:  # sometimes finding malformed packets at the end of files - ignoring
+                    line = file.readline()
+                    continue
+                line = file.readline()
+    except UnicodeDecodeError:
+        with open(kwargs['filePathOrName'], 'rb') as file:
+            content = file.readlines()
+        eventsToDecode = []
+        timestamps = []
+        for c in content:
+            firstQuoteIdx = c.find(b'\"')
+            lastQuoteIdx = c[::-1].find(b'\"')
+            bottleNum, ts, bottleType, _ = c[:firstQuoteIdx - 1].decode().split(' ')
+            data = c[firstQuoteIdx + 1:-(lastQuoteIdx + 1)]
+            bitStrings = np.frombuffer(fromStringNested(data), np.uint32)
+            eventsToDecode.append(bitStrings)
+            timestamps += [float(ts) / 0.000001]*len(bitStrings)
+        outDict = decodeEvents(np.vstack((timestamps, np.concatenate(eventsToDecode))).swapaxes(0,1).astype(int))
+        return importPostProcessing(outDict, **kwargs)
+
+
     # If importedToByte is not defined then we reached the end of the file
     # Crop arrays to number of events
     outDict = {
         'dvs': cropArraysToNumEvents(dvs),
         'dvsLbl': cropArraysToNumEvents(dvsLbl),
         'flow': cropArraysToNumEvents(dvsFlow),  # TODO: 'flow' is a poor name, considering we also have dense flow maps
-        'imuSamples': cropArraysToNumEvents(imuSamples),  # Imu Sample is an intermediate datatype - later it gets converted to IMU etc
+        'imuSamples': cropArraysToNumEvents(imuSamples),
+        # Imu Sample is an intermediate datatype - later it gets converted to IMU etc
         'skinEvents': cropArraysToNumEvents(skinEvents),
         'skinSamples': cropArraysToNumEvents(skinSamples),
         'ear': cropArraysToNumEvents(ear),
         'aps': cropArraysToNumEvents(aps),
-        }
+    }
     kwargs['importedToByte'] = importedToByte
     return importPostProcessing(outDict, **kwargs)
 
@@ -759,6 +810,10 @@ def addGroundTruth(groundTruth, importedDicts, name):
         keys = list(importedDicts[-1]['data'])
         if len(keys) == 1:
             importedDicts[-1]['data'][keys[0]][name] = groundTruth
+            try:
+                importedDicts[-1]['data'][keys[0]][name]['tsOffset'] = -importedDicts[-1]['info']['tsOffsetFromInfo'] # TODO check if this is always valid
+            except KeyError:
+                pass
         else:
             # TODO If more than one channel is present we don't know which one to assign the ground truth
             print(f'Found channels {keys}. Don\'t know which one to assign ground truth. Skipping.')
