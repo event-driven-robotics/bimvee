@@ -75,7 +75,7 @@ from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimes
 from .split import selectByLabel
 from bimvee.importBoundingBoxes import importBoundingBoxes
 from bimvee.importSkeleton import importSkeleton
-
+from tqdm import tqdm
 
 def decodeEvents(data, **kwargs):
     """
@@ -706,15 +706,22 @@ def importIitYarpDataLog(**kwargs):
             content = file.readlines()
         eventsToDecode = []
         timestamps = []
-        for c in content:
+        check_if_with_ts = False
+        for c in tqdm(content):
             firstQuoteIdx = c.find(b'\"')
             lastQuoteIdx = c[::-1].find(b'\"')
             bottleNum, ts, bottleType, _ = c[:firstQuoteIdx - 1].decode().split(' ')
             data = c[firstQuoteIdx + 1:-(lastQuoteIdx + 1)]
             bitStrings = np.frombuffer(fromStringNested(data), np.uint32)
+            if not check_if_with_ts:
+                with_ts = np.all(sorted(bitStrings[::2]) == bitStrings[::2])
+                check_if_with_ts = True
             eventsToDecode.append(bitStrings)
             timestamps += [float(ts) / 0.000001]*len(bitStrings)
-        outDict = decodeEvents(np.vstack((timestamps, np.concatenate(eventsToDecode))).swapaxes(0,1).astype(int))
+        if with_ts:
+            outDict = decodeEvents(np.reshape(np.concatenate(eventsToDecode), (-1, 2)))
+        else:
+            outDict = decodeEvents(np.vstack((timestamps, np.concatenate(eventsToDecode))).swapaxes(0, 1).astype(int))
         return importPostProcessing(outDict, **kwargs)
 
 
