@@ -203,7 +203,9 @@ def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     # 0000 0000 tcrr yyyy yyyy rrxx xxxx xxxp    (r = reserved)
     # t = 0 to indicate events
     # Ignoring channel though
-    ts = ts / 0.00000008
+    isGen1 = (x < 346).all() and (y < 260).all()
+    clock_time = 0.00000008 if isGen1 else 0.000001
+    ts = ts / clock_time
     ts = ts.astype(np.uint32)  # Timestamp wrapping occurs here
     ts = np.expand_dims(ts, 1)
     x = x.astype(np.uint32)
@@ -353,7 +355,7 @@ def encodeImu(ts, **kwargs):
     angV[:, 0] = - angV[:, 0]
     mag[:, 0] = - mag[:, 0]
 
-    ts = ts / 0.00000008
+    ts = ts / 0.00000008 #TODO find way to determine this rescaling value automatically
     ts = ts.astype(np.uint32)  # Timestamp wrapping occurs here
     ts = np.tile(ts, (1, 10))
     ts = ts.flatten(order='C')
@@ -410,7 +412,7 @@ def encodeSample(data, **kwargs):
     ts = data['ts']
     sensor = data['sensor'].astype(np.uint32)  # change type to allow shifting up bits
     value = data['value'].astype(np.uint16)  # change to unsigned int to avoid wrapping in the sum below
-    ts = ts / 0.00000008
+    ts = ts / 0.00000008 #TODO find way to determine this rescaling value automatically
     ts = ts.astype(np.uint32)  # Timestamp wrapping occurs here
     ts = np.expand_dims(ts, 1)
     channel = kwargs.get('channel', 0)
