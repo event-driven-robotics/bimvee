@@ -221,9 +221,7 @@ def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     ae = (ch << 22) + (y << 12) + (x << 1) + pol
     ae = np.expand_dims(ae, 1)
     data = np.concatenate([ts, ae], axis=1)
-    data = data.flatten().tolist()
-    data = list(map(str, data))
-    return data
+    return data.flatten()
 
 
 def exportDvs(dataFile, data, bottleNumber, **kwargs):
@@ -232,7 +230,7 @@ def exportDvs(dataFile, data, bottleNumber, **kwargs):
     ch = None
     if 'ch' in data:
         ch = data['ch']
-    eventsAsListOfStrings = encodeEvents24Bit(data['ts'],
+    eventsAsListOfInts = encodeEvents24Bit(data['ts'],
                                               data['x'],
                                               data['y'],
                                               data['pol'],
@@ -246,27 +244,22 @@ def exportDvs(dataFile, data, bottleNumber, **kwargs):
     ptr = 0
 
     pbar = tqdm(total=numEvents, position=0, leave=True)
-    bottleStrs = []
-    exportAsEv2 = kwargs.get('ev2', True)
+    exportAsEv2 = kwargs.get('exportAsEv2', True)
     while ptr < numEvents:
         firstTs = data['ts'][ptr]
         nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
         pbar.update(nextPtr - ptr)
         if exportAsEv2:
-            eventData = b''.join([int(x).to_bytes(4, 'little') for x in eventsAsListOfStrings[ptr * 2: nextPtr * 2]])
+            eventData = eventsAsListOfInts[ptr * 2: nextPtr * 2].tobytes()
             eventData = toStringNested(eventData)
-            packetDuration = int(eventsAsListOfStrings[::2][min(len(eventsAsListOfStrings[::2]) - 1, nextPtr)]) - \
-                             int(eventsAsListOfStrings[::2][ptr])
-            bottleStrs.append(bytes(f'{bottleNumber} {firstTs:.6f} AE {packetDuration} "', 'utf') + eventData + b'\"') #TODO check timestamp conversion
+            packetDuration = int(eventsAsListOfInts[::2][min(len(eventsAsListOfInts[::2]) - 1, nextPtr)]) - \
+                             int(eventsAsListOfInts[::2][ptr])
+            dataFile.write(bytes(f'{bottleNumber} {firstTs:.6f} AE {packetDuration} "', 'utf') + eventData + b'\"\n')
         else:
-            eventData = ' '.join(eventsAsListOfStrings[ptr * 2: nextPtr * 2])
-            bottleStrs.append(str(bottleNumber) + ' ' +
-                              '{0:.6f}'.format(firstTs) + ' AE (' +
-                              eventData + ')')
+            eventData = ' '.join(eventsAsListOfInts[ptr * 2: nextPtr * 2].astype(str))
+            dataFile.write(f'{bottleNumber} {firstTs:.6f} AE ({eventData})\n')
         ptr = nextPtr
         bottleNumber += 1
-    separator = b'\n' if exportAsEv2 else '\n'
-    dataFile.write(separator.join(bottleStrs))
 
 def exportFrame(dataFile, data, **kwargs):
     # Here is an example from the python camera - rgb though:
@@ -544,7 +537,7 @@ def exportIitYarp(importedDict, **kwargs):
                     # - placeholder 0.0 put in the following line 
                     infoFile.write('[0.0] ' + yarpOutputPortForChannel + ' [connected]\n')
                 # Write the data.log file
-                if (kwargs.get('ev2', True)) and 'b' not in writeMode:
+                if (kwargs.get('exportAsEv2', True)) and 'b' not in writeMode:
                     writeMode += 'b'
                 with open(os.path.join(channelPath, 'data.log'), writeMode) as dataFile:
                     if writeMode == 'a':
