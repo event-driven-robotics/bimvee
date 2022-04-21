@@ -35,6 +35,7 @@ import os
 import numpy as np
 from tqdm import tqdm
 import string
+import re
 
 
 # TODO: this could come from header info in some cases
@@ -77,45 +78,18 @@ def writeConnection(xmlFile, fromPort, toPort, **kwargs):
     xmlFile.write('\n')
 
 
+def quoting(match):
+    matchedString = (match.string[match.span()[0]:match.span()[1]])
+    if matchedString == b'\0':
+        return b'\\0'
+    if matchedString == b'\n':
+        return b'\\n'
+    if matchedString == b'\r':
+        return b'\\r'
+
+
 def toStringNested(in_string):
-    # quoting code: very inefficient, but portable
-    needQuote = False
-    for i, ch in enumerate(in_string):
-        ch = ch.to_bytes(1, 'big')
-        if (ch < b'a' or ch > b'z') and (ch < b'A' or ch > b'Z') and ch != b'_':
-            if (b'0' <= ch <= b'9') or ch == b'.' or ch == b'-':
-                if i == 0:
-                    needQuote = True
-                    break
-            else:
-                needQuote = True
-                break
-
-    if len(in_string) == 0:
-        needQuote = True
-    if in_string == "true" or in_string == "false":
-        needQuote = True
-
-    if not needQuote:
-        return in_string
-
-    result = b''
-    for ch in in_string:
-        ch = ch.to_bytes(1, 'big')
-        if ch == b'\n':
-            result += b'\\'
-            result += b'n'
-        elif ch == b'\r':
-            result += b'\\'
-            result += b'r'
-        elif ch == b'\0':
-            result += b'\\'
-            result += b'0'
-        else:
-            if ch == b'\\' or ch == b'\"':
-                result += b'\\'
-            result += ch
-    return result
+    return re.sub(b'([\n\0\r])', quoting, re.sub(b'([\"\\\\])', b'\\\\\g<1>', in_string))
 
 
 def exportIitYarpViewer(importedDict, **kwargs):
@@ -231,11 +205,11 @@ def exportDvs(dataFile, data, bottleNumber, **kwargs):
     if 'ch' in data:
         ch = data['ch']
     eventsAsListOfInts = encodeEvents24Bit(data['ts'],
-                                              data['x'],
-                                              data['y'],
-                                              data['pol'],
-                                              ch,
-                                              **kwargs)
+                                           data['x'],
+                                           data['y'],
+                                           data['pol'],
+                                           ch,
+                                           **kwargs)
 
     print('Breaking into bottles by time')
     # Output dvs data bottle by bottle.
@@ -260,6 +234,7 @@ def exportDvs(dataFile, data, bottleNumber, **kwargs):
             dataFile.write(f'{bottleNumber} {firstTs:.6f} AE ({eventData})\n')
         ptr = nextPtr
         bottleNumber += 1
+
 
 def exportFrame(dataFile, data, **kwargs):
     # Here is an example from the python camera - rgb though:
@@ -348,7 +323,7 @@ def encodeImu(ts, **kwargs):
     angV[:, 0] = - angV[:, 0]
     mag[:, 0] = - mag[:, 0]
 
-    ts = ts / 0.00000008 #TODO find way to determine this rescaling value automatically
+    ts = ts / 0.00000008  # TODO find way to determine this rescaling value automatically
     ts = ts.astype(np.uint32)  # Timestamp wrapping occurs here
     ts = np.tile(ts, (1, 10))
     ts = ts.flatten(order='C')
@@ -405,7 +380,7 @@ def encodeSample(data, **kwargs):
     ts = data['ts']
     sensor = data['sensor'].astype(np.uint32)  # change type to allow shifting up bits
     value = data['value'].astype(np.uint16)  # change to unsigned int to avoid wrapping in the sum below
-    ts = ts / 0.00000008 #TODO find way to determine this rescaling value automatically
+    ts = ts / 0.00000008  # TODO find way to determine this rescaling value automatically
     ts = ts.astype(np.uint32)  # Timestamp wrapping occurs here
     ts = np.expand_dims(ts, 1)
     channel = kwargs.get('channel', 0)

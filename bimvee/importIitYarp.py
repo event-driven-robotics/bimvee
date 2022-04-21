@@ -571,33 +571,24 @@ def importIitRawSkinSamples(**kwargs):
     kwargs['importedToByte'] = importedToByte
     return globalPostProcessing(outDict, **kwargs)
 
+def unquoting(match):
+    matchedString = (match.string[match.span()[0]:match.span()[1]])
+    even = len(matchedString) % 2 == 0
+    if matchedString[-2:] == b'\\0':
+        return b'\\' * ((len(matchedString) - 1) // 2) + b'\0' if even else b'\\' * ((len(matchedString) - 1) // 2) + b'0'
+    if matchedString[-2:] == b'\\n':
+        return b'\\' * ((len(matchedString) - 1) // 2) + b'\n' if even else b'\\' * ((len(matchedString) - 1) // 2) + b'n'
+    if matchedString[-2:] == b'\\r':
+        return b'\\' * ((len(matchedString) - 1) // 2) + b'\r' if even else b'\\' * ((len(matchedString) - 1) // 2) + b'r'
+    if matchedString[-2:] == b'\\"':
+        return b'\"'
+    if matchedString[-2:] == b'\\\\':
+        return b'\\'
 
-def fromStringNested(
-        in_string):  # Copied from https://github.com/robotology/yarp/blob/3d6e3f258db7755a3c44dd1e62c303cc36c49a8f/src/libYARP_os/src/yarp/os/impl/Storable.cpp
-    back = False
-    output = b''
-    for b in in_string:
-        b = b.to_bytes(1, byteorder='big')
-        if b == b'\\':
-            if not back:
-                back = True
-            else:
-                output += b
-                back = False
-        else:
-            if back:
-                if b == b'n':
-                    output += b'\n'
-                elif b == b'r':
-                    output += b'\r'
-                elif b == b'0':
-                    output += b'\0'
-                else:
-                    output += b
-            else:
-                output += b
-            back = False
-    return output
+
+def fromStringNested(in_string):
+   return re.sub(b'\\\\\\\\|\\\\\"', unquoting, re.sub(b'\\\\+[nr0]', unquoting, in_string))
+
 
 
 def importIitYarpDataLog(**kwargs):
