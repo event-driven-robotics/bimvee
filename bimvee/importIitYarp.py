@@ -75,7 +75,7 @@ from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimes
 from .split import selectByLabel
 from bimvee.importBoundingBoxes import importBoundingBoxes
 from bimvee.importSkeleton import importSkeleton
-
+from tqdm import tqdm
 
 def decodeEvents(data, **kwargs):
     """
@@ -571,33 +571,24 @@ def importIitRawSkinSamples(**kwargs):
     kwargs['importedToByte'] = importedToByte
     return globalPostProcessing(outDict, **kwargs)
 
+def unquoting(match):
+    matchedString = (match.string[match.span()[0]:match.span()[1]])
+    even = len(matchedString) % 2 == 0
+    if matchedString[-2:] == b'\\0':
+        return b'\\' * ((len(matchedString) - 1) // 2) + b'\0' if even else b'\\' * ((len(matchedString) - 1) // 2) + b'0'
+    if matchedString[-2:] == b'\\n':
+        return b'\\' * ((len(matchedString) - 1) // 2) + b'\n' if even else b'\\' * ((len(matchedString) - 1) // 2) + b'n'
+    if matchedString[-2:] == b'\\r':
+        return b'\\' * ((len(matchedString) - 1) // 2) + b'\r' if even else b'\\' * ((len(matchedString) - 1) // 2) + b'r'
+    if matchedString[-2:] == b'\\"':
+        return b'\"'
+    if matchedString[-2:] == b'\\\\':
+        return b'\\'
 
-def fromStringNested(
-        in_string):  # Copied from https://github.com/robotology/yarp/blob/3d6e3f258db7755a3c44dd1e62c303cc36c49a8f/src/libYARP_os/src/yarp/os/impl/Storable.cpp
-    back = False
-    output = b''
-    for b in in_string:
-        b = b.to_bytes(1, byteorder='big')
-        if b == b'\\':
-            if not back:
-                back = True
-            else:
-                output += b
-                back = False
-        else:
-            if back:
-                if b == b'n':
-                    output += b'\n'
-                elif b == b'r':
-                    output += b'\r'
-                elif b == b'0':
-                    output += b'\0'
-                else:
-                    output += b
-            else:
-                output += b
-            back = False
-    return output
+
+def fromStringNested(in_string):
+   return re.sub(b'\\\\\\\\|\\\\\"', unquoting, re.sub(b'\\\\+[nr0]', unquoting, in_string))
+
 
 
 def importIitYarpDataLog(**kwargs):
@@ -706,15 +697,22 @@ def importIitYarpDataLog(**kwargs):
             content = file.readlines()
         eventsToDecode = []
         timestamps = []
-        for c in content:
+        check_if_with_ts = False
+        for c in tqdm(content):
             firstQuoteIdx = c.find(b'\"')
             lastQuoteIdx = c[::-1].find(b'\"')
             bottleNum, ts, bottleType, _ = c[:firstQuoteIdx - 1].decode().split(' ')
             data = c[firstQuoteIdx + 1:-(lastQuoteIdx + 1)]
             bitStrings = np.frombuffer(fromStringNested(data), np.uint32)
+            if not check_if_with_ts:
+                with_ts = np.all(sorted(bitStrings[::2]) == bitStrings[::2])
+                check_if_with_ts = True
             eventsToDecode.append(bitStrings)
             timestamps += [float(ts) / 0.000001]*len(bitStrings)
-        outDict = decodeEvents(np.vstack((timestamps, np.concatenate(eventsToDecode))).swapaxes(0,1).astype(int))
+        if with_ts:
+            outDict = decodeEvents(np.reshape(np.concatenate(eventsToDecode), (-1, 2)))
+        else:
+            outDict = decodeEvents(np.vstack((timestamps, np.concatenate(eventsToDecode))).swapaxes(0, 1).astype(int))
         return importPostProcessing(outDict, **kwargs)
 
 

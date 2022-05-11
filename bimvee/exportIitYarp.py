@@ -29,16 +29,18 @@ run from yarpmanager, the data which has been exported can be viewed.
 "writeMode" (default='w') can be set to append mode ('a') for exporting (large) files in batches.
 """
 
-#%%
+# %%
 
 import os
 import numpy as np
 from tqdm import tqdm
 import string
+import re
+
 
 # TODO: this could come from header info in some cases
 def getDims(dataTypeDict):
-    if 'pol' in dataTypeDict: # dvs
+    if 'pol' in dataTypeDict:  # dvs
         minX = np.min(dataTypeDict['x'])
         maxX = np.max(dataTypeDict['x'])
         minY = np.min(dataTypeDict['y'])
@@ -49,6 +51,7 @@ def getDims(dataTypeDict):
         minY = 0
         maxY = (dataTypeDict['frames'][0].shape)[1]
     return minX, maxX, minY, maxY
+
 
 def writeModule(xmlFile, name, **kwargs):
     xmlFile.write('<module>\n')
@@ -64,6 +67,7 @@ def writeModule(xmlFile, name, **kwargs):
     xmlFile.write('</module>\n')
     xmlFile.write('\n')
 
+
 def writeConnection(xmlFile, fromPort, toPort, **kwargs):
     xmlFile.write('<connection>\n')
     xmlFile.write('    <from> ' + fromPort + ' </from>\n')
@@ -73,6 +77,21 @@ def writeConnection(xmlFile, fromPort, toPort, **kwargs):
     xmlFile.write('</connection>\n')
     xmlFile.write('\n')
 
+
+def quoting(match):
+    matchedString = (match.string[match.span()[0]:match.span()[1]])
+    if matchedString == b'\0':
+        return b'\\0'
+    if matchedString == b'\n':
+        return b'\\n'
+    if matchedString == b'\r':
+        return b'\\r'
+
+
+def toStringNested(in_string):
+    return re.sub(b'([\n\0\r])', quoting, re.sub(b'([\"\\\\])', b'\\\\\g<1>', in_string))
+
+
 def exportIitYarpViewer(importedDict, **kwargs):
     exportFilePath = kwargs.get('exportFilePath', './')
     with open(os.path.join(exportFilePath, 'play.xml'), 'w') as xmlFile:
@@ -81,7 +100,7 @@ def exportIitYarpViewer(importedDict, **kwargs):
         xmlFile.write('\n')
         writeModule(xmlFile=xmlFile, name='yarpdataplayer')
         pathForPlayback = kwargs.get('pathForPlayback', exportFilePath)
-        #dependencyStr = ''
+        # dependencyStr = ''
         dependencyStr = '<port timeout="100.0" request="load ' + pathForPlayback + '" reply="[ok]">/yarpdataplayer/rpc:i</port>'
         dataTypesToExport = kwargs.get('dataTypes')
         for channelKey in importedDict['data']:
@@ -95,14 +114,15 @@ def exportIitYarpViewer(importedDict, **kwargs):
                     height = maxY + 1
                     width = maxX + 1
                     paramsFramer = '--name /framer' + channelAndDataType + \
-                                                   ' --height ' + str(height) + \
-                                                   ' --width ' + str(width) + \
-                                                   ' --displays "(/' + channelAndDataType + ' (AE ISO))"'
-                    writeModule(xmlFile=xmlFile, name='vFramerLite', parameters=paramsFramer, dependencies=dependencyStr)
+                                   ' --height ' + str(height) + \
+                                   ' --width ' + str(width) + \
+                                   ' --displays "(/' + channelAndDataType + ' (AE ISO))"'
+                    writeModule(xmlFile=xmlFile, name='vFramerLite', parameters=paramsFramer,
+                                dependencies=dependencyStr)
                     dependencyStr = ''
                     paramsViewer = '--name /viewer/' + channelAndDataType + \
-                                    ' --w ' + str((width) * 2) + \
-                                    ' --h ' + str((height) * 2) + ' --synch'
+                                   ' --w ' + str((width) * 2) + \
+                                   ' --h ' + str((height) * 2) + ' --synch'
                     writeModule(xmlFile=xmlFile, name='yarpview', parameters=paramsViewer)
 
                     fromPort = '/file/' + channelAndDataType + ':o'
@@ -118,9 +138,9 @@ def exportIitYarpViewer(importedDict, **kwargs):
                     height = maxY + 1
                     width = maxX + 1
                     paramsViewer = '--name /viewer/' + channelAndDataType + \
-                                    ' --w ' + str((width) * 2) + \
-                                    ' --h ' + str((height) * 2) + ' --synch' + \
-                                    ' --RefreshTime 33'
+                                   ' --w ' + str((width) * 2) + \
+                                   ' --h ' + str((height) * 2) + ' --synch' + \
+                                   ' --RefreshTime 33'
                     writeModule(xmlFile=xmlFile, name='yarpview', parameters=paramsViewer, dependencies=dependencyStr)
                     dependencyStr = ''
 
@@ -130,13 +150,14 @@ def exportIitYarpViewer(importedDict, **kwargs):
 
                 if dataType == 'imu':
                     paramsFramer = '--name /framer' + channelAndDataType + \
-                                                  ' --height 200' + \
-                                                  ' --width 200' + \
-                                                  ' --displays "(/' + channelAndDataType + ' (AE IMU))"'
-                    writeModule(xmlFile=xmlFile, name='vFramerLite', parameters=paramsFramer, dependencies=dependencyStr)
+                                   ' --height 200' + \
+                                   ' --width 200' + \
+                                   ' --displays "(/' + channelAndDataType + ' (AE IMU))"'
+                    writeModule(xmlFile=xmlFile, name='vFramerLite', parameters=paramsFramer,
+                                dependencies=dependencyStr)
                     dependencyStr = ''
                     paramsViewer = '--name /viewer/' + channelAndDataType + \
-                                    ' --w 400 --h 400 --synch'
+                                   ' --w 400 --h 400 --synch'
                     writeModule(xmlFile=xmlFile, name='yarpview', parameters=paramsViewer)
 
                     fromPort = '/file/' + channelAndDataType + ':o'
@@ -147,8 +168,8 @@ def exportIitYarpViewer(importedDict, **kwargs):
                     toPort = '/viewer/' + channelAndDataType
                     writeConnection(xmlFile=xmlFile, fromPort=fromPort, toPort=toPort)
 
-
         xmlFile.write('</application>\n')
+
 
 def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     # timestamps(ts) are 32 bit integers counted with an 80 ns clock. 
@@ -156,8 +177,10 @@ def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     # 0000 0000 tcrr yyyy yyyy rrxx xxxx xxxp    (r = reserved)
     # t = 0 to indicate events
     # Ignoring channel though
-    ts = ts / 0.00000008
-    ts = ts.astype(np.uint32) # Timestamp wrapping occurs here
+    isGen1 = (x < 346).all() and (y < 260).all()
+    clock_time = 0.00000008 if isGen1 else 0.000001
+    ts = ts / clock_time
+    ts = ts.astype(np.uint32)  # Timestamp wrapping occurs here
     ts = np.expand_dims(ts, 1)
     x = x.astype(np.uint32)
     y = y.astype(np.uint32)
@@ -172,39 +195,46 @@ def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     ae = (ch << 22) + (y << 12) + (x << 1) + pol
     ae = np.expand_dims(ae, 1)
     data = np.concatenate([ts, ae], axis=1)
-    data = data.flatten().tolist()
-    data = list(map(str, data))
-    return data
+    return data.flatten()
+
 
 def exportDvs(dataFile, data, bottleNumber, **kwargs):
     # preconvert numpy arrays into bottle-ready data
     print('Converting event arrays to bottle-ready string format ...')
-    ch=None
+    ch = None
     if 'ch' in data:
         ch = data['ch']
-    eventsAsListOfStrings = encodeEvents24Bit(data['ts'],
-                                              data['x'],
-                                              data['y'],
-                                              data['pol'],
-                                              ch,
-                                              **kwargs)
+    eventsAsListOfInts = encodeEvents24Bit(data['ts'],
+                                           data['x'],
+                                           data['y'],
+                                           data['pol'],
+                                           ch,
+                                           **kwargs)
+
     print('Breaking into bottles by time')
     # Output dvs data bottle by bottle.
     minTimeStepPerBottle = kwargs.get('minTimeStepPerBottle', 2e-3)
     numEvents = len(data['ts'])
     ptr = 0
+
     pbar = tqdm(total=numEvents, position=0, leave=True)
-    bottleStrs = []
+    exportAsEv2 = kwargs.get('exportAsEv2', True)
     while ptr < numEvents:
         firstTs = data['ts'][ptr]
         nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
-        pbar.update(nextPtr-ptr)
-        bottleStrs.append(str(bottleNumber) + ' ' +
-                       '{0:.6f}'.format(firstTs) + ' AE (' +
-                       ' '.join(eventsAsListOfStrings[ptr*2 : nextPtr*2]) + ')')
+        pbar.update(nextPtr - ptr)
+        if exportAsEv2:
+            eventData = eventsAsListOfInts[ptr * 2: nextPtr * 2].tobytes()
+            eventData = toStringNested(eventData)
+            packetDuration = int(eventsAsListOfInts[::2][min(len(eventsAsListOfInts[::2]) - 1, nextPtr)]) - \
+                             int(eventsAsListOfInts[::2][ptr])
+            dataFile.write(bytes(f'{bottleNumber} {firstTs:.6f} AE {packetDuration} "', 'utf') + eventData + b'\"\n')
+        else:
+            eventData = ' '.join(eventsAsListOfInts[ptr * 2: nextPtr * 2].astype(str))
+            dataFile.write(f'{bottleNumber} {firstTs:.6f} AE ({eventData})\n')
         ptr = nextPtr
         bottleNumber += 1
-    dataFile.write('\n'.join(bottleStrs))
+
 
 def exportFrame(dataFile, data, **kwargs):
     # Here is an example from the python camera - rgb though:
@@ -214,8 +244,8 @@ def exportFrame(dataFile, data, **kwargs):
         ts, frame = tsFrameTuple
         xDim, yDim = frame.shape
         lineStrs.append(str(bottleNum + 1) + ' ' + "{0:.3f}".format(ts) + ' [mat] [mono] (' +
-            ' '.join(['1', str(frame.size), '8', str((frame.shape)[0]), str((frame.shape)[1])]) + ') {' +
-            ' '.join(list(map(str, frame.flatten().tolist()))) + '}\n')
+                        ' '.join(['1', str(frame.size), '8', str((frame.shape)[0]), str((frame.shape)[1])]) + ') {' +
+                        ' '.join(list(map(str, frame.flatten().tolist()))) + '}\n')
 
         ''' expand mono to rgb
         frameRgb = np.reshape(frame, (-1, 1))
@@ -228,9 +258,11 @@ def exportFrame(dataFile, data, **kwargs):
         '''
     dataFile.write(''.join(lineStrs))
 
+
 def exportPose6q(dataFile, data, **kwargs):
     # Following Prashanth's lead here:  https://github.com/robotology/whole-body-estimators/blob/b55be34ce0abab46a14b7bb25d39d9ede5d05d0e/devices/baseEstimatorV1/include/baseEstimatorV1.h#L421
     pass
+
 
 def encodeImu(ts, **kwargs):
     # An IMU reading should go in a bottle with 10 consecutive events.
@@ -277,10 +309,11 @@ def encodeImu(ts, **kwargs):
     temp = kwargs.get('temp')
     mag = kwargs.get('mag')
 
-    acc = np.zeros((numSamples, 3), dtype = np.int16) if acc is None else (acc * accConversionFactor).astype(np.int16)
-    angV = np.zeros((numSamples, 3), dtype = np.int16) if angV is None else (angV * angVConversionFactor).astype(np.int16)
-    temp = np.zeros((numSamples, 1), dtype = np.int16) if temp is None else ((temp + tempConversionOffset) * tempConversionFactor).astype(np.int16)
-    mag = np.zeros((numSamples, 3), dtype = np.int16) if mag is None else (mag * magConversionFactor).astype(np.int16)
+    acc = np.zeros((numSamples, 3), dtype=np.int16) if acc is None else (acc * accConversionFactor).astype(np.int16)
+    angV = np.zeros((numSamples, 3), dtype=np.int16) if angV is None else (angV * angVConversionFactor).astype(np.int16)
+    temp = np.zeros((numSamples, 1), dtype=np.int16) if temp is None else (
+            (temp + tempConversionOffset) * tempConversionFactor).astype(np.int16)
+    mag = np.zeros((numSamples, 3), dtype=np.int16) if mag is None else (mag * magConversionFactor).astype(np.int16)
 
     # switch X and Y; negate Y, to match IMU as mounted on Stefi
     acc = acc[:, [1, 0, 2]]
@@ -290,8 +323,8 @@ def encodeImu(ts, **kwargs):
     angV[:, 0] = - angV[:, 0]
     mag[:, 0] = - mag[:, 0]
 
-    ts = ts / 0.00000008
-    ts = ts.astype(np.uint32) # Timestamp wrapping occurs here
+    ts = ts / 0.00000008  # TODO find way to determine this rescaling value automatically
+    ts = ts.astype(np.uint32)  # Timestamp wrapping occurs here
     ts = np.tile(ts, (1, 10))
     ts = ts.flatten(order='C')
     ts = np.expand_dims(ts, 1)
@@ -307,6 +340,7 @@ def encodeImu(ts, **kwargs):
     data = data.flatten().tolist()
     data = list(map(str, data))
     return data
+
 
 def exportImu(dataFile, data, bottleNumber, **kwargs):
     # preconvert numpy arrays into bottle-ready data
@@ -324,14 +358,15 @@ def exportImu(dataFile, data, bottleNumber, **kwargs):
     while ptr < numEvents:
         firstTs = data['ts'][ptr]
         nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
-        pbar.update(nextPtr-ptr)
+        pbar.update(nextPtr - ptr)
         # Why 20 in the following? Because there are 10 samples per imu and 2 ints per sample that need to be included. 
         bottleStrs.append(str(bottleNumber) + ' ' +
-                       '{0:.6f}'.format(firstTs) + ' IMUS (' +
-                       ' '.join(eventsAsListOfStrings[ptr*20 : nextPtr*20]) + ')')
+                          '{0:.6f}'.format(firstTs) + ' IMUS (' +
+                          ' '.join(eventsAsListOfStrings[ptr * 20: nextPtr * 20]) + ')')
         ptr = nextPtr
         bottleNumber += 1
     dataFile.write('\n'.join(bottleStrs))
+
 
 def encodeSample(data, **kwargs):
     # Samples are encoded like this
@@ -341,12 +376,12 @@ def encodeSample(data, **kwargs):
     # rrrr rrrr tcrr ssss vvvv vvvv vvvv vvvv    (r = reserved = 0)
     # Ignoring channel though
 
-    #Unpack
+    # Unpack
     ts = data['ts']
-    sensor = data['sensor'].astype(np.uint32) # change type to allow shifting up bits
-    value = data['value'].astype(np.uint16) # change to unsigned int to avoid wrapping in the sum below
-    ts = ts / 0.00000008
-    ts = ts.astype(np.uint32) # Timestamp wrapping occurs here
+    sensor = data['sensor'].astype(np.uint32)  # change type to allow shifting up bits
+    value = data['value'].astype(np.uint16)  # change to unsigned int to avoid wrapping in the sum below
+    ts = ts / 0.00000008  # TODO find way to determine this rescaling value automatically
+    ts = ts.astype(np.uint32)  # Timestamp wrapping occurs here
     ts = np.expand_dims(ts, 1)
     channel = kwargs.get('channel', 0)
     eventType = 1
@@ -372,26 +407,27 @@ def exportSample(dataFile, data, bottleNumber, **kwargs):
     while ptr < numEvents:
         firstTs = data['ts'][ptr]
         nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
-        pbar.update(nextPtr-ptr)
+        pbar.update(nextPtr - ptr)
         # Why 20 in the following? Because there are 10 samples per imu and 2 ints per sample that need to be included. 
         bottleStrs.append(str(bottleNumber) + ' ' +
-                       '{0:.6f}'.format(firstTs) + ' IMUS (' +
-                       ' '.join(eventsAsListOfStrings[ptr*2 : nextPtr*2]) + ')')
+                          '{0:.6f}'.format(firstTs) + ' IMUS (' +
+                          ' '.join(eventsAsListOfStrings[ptr * 2: nextPtr * 2]) + ')')
         ptr = nextPtr
         bottleNumber += 1
     dataFile.write('\n'.join(bottleStrs))
-    
-    
+
+
 def encodeSkeleton(inData, **kwargs):
-    data = np.array([], dtype = np.uint32)
+    data = np.array([], dtype=np.uint32)
     for i in range(len(inData['ts'])):
         for key in inData:
-            if(key != 'ts'):
+            if (key != 'ts'):
                 data = np.append(data, inData[key][i].astype(np.uint32))
- 
+
     data = data.flatten().tolist()
     data = list(map(str, data))
     return data
+
 
 def exportSkeleton(dataFile, data, bottleNumber, **kwargs):
     # preconvert numpy arrays into bottle-ready data
@@ -407,14 +443,14 @@ def exportSkeleton(dataFile, data, bottleNumber, **kwargs):
     while ptr < numEvents:
         firstTs = data['ts'][ptr]
         nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
-        pbar.update(nextPtr-ptr)
+        pbar.update(nextPtr - ptr)
         bottleStrs.append(str(bottleNumber) + ' ' +
-                        '{0:.6f}'.format(firstTs) + ' SKLT (' +
-                        ' '.join(eventsAsListOfStrings[ptr*13*2 : nextPtr*13*2]) + ')')
+                          '{0:.6f}'.format(firstTs) + ' SKLT (' +
+                          ' '.join(eventsAsListOfStrings[ptr * 13 * 2: nextPtr * 13 * 2]) + ')')
         ptr = nextPtr
         bottleNumber += 1
     dataFile.write('\n'.join(bottleStrs))
-    
+
 
 def exportIitYarp(importedDict, **kwargs):
     exportFilePath = kwargs.get('exportFilePath', './')
@@ -428,7 +464,7 @@ def exportIitYarp(importedDict, **kwargs):
           ' targeting folder ' + exportFilePath)
     try:
         os.makedirs(exportFilePath)
-    except FileExistsError: # The folder already exists
+    except FileExistsError:  # The folder already exists
         pass
     yarpOutputPort = kwargs.get('yarpOutputPort', '/file')
     channelNames = importedDict['data'].keys()
@@ -440,21 +476,22 @@ def exportIitYarp(importedDict, **kwargs):
             kwargs['channel'] = 0
         dataTypes = importedDict['data'][channelName].keys()
         for dataType in dataTypes:
-            if dataTypesToExport is None or dataType in dataTypesToExport: # , 'pose6', 'imu'
+            if dataTypesToExport is None or dataType in dataTypesToExport:  # , 'pose6', 'imu'
                 if dataType not in ['dvs', 'frame', 'imu', 'sample', 'skeleton']:
                     print('unknown datatype')
-                    continue # Exclude unknown datatypes
-                channelNameAndDataType = channelName + dataType # This is used as a new channel name
+                    continue  # Exclude unknown datatypes
+                channelNameAndDataType = channelName + dataType  # This is used as a new channel name
                 channelPath = os.path.join(exportFilePath, str(channelNameAndDataType))
                 try:
                     os.mkdir(channelPath)
-                except FileExistsError: # The folder already exists
+                except FileExistsError:  # The folder already exists
                     pass
                 dirList = os.listdir(channelPath)
 
                 writeMode = kwargs.get('writeMode', 'w')
                 if 'data.log' in dirList:
-                    print('data already exists in export directory for channel and datatype' + str(channelNameAndDataType))
+                    print('data already exists in export directory for channel and datatype' + str(
+                        channelNameAndDataType))
                     if kwargs.get('protectedWrite', True):
                         print('export not performed')
                         continue
@@ -475,13 +512,15 @@ def exportIitYarp(importedDict, **kwargs):
                     # - placeholder 0.0 put in the following line 
                     infoFile.write('[0.0] ' + yarpOutputPortForChannel + ' [connected]\n')
                 # Write the data.log file
+                if (kwargs.get('exportAsEv2', True)) and 'b' not in writeMode:
+                    writeMode += 'b'
                 with open(os.path.join(channelPath, 'data.log'), writeMode) as dataFile:
                     if writeMode == 'a':
                         dataFile.write('\n')
                     data = importedDict['data'][channelName][dataType]
                     if dataType == 'dvs':
                         if writeMode == 'a':
-                             exportDvs(dataFile, data, bottleNumberStart, **kwargs)
+                            exportDvs(dataFile, data, bottleNumberStart, **kwargs)
                         else:
                             exportDvs(dataFile, data, 0, **kwargs)
                     elif dataType == 'frame':
