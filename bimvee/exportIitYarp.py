@@ -224,8 +224,11 @@ def exportDvs(dataFile, data, bottleNumber, **kwargs):
         nextPtr = np.searchsorted(data['ts'], firstTs + minTimeStepPerBottle)
         pbar.update(nextPtr - ptr)
         if exportAsEv2:
-            eventData = eventsAsListOfInts[ptr * 2: nextPtr * 2].tobytes()
-            eventData = toStringNested(eventData)
+            eventData = eventsAsListOfInts[ptr * 2: nextPtr * 2]
+            if not kwargs.get('exportTimestamps', True):
+                eventData = eventData[1::2]
+
+            eventData = toStringNested(eventData.tobytes())
             packetDuration = int(eventsAsListOfInts[::2][min(len(eventsAsListOfInts[::2]) - 1, nextPtr)]) - \
                              int(eventsAsListOfInts[::2][ptr])
             dataFile.write(bytes(f'{bottleNumber} {firstTs:.6f} AE {packetDuration} "', 'utf') + eventData + b'\"\n')
