@@ -47,7 +47,7 @@ class VisualiserDvs(Visualiser):
     # TODO: There can be methods which better choose the best frame, or which create a visualisation which
     # respects the time_window parameter 
     def get_frame(self, time, timeWindow, **kwargs):
-        self.coloured = kwargs['image_type'] == 'coloured'
+        self.coloured = kwargs.get('image_type') == 'coloured'
         data = self.__data
         kwargs['startTime'] = time - timeWindow / 2
         kwargs['stopTime'] = time + timeWindow / 2

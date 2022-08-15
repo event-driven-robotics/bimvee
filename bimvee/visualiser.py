@@ -41,11 +41,25 @@ import numpy as np
 # Local imports
 
 # Importing child classes lets this one module be referenced for all imports
-from .visualisers.visualiserDvs import VisualiserDvs
-from .visualisers.visualiserFrame import VisualiserFrame
-from .visualisers.visualiserPoint3 import VisualiserPoint3
-from .visualisers.visualiserPose6q import VisualiserPose6q
-from .visualisers.visualiserBoundingBoxes import VisualiserBoundingBoxes
-from .visualisers.visualiserOpticFlow import VisualiserOpticFlow
-from .visualisers.visualiserImu import VisualiserImu
-from .visualisers.visualiserSkeleton import VisualiserSkeleton
+
+
+
+try:
+    from .visualisers.visualiserDvs import VisualiserDvs
+    from .visualisers.visualiserFrame import VisualiserFrame
+    from .visualisers.visualiserPoint3 import VisualiserPoint3
+    from .visualisers.visualiserPose6q import VisualiserPose6q
+    from .visualisers.visualiserBoundingBoxes import VisualiserBoundingBoxes
+    from .visualisers.visualiserOpticFlow import VisualiserOpticFlow
+    from .visualisers.visualiserImu import VisualiserImu
+    from .visualisers.visualiserSkeleton import VisualiserSkeleton
+except ImportError:
+    from bimvee.visualisers.visualiserDvs import VisualiserDvs
+    from bimvee.visualisers.visualiserFrame import VisualiserFrame
+    from bimvee.visualisers.visualiserPoint3 import VisualiserPoint3
+    from bimvee.visualisers.visualiserPose6q import VisualiserPose6q
+    from bimvee.visualisers.visualiserBoundingBoxes import VisualiserBoundingBoxes
+    from bimvee.visualisers.visualiserOpticFlow import VisualiserOpticFlow
+    from bimvee.visualisers.visualiserImu import VisualiserImu
+    from bimvee.visualisers.visualiserSkeleton import VisualiserSkeleton
+
