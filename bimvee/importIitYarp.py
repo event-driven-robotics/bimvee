@@ -575,14 +575,19 @@ def unquoting(match):
     matchedString = (match.string[match.span()[0]:match.span()[1]])
     even = len(matchedString) % 2 == 0
     if matchedString[-2:] == b'\\0':
-        return b'\\' * ((len(matchedString) - 1) // 2) + b'\0' if even else b'\\' * ((len(matchedString) - 1) // 2) + b'0'
+        return b'\\' * ((len(matchedString) - 1) // 2) + b'\0' if even\
+            else b'\\' * ((len(matchedString) - 1) // 2) + b'0'
     if matchedString[-2:] == b'\\n':
-        return b'\\' * ((len(matchedString) - 1) // 2) + b'\n' if even else b'\\' * ((len(matchedString) - 1) // 2) + b'n'
+        return b'\\' * ((len(matchedString) - 1) // 2) + b'\n' if even\
+            else b'\\' * ((len(matchedString) - 1) // 2) + b'n'
     if matchedString[-2:] == b'\\r':
-        return b'\\' * ((len(matchedString) - 1) // 2) + b'\r' if even else b'\\' * ((len(matchedString) - 1) // 2) + b'r'
+        return b'\\' * ((len(matchedString) - 1) // 2) + b'\r' if even\
+            else b'\\' * ((len(matchedString) - 1) // 2) + b'r'
     if matchedString[-2:] == b'\\"':
         return b'\"'
     if matchedString[-2:] == b'\\\\':
+        if match.string[match.span()[1]:match.span()[1]+1] in [b'\x00', b'n', b'r']:
+            return matchedString
         return b'\\'
 
 
