@@ -518,6 +518,7 @@ def importIitYarpBinaryDataLog(**kwargs):
         events = np.frombuffer(events, np.uint32)
         events = events.reshape((-1, 2))
         outDict = decodeEvents(events)
+        del events
         if file.read(1) is None:
             kwargs['importedToByte'] = 'EOF'
         else:
@@ -586,13 +587,13 @@ def unquoting(match):
     if matchedString[-2:] == b'\\"':
         return b'\"'
     if matchedString[-2:] == b'\\\\':
-        if match.string[match.span()[1]:match.span()[1]+1] in [b'\x00', b'n', b'r']:
+        if match.string[match.span()[1]:match.span()[1]+1] in [b'0', b'n', b'r', b'\0', b'\n', b'\r']:
             return matchedString
-        return b'\\'
+        return b'\\' * ((len(matchedString)) // 2)
 
 
 def fromStringNested(in_string):
-   return re.sub(b'\\\\\\\\|\\\\\"', unquoting, re.sub(b'\\\\+[nr0]', unquoting, in_string))
+   return re.sub(b'\\\{2,}|\\\\\"', unquoting, re.sub(b'\\\\+[nr0]', unquoting, in_string))
 
 
 
@@ -718,6 +719,7 @@ def importIitYarpDataLog(**kwargs):
             outDict = decodeEvents(np.reshape(np.concatenate(eventsToDecode), (-1, 2)))
         else:
             outDict = decodeEvents(np.vstack((timestamps, np.concatenate(eventsToDecode))).swapaxes(0, 1).astype(int))
+        del content
         return importPostProcessing(outDict, **kwargs)
 
 

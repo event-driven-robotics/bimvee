@@ -492,6 +492,10 @@ def exportIitYarp(importedDict, **kwargs):
                 dirList = os.listdir(channelPath)
 
                 writeMode = kwargs.get('writeMode', 'w')
+                bottleNumberStart = 0
+                if (kwargs.get('exportAsEv2', True)) and 'b' not in writeMode:
+                    writeMode += 'b'
+                readMode = 'rb' if (kwargs.get('exportAsEv2', True)) else 'r'
                 if 'data.log' in dirList:
                     print('data already exists in export directory for channel and datatype' + str(
                         channelNameAndDataType))
@@ -499,13 +503,12 @@ def exportIitYarp(importedDict, **kwargs):
                         print('export not performed')
                         continue
                     else:
-                        if writeMode == 'w':
+                        if 'w' in writeMode:
                             print('data is being overwritten!')
-                        elif writeMode == 'a':
+                        elif 'a' in writeMode:
                             print('data is being appended!')
-                            with open(os.path.join(channelPath, 'data.log'), 'r') as f:
-                                lines = f.read().splitlines()
-                                bottleNumberStart = len(lines)
+                            with open(os.path.join(channelPath, 'data.log'), readMode) as f:
+                                bottleNumberStart = sum(1 for _ in f)
 
                 # Write the info.log file
                 yarpOutputPortForChannel = yarpOutputPort + '/' + channelNameAndDataType + ":o"
@@ -515,38 +518,22 @@ def exportIitYarp(importedDict, **kwargs):
                     # - placeholder 0.0 put in the following line 
                     infoFile.write('[0.0] ' + yarpOutputPortForChannel + ' [connected]\n')
                 # Write the data.log file
-                if (kwargs.get('exportAsEv2', True)) and 'b' not in writeMode:
-                    writeMode += 'b'
                 with open(os.path.join(channelPath, 'data.log'), writeMode) as dataFile:
-                    if writeMode == 'a':
-                        dataFile.write('\n')
                     data = importedDict['data'][channelName][dataType]
                     if dataType == 'dvs':
-                        if writeMode == 'a':
-                            exportDvs(dataFile, data, bottleNumberStart, **kwargs)
-                        else:
-                            exportDvs(dataFile, data, 0, **kwargs)
+                        exportDvs(dataFile, data, bottleNumberStart, **kwargs)
                     elif dataType == 'frame':
                         # TODO: handle bottle numbering for writeMode = 'a'
                         exportFrame(dataFile, data, **kwargs)
                     elif dataType == 'imu':
-                        if writeMode == 'a':
-                            exportImu(dataFile, data, bottleNumberStart, **kwargs)
-                        else:
-                            exportImu(dataFile, data, 0, **kwargs)
+                        exportImu(dataFile, data, bottleNumberStart, **kwargs)
                     elif dataType == 'pose6q':
                         # TODO: handle bottle numbering for writeMode = 'a'
                         exportPose6q(dataFile, data, **kwargs)
                     elif dataType == 'sample':
-                        if writeMode == 'a':
-                            exportSample(dataFile, data, bottleNumberStart, **kwargs)
-                        else:
-                            exportSample(dataFile, data, 0, **kwargs)
+                        exportSample(dataFile, data, bottleNumberStart, **kwargs)
                     elif dataType == 'skeleton':
-                        if writeMode == 'a':
-                            exportSkeleton(dataFile, data, bottleNumberStart, **kwargs)
-                        else:
-                            exportSkeleton(dataFile, data, 0, **kwargs)
+                        exportSkeleton(dataFile, data, bottleNumberStart, **kwargs)
             else:
                 print("datatype: ", dataType, " not handled yet")
     if kwargs.get('viewerApp', True):
