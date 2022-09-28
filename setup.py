@@ -30,7 +30,8 @@ setup(
           'seaborn',
           'imageio',
           'hickle',
-          'opencv-python'
+          'opencv-python',
+          'loris'
       ],
   classifiers=[
     'Development Status :: 3 - Alpha',
