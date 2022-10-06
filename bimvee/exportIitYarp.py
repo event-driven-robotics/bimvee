@@ -184,7 +184,8 @@ def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     ts = np.expand_dims(ts, 1)
     x = x.astype(np.uint32)
     y = y.astype(np.uint32)
-    pol = pol.astype(np.uint32)
+    pol = pol.astype(bool)
+    pol = (~pol).astype(np.uint32)
     # if ch stream is absent, data has already been split into left and right channels
     # in that case, assign channel value of the whole stream (left or right) from kwargs
     if ch is None:
