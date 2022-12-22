@@ -34,11 +34,15 @@ that we need for our experiments, including but not limited to:
 - Camera calibration info is also imported from e.g. ros (cam)
 
 File formats supported include:
-- IIT YARP .log - ATIS Gen1 and IMU
+- IIT YARP .log - ATIS Gen1 and IMU, also iCub skin
 - rpg_dvs_ros - DVS/DAVIS .bag
 - Third-party datasets recorded by using the above rosbag importer (e.g. Penn MvSEC, UMD EvIMO, Intel Realsense etc)
 - Vicon - as dumped by yarpDumper
 - Samsung (SEC) Gen3 VGA .bin
+- Universidad de Sevilla / PyNavis .aedat
+- TU Graz .aer2
+- INI .aedat (partial implementation - audio / DAS data only)
+- Prophesee .raw .dat
 - Pull requests welcome for importers or exporters of other file formats.
 
 # Contents of library
