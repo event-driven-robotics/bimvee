@@ -177,9 +177,13 @@ def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     # 0000 0000 tcrr yyyy yyyy rrxx xxxx xxxp    (r = reserved)
     # t = 0 to indicate events
     # Ignoring channel though
-    isGen1 = (x < 346).all() and (y < 260).all()
-    clock_time = 0.00000008 if isGen1 else 0.000001
-    ts = ts / clock_time
+    clock_period = kwargs.get('clock')
+    if clock_period == None:
+        clock_period = 1 / 1e6
+    else:
+        clock_period = clock_period / 1e9
+
+    ts = ts / clock_period
     ts = ts.astype(np.uint32)  # Timestamp wrapping occurs here
     ts = np.expand_dims(ts, 1)
     x = x.astype(np.uint32)
