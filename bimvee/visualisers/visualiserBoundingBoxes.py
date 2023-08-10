@@ -98,9 +98,9 @@ class VisualiserBoundingBoxes(Visualiser):
             boxes = np.array(boxes).astype(int)
         else:
             boxes = np.column_stack((gt_bb['minY'][indices], gt_bb['minX'][indices],
-                                     gt_bb['maxY'][indices], gt_bb['maxX'][indices])).astype(np.int)
+                                     gt_bb['maxY'][indices], gt_bb['maxX'][indices])).astype(int)
             if kwargs.get('with_labels', True) and 'label' in gt_bb.keys():
-                labels = gt_bb['label'][indices].astype(np.int)
+                labels = gt_bb['label'][indices].astype(int)
                 boxes = np.column_stack([boxes, labels])
         boxes = np.unique(boxes, axis=0)
         return boxes
