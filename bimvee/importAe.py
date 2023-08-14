@@ -59,6 +59,7 @@ import os
 
 # local imports
 from .importIitNumpy import importIitNumpy
+from .importInivationNumpy import importInivationNumpy
 from .importIitYarp import importIitYarp
 from .importRpgDvsRos import importRpgDvsRos
 from .importSecDvs import importSecDvs
@@ -153,7 +154,10 @@ def importAe(**kwargs):
     elif fileFormat in ['rpgdvsros', 'rosbag', 'rpg', 'ros', 'bag', 'rpgdvs']:
         importedData = importRpgDvsRos(**kwargs)
     elif fileFormat in ['iitnpy', 'npy', 'numpy']:
-        importedData = importIitNumpy(**kwargs)
+        try:
+            importedData = importIitNumpy(**kwargs)
+        except ValueError:
+            importedData = importInivationNumpy(**kwargs)
     elif fileFormat in ['dat', 'raw']:
         importedData = importProph(**kwargs)
     elif fileFormat in ['secdvs', 'bin', 'samsung', 'sec', 'gen3']:
