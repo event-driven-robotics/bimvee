@@ -153,7 +153,7 @@ class VisualiserOpticFlow(Visualiser):
         rad = np.sqrt(np.square(u) + np.square(v))
         a = np.arctan2(-v, -u) / np.pi
         fk = (a + 1) / 2 * (ncols - 1)
-        k0 = np.floor(fk).astype(np.int32)
+        k0 = np.floor(fk).astype(int)
         k1 = k0 + 1
         k1[k1 == ncols] = 0
         f = fk - k0

@@ -22,7 +22,7 @@ We assume that these timestamps are already synchronised.
 We take the lowest, and use that to zero all the timestamps. 
 
 unwrapTimestamps()
-taking a numpy array (expected to by dtype=np.float64), return the array where
+taking a numpy array (expected to by dtype=float), return the array where
 any timestamp wrap events have been treated by advancing all the timestamps 
 after every wrap event.
 The 'wrapTime' argument is the time at which wrapping is expected to occur.
@@ -45,7 +45,7 @@ def zeroTimestampsForADataType(dataTypeDict, tsOffset=None):
     dataTypeDict['tsOffset'] = tsOffset + tsOffsetInitial
 
 def getFirstTimestampForAChannel(channelDict):
-    firstTimestamp = np.float64(np.inf)    
+    firstTimestamp = float(np.inf)    
     for dtypeName in channelDict:
         # Probably the common format is 'ts' for all dtypes, 
         # but handle any exceptions here, example: if dtypeName == 'frame':
@@ -100,7 +100,7 @@ Also it doesn't modify dicts in situ but rather creates new ones.
 '''
 def rezeroTimestampsForMultipleChannels(inDict):
     # Find largest (i.e. least negative) offset
-    tsOffset = np.float64(-np.inf)
+    tsOffset = float(-np.inf)
     for channelName in inDict:
         for dataType in inDict[channelName]:
             tsOffset = max(
@@ -154,7 +154,7 @@ also remove in-situ modification behaviour.
 '''
 def rezeroTimestampsForAnImportedDict(importedDict):
     # Find largest (i.e. least negative) offset
-    tsOffset = np.float64(-np.inf)
+    tsOffset = float(-np.inf)
     for channelName in importedDict['data']:
         for dataType in importedDict['data'][channelName]:
             tsOffset = max(tsOffset, importedDict['data'][channelName][dataType].get('tsOffset', -np.inf))
@@ -191,9 +191,9 @@ def rezeroTimestampsForImportedDicts(importedDicts):
     if not isinstance(importedDicts, list):
         importedDicts = [importedDicts]
     # Find largest (i.e. least negative) offset
-    tsOffsetFromData = np.float64(-np.inf)
+    tsOffsetFromData = float(-np.inf)
     # Confusingly, info-level timestamps run in the other direction! TODO: could fix this
-    tsOffsetFromInfo = np.float64(np.inf)
+    tsOffsetFromInfo = float(np.inf)
     allHaveInfoTsOffset = True
     for importedDict in importedDicts:
         rezeroTimestampsForAnImportedDict(importedDict)
@@ -263,7 +263,7 @@ def unwrapTimestamps(ts, **kwargs):
     tsBits = kwargs.get('tsBits')
     if tsBits is not None and tsBits < 32:
         ts = ts & (np.uint32(0x1 << tsBits) - 1)
-    ts = ts.astype(np.float64) 
+    ts = ts.astype(float) 
     diff = ts[1:] - ts[:-1] 
     wrapPoints = np.where(diff < 0)[0]
     for wrapPoint in wrapPoints:

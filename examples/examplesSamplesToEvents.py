@@ -37,7 +37,7 @@ container = importAe(filePathOrName=filePathOrName)
 ''' 
 At this point in the script we want to isolate a dict containing a single
 sample datatype. Concretely, we want a dict containing at least:
-'ts' - a numpy array of timestamps of type np.float64, assumed to be seconds,
+'ts' - a numpy array of timestamps of type float, assumed to be seconds,
 monotonically increasing.
 'value' (or any other field name) - a numpy array of samples
 with one row (the zeroth dimension) for each timestamp, and additional
@@ -99,7 +99,7 @@ outDict = samplesToEvents(inDict,
                           threshold = 5.)
 
 if 'addr' not in outDict:
-    outDict['addr'] = np.zeros_like(outDict['ts'], dtype=np.int32)
+    outDict['addr'] = np.zeros_like(outDict['ts'], dtype=int)
 
 #%%
 from bimvee.plotSpikeogram import plotSpikeogram

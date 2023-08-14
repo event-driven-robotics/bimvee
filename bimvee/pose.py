@@ -22,9 +22,9 @@ of 3D poses.
 The typical dictionary format is:
 
 {
-*	'ts': numpy array (n) of np.float64 - timestamps in seconds, assumed to be
+*	'ts': numpy array (n) of float - timestamps in seconds, assumed to be
                             sorted ascending,
-*	'point': numpy array (n, 3) of np.float64, where each row contains [x, y, z],
+*	'point': numpy array (n, 3) of float, where each row contains [x, y, z],
 *	'rotation': see below for different pose formats,
 *   optionally, other fields, where each is an iterable with 1st dimension (n, ...)
 }
@@ -135,7 +135,7 @@ def rotToMat(inDict):
         # already a matrix
         return inDict
 
-    mat = np.zeros((rotation.shape[0], 4, 4), dtype=np.float64)
+    mat = np.zeros((rotation.shape[0], 4, 4), dtype=float)
     mat[:, 3, 3] = 1
     mat[:, :3, 3] = inDict['point']
     outDict = inDict.copy()
@@ -383,8 +383,8 @@ def interpolatePoses(inDict, times=None, period=None, maxPeriod=None):
     # Now we have newTimes and existingTimes;
     # Now iterate over newTimes and do interpolation
     numNewTimes = len(newTimes)
-    newPoints = np.zeros((numNewTimes, 3), dtype=np.float64)
-    newRotations = np.zeros((numNewTimes, 4), dtype=np.float64)
+    newPoints = np.zeros((numNewTimes, 3), dtype=float)
+    newRotations = np.zeros((numNewTimes, 4), dtype=float)
     for idx in range(numNewTimes):
         # TODO: slerp function could be vectorised
         # then this whole loop could be vectorised
@@ -457,7 +457,7 @@ def transform(inDict, transformationDict=None, transformationMatrix=None,
             transformation = transformationMatrix
         else:
             # Form a transformation matrix from either or both of translation and rotation
-            transformation = np.zeros((4, 4), dtype=np.float64)
+            transformation = np.zeros((4, 4), dtype=float)
             transformation[3, 3] = 1
             if translation is not None:
                 transformation[:3, 3] = translation
@@ -502,7 +502,7 @@ def averageRotation(inDict, weights=None):
     numRotations = rotations.shape[0]
     if weights is None:
         weights = np.ones(numRotations)
-    A = np.zeros((4,4), dtype=np.float64)
+    A = np.zeros((4,4), dtype=float)
     for weight, q in zip(weights, rotations):
         # multiply q with its transposed version q' and accumulate in A
         A = A + weight * np.outer(q,q)
@@ -538,7 +538,7 @@ def makeQuaternionsContinuous(inDict):
     swapIds = np.where((allQ[:-1, :] * allQ[1:, :]).sum(axis=1) < 0)[0]
     if len(swapIds) % 2 == 1:
         swapIds = np.append(swapIds, (len(allQ) - 1))
-    swapBool = np.zeros((len(outDict['ts'])), dtype=np.bool)
+    swapBool = np.zeros((len(outDict['ts'])), dtype=bool)
 
     for swapIdsIdx in range(0, len(swapIds), 2):
         swapBool[swapIds[swapIdsIdx]+1 :swapIds[swapIdsIdx + 1]+1] = True
@@ -668,13 +668,13 @@ def slerp(q1, q2, time_relative):
     return (s0 * q1) + (s1 * q2)
 
 '''
-expects pose dict in the form: {'ts': 1d np.array of np.float64 timestamps,
-                                'point': 2d array np.float64 of positions [x, y, z],
-                                'rotation': 2d array np.float64 of quaternions [rw, rx, ry, rz]
+expects pose dict in the form: {'ts': 1d np.array of float timestamps,
+                                'point': 2d array float of positions [x, y, z],
+                                'rotation': 2d array float of quaternions [rw, rx, ry, rz]
                                 (i.e. 6dof with rotation as quaternion)}
 Two modes of operation:
 If time is not None, then returns the interpolated pose at that time -
-    returns (point, rotation) tuple, being np.array 1d x 3 and 4 respectively, np.float64,    which is interpolated pose;
+    returns (point, rotation) tuple, being np.array 1d x 3 and 4 respectively, float,    which is interpolated pose;
 Else if maxPeriod is not None, then it returns the entire pose dict,
     but with additional points necessary to ensure that time between samples
     never exceeds maxPeriod
@@ -792,7 +792,7 @@ def transformPosesOld(poseDict, translation=None, rotation=None):
 def averageOfQuaternions(allQ, w=None):
     # Number of quaternions to average
     M = allQ.shape[0]
-    A = np.zeros((4,4), dtype = np.float64)
+    A = np.zeros((4,4), dtype = float)
     if w is None:
         w = np.ones(M,)
     weightSum = 0

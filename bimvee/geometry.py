@@ -66,13 +66,13 @@ def slerp(q1, q2, time_relative):
     return (s0 * q1) + (s1 * q2)
 
 ''' 
-expects pose dict in the form: {'ts': 1d np.array of np.float64 timestamps,
-                                'point': 2d array np.float64 of positions [x, y, z], 
-                                'rotation': 2d array np.float64 of quaternions [rw, rx, ry, rz]
+expects pose dict in the form: {'ts': 1d np.array of float timestamps,
+                                'point': 2d array float of positions [x, y, z], 
+                                'rotation': 2d array float of quaternions [rw, rx, ry, rz]
                                 (i.e. 6dof with rotation as quaternion)}
 Two modes of operation:
 If time is not None, then returns the interpolated pose at that time -
-    returns (point, rotation) tuple, being np.array 1d x 3 and 4 respectively, np.float64,    which is interpolated pose;
+    returns (point, rotation) tuple, being np.array 1d x 3 and 4 respectively, float,    which is interpolated pose;
 Else if maxPeriod is not None, then it returns the entire pose dict,
     but with additional points necessary to ensure that time between samples 
     never exceeds maxPeriod
@@ -217,7 +217,7 @@ def transformPoses(poseDict, translation=None, rotation=None):
 def averageOfQuaternions(allQ, w=None):
     # Number of quaternions to average
     M = allQ.shape[0]
-    A = np.zeros((4,4), dtype = np.float64)
+    A = np.zeros((4,4), dtype = float)
     if w is None:
         w = np.ones(M,)
     weightSum = 0

@@ -136,7 +136,7 @@ def importUdsAedat(**kwargs):
             addr = (events[:, 0] * 2**8 +
                     events[:, 1])
         if kwargs.get('polarised', ('polarized', True)):
-            earDict['pol'] = np.bool_(addr & 0x01)
+            earDict['pol'] = bool_(addr & 0x01)
             addr = addr >> 1
         numChannelBits = kwargs.get('numChannelBits', 5)
         earDict['freq'] = np.uint16(addr & (2**numChannelBits -1))
@@ -155,7 +155,7 @@ def importUdsAedat(**kwargs):
     if kwargs.get('zeroTimestamps', True):
         zeroTimestampsForADataType(earDict) # TODO: This should return a new dict
     tsTick = kwargs.get('tsTick', 1e-6)
-    earDict['ts'] = earDict['ts'].astype(np.float64) * tsTick
+    earDict['ts'] = earDict['ts'].astype(float) * tsTick
     if kwargs.get('stereo', True) and kwargs.get('splitByChannel', True):
         channels = splitByLabel(earDict, 'ch')
         if 0 in channels.keys():

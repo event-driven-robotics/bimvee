@@ -134,9 +134,9 @@ freedom in translation and rotation; it produces a sample every 10 ms.
 
 import numpy as np
 
-ts = np.arange(0, 4.01, 0.01, dtype=np.float64)
-point = np.zeros((401, 3), dtype=np.float64)
-rotation = np.zeros((401, 4), dtype=np.float64)
+ts = np.arange(0, 4.01, 0.01, dtype=float)
+point = np.zeros((401, 3), dtype=float)
+rotation = np.zeros((401, 4), dtype=float)
 rotation[:, 0] = 1 # Neutral quaternion pose
 
 # First: yaw-through-pitch anticlockwise
@@ -190,7 +190,7 @@ from bimvee.geometry import combineTwoQuaternions
 from pyquaternion import Quaternion as Q
 
 # Use pyquaternion library to give us a quaternion starting with a rotation matrix
-cameraToWorldRotMat = np.array([[0, 0, -1], [1, 0, 0], [0, -1, 0]], dtype=np.float64)
+cameraToWorldRotMat = np.array([[0, 0, -1], [1, 0, 0], [0, -1, 0]], dtype=float)
 cameraToWorldQ = Q(matrix = cameraToWorldRotMat).q
 
 rotationNew = np.zeros_like(rotation)

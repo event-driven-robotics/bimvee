@@ -258,11 +258,11 @@ def plotSpikeogram(inDict, **kwargs):
         on = inDict['pol']
         if np.any(on):
             ff = inDict['ts'][on]
-            gg = inDict['addr'][on].astype(np.float64)
+            gg = inDict['addr'][on].astype(float)
             axes.scatter(ff, gg, color='b')
         off = ~on
         if np.any(off):
-            axes.scatter(inDict['ts'][off], inDict['addr'][off].astype(np.float64), color='r')
+            axes.scatter(inDict['ts'][off], inDict['addr'][off].astype(float), color='r')
     else:
         axes.scatter(inDict['ts'], inDict['addr'])
     return axes

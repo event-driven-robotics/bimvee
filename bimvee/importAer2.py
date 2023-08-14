@@ -26,10 +26,10 @@ and returns a dict in this format:
  'data': {
          ch0: {
                dvs: {
-                     'ts': np.array of np.float64 in seconds 
+                     'ts': np.array of float in seconds 
                      'x': np.array of np.uint16 in pixels
                      'y': np.array of np.uint16 in pixels
-                     'pol': np.array of np.bool -- 1 = ON event 
+                     'pol': np.array of bool -- 1 = ON event 
                     }}}}
 """
 
@@ -51,18 +51,18 @@ def importAer2(**kwargs):
     filePathOrName = kwargs['filePathOrName']
     print('Attempting to import ' + filePathOrName + ' as aer2')
     sizeOfArray = 1024
-    ts = np.zeros((sizeOfArray), dtype=np.float64)
+    ts = np.zeros((sizeOfArray), dtype=float)
     x = np.zeros((sizeOfArray), dtype=np.uint16)
     y = np.zeros((sizeOfArray), dtype=np.uint16)
-    pol = np.zeros((sizeOfArray), dtype=np.bool)
+    pol = np.zeros((sizeOfArray), dtype=bool)
 
     with open(filePathOrName, 'r') as file:
         for idx, line in enumerate(tqdm(file)):
             if idx == sizeOfArray:
-                ts = np.concatenate((ts, np.zeros((sizeOfArray), dtype=np.float64)))
+                ts = np.concatenate((ts, np.zeros((sizeOfArray), dtype=float)))
                 x = np.concatenate((x, np.zeros((sizeOfArray), dtype=np.uint16)))
                 y = np.concatenate((y, np.zeros((sizeOfArray), dtype=np.uint16)))
-                pol = np.concatenate((pol, np.zeros((sizeOfArray), dtype=np.bool)))
+                pol = np.concatenate((pol, np.zeros((sizeOfArray), dtype=bool)))
                 sizeOfArray *= 2
             lineSplit = line.split()
             ts[idx] = float(lineSplit[0])
