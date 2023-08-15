@@ -59,7 +59,8 @@ def importInivationNumpy(filePathOrName, **kwargs):
 
     # Importing events
     events = np.load(filePathOrName, allow_pickle=True)
-
+    if len(events.shape) > 1:
+        events = events[0]
     outDict['data']['events'] = {}
     outDict['data']['events']['dvs'] = {}
 
