@@ -128,10 +128,10 @@ def decodeEvents(data, **kwargs):
         channel           (c: 0 -> left; 1 -> right)
     """
     dvsBool = np.logical_not(data[:, 1] & 0xFF800000)
-    apsBool = bool_(data[:, 1] & 0x00800000)
-    skinBool = bool_(data[:, 1] & 0x01000000)
-    imuBool = bool_(data[:, 1] & 0x02000000)
-    earBool = bool_(data[:, 1] & 0x04000000)
+    apsBool = np.array(data[:, 1] & 0x00800000, dtype=bool)
+    skinBool = np.array(data[:, 1] & 0x01000000, dtype=bool)
+    imuBool = np.array(data[:, 1] & 0x02000000, dtype=bool)
+    earBool = np.array(data[:, 1] & 0x04000000, dtype=bool)
     if kwargs.get('codec', '24bit') == '20bit':
         dvsBool[:] = True
         apsBool[:] = False
@@ -152,11 +152,11 @@ def decodeEvents(data, **kwargs):
         ts = dataDvs[:, 0]
         if np.isscalar(ts):
             ts = np.ones((1), dtype=np.uint32) * ts
-        pol = ~bool_(dataDvs[:, 1] & 0x01)  # We want True=ON=brighter, False=OFF=darker, so we negate
+        pol = ~np.array(dataDvs[:, 1] & 0x01, dtype=bool)  # We want True=ON=brighter, False=OFF=darker, so we negate
         dataDvs[:, 1] >>= 1
         if kwargs.get('codec', '24bit') == '20bit':
             # If any non zero value shows up in bits 18-19 then we are sure that the new 24 bit codec is being used
-            if bool_(dataDvs[:, 1] & 0x00C00000).any():
+            if np.array(dataDvs[:, 1] & 0x00C00000, dtype=bool).any():
                 raise ValueError("Data codec not consistent or data check not valid")
             x = np.uint16(dataDvs[:, 1] & 0x1FF)
             dataDvs[:, 1] >>= 9
@@ -196,7 +196,7 @@ def decodeEvents(data, **kwargs):
         ts = np.uint32(dataSkin[:, 0])
         if np.isscalar(ts):
             ts = np.ones((1), dtype=np.uint32) * ts
-        polarity = bool_(dataSkin[:, 1] & 0x01)
+        polarity = np.array(dataSkin[:, 1] & 0x01, dtype=bool)
         dataSkin[:, 1] >>= 1
         taxel = np.uint16(dataSkin[:, 1] & 0x3FF)
         dataSkin[:, 1] >>= 12
@@ -219,7 +219,7 @@ def decodeEvents(data, **kwargs):
         ts = np.uint32(dataEar[:, 0])
         if np.isscalar(ts):
             ts = np.ones((1), dtype=np.uint32) * ts
-        polarity = bool_(dataEar[:, 1] & 0x01)
+        polarity = np.array(dataEar[:, 1] & 0x01, dtype=bool)
         dataEar[:, 1] >>= 1
         frequencyChannel = np.uint8(dataEar[:, 1] & 0x7F)
         dataEar[:, 1] >>= 7
