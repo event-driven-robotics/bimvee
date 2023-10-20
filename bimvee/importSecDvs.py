@@ -21,10 +21,10 @@ Returns a dict in this format:
  'data': {
          ch0: {
                dvs: {
-                     'ts': np.array of np.float64 in seconds 
+                     'ts': np.array of float in seconds 
                      'x': np.array of np.uint16 in pixels
                      'y': np.array of np.uint16 in pixels
-                     'pol': np.array of np.bool -- 1 = ON event 
+                     'pol': np.array of bool -- 1 = ON event 
                     }}}}
 """
 
@@ -48,9 +48,9 @@ def importSecDvs(**kwargs):
     data = data[idx:]
 
     print('Building indices for word types  ...')
-    isTs = (data & 0x08000000).astype(np.bool) # Reference timestamp, i.e. tsMsb
-    isCol = (data & 0x4000000).astype(np.bool) # X and tsLsb
-    isRow = (data & 0x80000000).astype(np.bool) # y and pol
+    isTs = (data & 0x08000000).astype(bool) # Reference timestamp, i.e. tsMsb
+    isCol = (data & 0x4000000).astype(bool) # X and tsLsb
+    isRow = (data & 0x80000000).astype(bool) # y and pol
 
     print('Handling col data ...')
     # create an index which points data back to col
@@ -73,7 +73,7 @@ def importSecDvs(**kwargs):
     print('Handling timestamp data ...')
 
     # from data extract the "start col" flag
-    isStartCol = (data & 0x200000).astype(np.bool) & isCol
+    isStartCol = (data & 0x200000).astype(bool) & isCol
     # now, for each startCol, we want to search backwards through data for a ts    
     # To do this, we find the "data" idx of start col, we create a set of tsIds
     # and then we search tsIds for each dataIdx    
@@ -123,9 +123,9 @@ def importSecDvs(**kwargs):
     ts = unwrapTimestamps(ts)  / 1000000 # Convert to seconds in the same step
     
     # Break out addr and pol for each of the two groups
-    pol1 = ((data & 0x00010000) >> 16).astype(np.bool)
+    pol1 = ((data & 0x00010000) >> 16).astype(bool)
     yLarge1 = ((data & 0x00FC0000) >> 15).astype(np.uint16) # grp1Address
-    pol2 = ((data & 0x00020000) >> 17).astype(np.bool)
+    pol2 = ((data & 0x00020000) >> 17).astype(bool)
     grp2Offset = (data & 0x7C000000) >> 23 
     yLarge2 = (grp2Offset + yLarge1).astype(np.uint16)
 
@@ -138,13 +138,13 @@ def importSecDvs(**kwargs):
     polToConcatenate = []
     for idx in tqdm(range(8)):
         #group 1
-        grp1Bool = (grp1Events & (2 ** idx)).astype(np.bool)
+        grp1Bool = (grp1Events & (2 ** idx)).astype(bool)
         tsToConcatenate.append(ts[grp1Bool])
         xToConcatenate.append(x[grp1Bool])
         yToConcatenate.append(yLarge1[grp1Bool] + idx)
         polToConcatenate.append(pol1[grp1Bool])
         # group 2        
-        grp2Bool = (grp2Events & (2 ** (idx + 8))).astype(np.bool)
+        grp2Bool = (grp2Events & (2 ** (idx + 8))).astype(bool)
         tsToConcatenate.append(ts[grp2Bool])
         xToConcatenate.append(x[grp2Bool])
         yToConcatenate.append(yLarge2[grp2Bool] + idx)

@@ -45,8 +45,8 @@ except ModuleNotFoundError:
         arr = np.ravel(np.asarray(a))
         algo = 'mergesort' if method == 'ordinal' else 'quicksort'
         sorter = np.argsort(arr, kind=algo)
-        inv = np.empty(sorter.size, dtype=np.intp)
-        inv[sorter] = np.arange(sorter.size, dtype=np.intp)
+        inv = np.empty(sorter.size, dtype=intp)
+        inv[sorter] = np.arange(sorter.size, dtype=intp)
         if method == 'ordinal':
             return inv + 1
         arr = arr[sorter]
@@ -79,7 +79,7 @@ def plotDvsLastTsSingle(inDict, **kwargs):
     maxX = kwargs.get('maxX',inDict['x'].max())
     sizeX = maxX - minX + 1
     sizeY = maxY - minY + 1
-    tsArray = np.ones((sizeY, sizeX), dtype=np.float64) * -1
+    tsArray = np.ones((sizeY, sizeX), dtype=float) * -1
 
     # populate the array by running time forward to time
     chosenLogical = inDict['ts'] <= time

@@ -86,7 +86,7 @@ def refractoryPeriod(inDict, refractoryPeriod=0.001, **kwargs):
     maxX = x.max()
     maxY = y.max()
     prevTs = np.zeros((maxY+1, maxX+1))
-    toKeep = np.ones((numEvents), dtype=np.bool)
+    toKeep = np.ones((numEvents), dtype=bool)
     for idx in trange(numEvents, leave=True, position=0):
         if ts[idx] >= prevTs[y[idx], x[idx]] + refractoryPeriod: 
             prevTs[y[idx], x[idx]] = ts[idx]
@@ -114,15 +114,15 @@ def findDims(inDict):
 '''
 Converts the underlying representation of address-events to a single ndarray
 n x 3, where the first col is x, the second col is y, and the third col is all 
-ones; the dtype is np.float64. The field is called 'xyh'.
+ones; the dtype is float. The field is called 'xyh'.
 x and y fields become 1d views of the appropriate rows.
 '''
 def convertToHomogeneousCoords(inDict):
     outDict = inDict.copy()
     outDict['xyh'] = np.concatenate((
-        inDict['x'][:, np.newaxis].astype(np.float64),
-        inDict['y'][:, np.newaxis].astype(np.float64),
-        np.ones((inDict['x'].shape[0], 1), dtype=np.float64)
+        inDict['x'][:, np.newaxis].astype(float),
+        inDict['y'][:, np.newaxis].astype(float),
+        np.ones((inDict['x'].shape[0], 1), dtype=float)
         ), axis=1)
     outDict['x'] = outDict['xyh'][:, 0]
     outDict['y'] = outDict['xyh'][:, 1]
@@ -140,15 +140,15 @@ def undistortEvents(inDict, k, d, **kwargs):
     inDict = findDims(inDict)
     kNew = kwargs.get('kNew', k)
     yGrid, xGrid = np.meshgrid(range(inDict['dimY']), range(inDict['dimX']))
-    xGrid = xGrid.reshape(-1).astype(np.float32)
-    yGrid = yGrid.reshape(-1).astype(np.float32)
+    xGrid = xGrid.reshape(-1).astype(float)
+    yGrid = yGrid.reshape(-1).astype(float)
     xyGrid = np.concatenate((xGrid[:, np.newaxis], yGrid[:, np.newaxis]), axis=1)
     undistortedPoints = cv2.undistortPoints(xyGrid, k, d, None, kNew)
     undistortionMap = undistortedPoints.reshape(inDict['dimX'], inDict['dimY'], 2)
     undistortionMap = np.swapaxes(undistortionMap, 0, 1)
     xy = undistortionMap[inDict['y'], inDict['x'], :]
     if kwargs.get('asInt', False):
-        xy = np.round(xy).astype('np.int16')
+        xy = np.round(xy).astype('int')
     outDict = inDict.copy()
     outDict['x'] = xy[:, 0]
     outDict['y'] = xy[:, 1]

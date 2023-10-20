@@ -70,7 +70,7 @@ def defineBoundariesAndDensities(**kwargs):
     return boundaries, densities, centres, widths
 
 def interSpikeInterval(ts, boundaries, densities, **kwargs):
-    hist = np.zeros((len(densities)), dtype=np.float64)
+    hist = np.zeros((len(densities)), dtype=float)
     diff = ts[1:] - ts[:-1]
     for idx, (boundary1, boundary2) in enumerate(zip(boundaries[:-1], boundaries[1:])):
         hist[idx] = np.sum(np.logical_and(diff >= boundary1, diff <= boundary2))
@@ -96,7 +96,7 @@ def plotInterSpikeIntervalSingle(events, **kwargs):
     maxX = np.max(events['x'])
     minY = np.min(events['y'])
     maxY = np.max(events['y'])
-    hist = np.zeros((len(densities)), dtype=np.float64)
+    hist = np.zeros((len(densities)), dtype=float)
     for currX in trange(minX, maxX+1, leave=True, position=0):
         currXLogical = events['x']==currX
         tsForCurrX = events['ts'][currXLogical]
@@ -184,7 +184,7 @@ def plotIsi(inDict, **kwargs):
     plotInterSpikeInterval(inDict, **kwargs)
 
 def crossCorrelation(ts1, ts2, boundaries, densities, **kwargs):
-    hist = np.zeros((len(densities)), dtype=np.float64)
+    hist = np.zeros((len(densities)), dtype=float)
     # TODO: think about a nice array-based way to do the following:
     for ts in ts1:
         firstIdx = np.searchsorted(ts2, ts+boundaries[0])
@@ -224,7 +224,7 @@ def plotCrossCorrelation(events1, events2, **kwargs):
     maxX = max(np.max(events1['x']), np.max(events2['x']))
     minY = min(np.min(events1['y']), np.min(events2['y']))
     maxY = max(np.max(events1['y']), np.max(events2['y']))
-    hist = np.zeros((len(densities)), dtype=np.float64)
+    hist = np.zeros((len(densities)), dtype=float)
     # TODO: This loop could be much more efficient, following the pattern in plotInterSpikeInterval, above
     for currX in trange(minX, maxX+1, leave=True, position=0): 
         for currY in range(minY, maxY+1):

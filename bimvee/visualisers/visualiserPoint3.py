@@ -151,7 +151,7 @@ class VisualiserPoint3(Visualiser):
         rotMat = np.array([[cosA * cosB, cosA * sinB * sinC - sinA * cosC, cosA * sinB * cosC + sinA * sinC],
                            [sinA * cosB, sinA * sinB * sinC + cosA * cosC, sinA * sinB * cosC - cosA * sinC],
                            [-sinB, cosB * sinC, cosB * cosC]],
-                          dtype=np.float64)
+                          dtype=float)
         points = points - 0.5
         points = np.matmul(rotMat, points.transpose()).transpose()
         points = points + 0.5

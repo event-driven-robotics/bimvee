@@ -135,9 +135,9 @@ def importIitVicon(**kwargs):
             line = file.readline()
 
     # converting lists of strings to numpy arrays of objects
-    poseDict['ts'] = np.array(poseDict['ts'], dtype=np.float64)
-    poseDict['point'] = np.array(poseDict['point'], dtype=np.float64)
-    poseDict['rotation'] = np.array(poseDict['rotation'], dtype=np.float64)
+    poseDict['ts'] = np.array(poseDict['ts'], dtype=float)
+    poseDict['point'] = np.array(poseDict['point'], dtype=float)
+    poseDict['rotation'] = np.array(poseDict['rotation'], dtype=float)
     poseDict['bodyId'] = np.array(poseDict['bodyId'], dtype=object)
     if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
         zeroTimestampsForADataType(poseDict)

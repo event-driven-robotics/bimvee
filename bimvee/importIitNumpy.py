@@ -71,9 +71,9 @@ def importIitNumpy(filePathOrName, **kwargs):
     ts_to_sync = [events[:, 0]]
 
     outDict['data']['labelledEvents']['dvs']['ts'] = events[:, 0]
-    outDict['data']['labelledEvents']['dvs']['x'] = events[:, 1].astype(np.int)
-    outDict['data']['labelledEvents']['dvs']['y'] = events[:, 2].astype(np.int)
-    outDict['data']['labelledEvents']['dvs']['pol'] = events[:, 3].astype(np.bool)
+    outDict['data']['labelledEvents']['dvs']['x'] = events[:, 1].astype(int)
+    outDict['data']['labelledEvents']['dvs']['y'] = events[:, 2].astype(int)
+    outDict['data']['labelledEvents']['dvs']['pol'] = events[:, 3].astype(bool)
     outDict['data']['labelledEvents']['dvs']['dimX'] = 304
     outDict['data']['labelledEvents']['dvs']['dimY'] = 240
 
@@ -107,7 +107,7 @@ def importIitNumpy(filePathOrName, **kwargs):
         outDict['data']['labelledFrames'] = {}
         outDict['data']['labelledFrames']['frame'] = {}
 
-        frames_ts = found[:, 0].astype(np.float)
+        frames_ts = found[:, 0].astype(float)
         tsOffset = min(tsOffset, frames_ts[0])
         ts_to_sync.append(frames_ts)
 
@@ -135,9 +135,9 @@ def importIitNumpy(filePathOrName, **kwargs):
                 labels.append(label)
                 boxes_ts.append(ts)
 
-        boxes_ts = np.array(boxes_ts).astype(np.float)
-        labels = np.array(labels).astype(np.int)
-        boxes = np.array(boxes).astype(np.int)
+        boxes_ts = np.array(boxes_ts).astype(float)
+        labels = np.array(labels).astype(int)
+        boxes = np.array(boxes).astype(int)
 
         tsOffset = min(tsOffset, boxes_ts[0])
         ts_to_sync.append(boxes_ts)

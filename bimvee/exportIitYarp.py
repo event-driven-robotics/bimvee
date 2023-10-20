@@ -317,11 +317,11 @@ def encodeImu(ts, **kwargs):
     temp = kwargs.get('temp')
     mag = kwargs.get('mag')
 
-    acc = np.zeros((numSamples, 3), dtype=np.int16) if acc is None else (acc * accConversionFactor).astype(np.int16)
-    angV = np.zeros((numSamples, 3), dtype=np.int16) if angV is None else (angV * angVConversionFactor).astype(np.int16)
-    temp = np.zeros((numSamples, 1), dtype=np.int16) if temp is None else (
-            (temp + tempConversionOffset) * tempConversionFactor).astype(np.int16)
-    mag = np.zeros((numSamples, 3), dtype=np.int16) if mag is None else (mag * magConversionFactor).astype(np.int16)
+    acc = np.zeros((numSamples, 3), dtype=int) if acc is None else (acc * accConversionFactor).astype(int)
+    angV = np.zeros((numSamples, 3), dtype=int) if angV is None else (angV * angVConversionFactor).astype(int)
+    temp = np.zeros((numSamples, 1), dtype=int) if temp is None else (
+            (temp + tempConversionOffset) * tempConversionFactor).astype(int)
+    mag = np.zeros((numSamples, 3), dtype=int) if mag is None else (mag * magConversionFactor).astype(int)
 
     # switch X and Y; negate Y, to match IMU as mounted on Stefi
     acc = acc[:, [1, 0, 2]]

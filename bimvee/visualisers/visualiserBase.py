@@ -59,4 +59,7 @@ class Visualiser:
 
     def get_colorfmt(self):
         return 'luminance'
+    
+    def get_settings(self):
+        return {}
 

@@ -50,12 +50,12 @@ class VisualiserBoundingBoxes(Visualiser):
 
     def get_frame(self, time, timeWindow, **kwargs):
         if self.__data is None or not kwargs.get('show_bounding_boxes', True):
-            return [[0, 0, 0, 0]]
+            return None
         gt_bb = self.__data
         indices = abs(gt_bb['ts'] - time) < timeWindow
         if not any(indices):
             if not kwargs.get('interpolate'):
-                return [[0, 0, 0, 0]]
+                return None
         if kwargs.get('interpolate'):
             boxes = []
             for label in np.unique(gt_bb['label']):
@@ -98,9 +98,9 @@ class VisualiserBoundingBoxes(Visualiser):
             boxes = np.array(boxes).astype(int)
         else:
             boxes = np.column_stack((gt_bb['minY'][indices], gt_bb['minX'][indices],
-                                     gt_bb['maxY'][indices], gt_bb['maxX'][indices])).astype(np.int)
+                                     gt_bb['maxY'][indices], gt_bb['maxX'][indices])).astype(int)
             if kwargs.get('with_labels', True) and 'label' in gt_bb.keys():
-                labels = gt_bb['label'][indices].astype(np.int)
+                labels = gt_bb['label'][indices].astype(int)
                 boxes = np.column_stack([boxes, labels])
         boxes = np.unique(boxes, axis=0)
         return boxes

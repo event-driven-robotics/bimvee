@@ -25,10 +25,10 @@ Returns a dict in this format:
  'data': {
          ch0: {
                dvs: {
-                     'ts': np.array of np.float64 in seconds
+                     'ts': np.array of float in seconds
                      'x': np.array of np.uint16 in pixels
                      'y': np.array of np.uint16 in pixels
-                     'pol': np.array of np.bool -- 1 = ON event
+                     'pol': np.array of bool -- 1 = ON event
                     }}}}
 """
 
@@ -107,10 +107,10 @@ def importDat(dat):
     events = dat.read()
     events = np.frombuffer(events, np.uint32().newbyteorder('<'))
     events = events.reshape(-1, 2)
-    ts = events[:,0].astype(np.float64) / 1000000
+    ts = events[:,0].astype(float) / 1000000
     events = events[:,1]
-    x = (events & 0x00003FFF).astype(np.int16)
-    y = ((events & 0x0FFFC000) >> 14).astype(np.int16)
+    x = (events & 0x00003FFF).astype(int)
+    y = ((events & 0x0FFFC000) >> 14).astype(int)
     pol = (events & 0xF0000000) >> 28
     
     try:
@@ -118,7 +118,7 @@ def importDat(dat):
     except AssertionError:
         print('This file format not supported by this decoder.')
         raise
-    pol = pol.astype(np.bool)
+    pol = pol.astype(bool)
     
     dvsDict = {'ts': ts,
                'x': x,
@@ -223,10 +223,10 @@ def importRaw(raw):
         print('Other event types are present in this file, which are not being decoded')
     events = events[~eventIsOtherType]
     ts_MSB = ts_MSB[~eventIsOtherType]
-    pol = (ev_type[~eventIsOtherType]).astype(np.bool)
+    pol = (ev_type[~eventIsOtherType]).astype(bool)
     # unpack the rest of the data
-    y = (events & 0x000007FF).astype(np.int16)           # y is bits 10..0
-    x = ((events & 0x003FF800) >> 11).astype(np.int16)    # x is bits 21..11
+    y = (events & 0x000007FF).astype(int)           # y is bits 10..0
+    x = ((events & 0x003FF800) >> 11).astype(int)    # x is bits 21..11
     ts_LSB = (events & 0x0FC00000) >> 22  # ts is bits 27..22
     ts = (ts_MSB + ts_LSB) / 1000000
 

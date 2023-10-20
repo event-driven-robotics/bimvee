@@ -81,7 +81,7 @@ dvs data type, for example, then contains:
 - "pol": numpy array of bool
 - "x": numpy array of np.uint16
 - "y": numpy array of np.uint16
-- "ts": numpy array of np.float64
+- "ts": numpy array of float
 
 timestamps are always converted to seconds;
 (raw formats are, however, e.g. int with unit increments of 80 ns for ATIS,
@@ -175,7 +175,7 @@ import/export Hdf5 functions use:
 
 bimvee doesn't use classes for datatypes. Consequently, the code doesn't have a central place to refer to for the definition of datatypes. The types are intended to be used loosely, with minimal features which can be extended by adding optional fields. There is an optional container class which gives some functions for easier data manipulation.
 
-There are some datatypes which are simply dicts which act as containers to group information, for example the 'cam' type. However most of the functionality of the library is based around the idea of a datatype dict containing a set of keys where each is a numpy array (or other iterable) where there is a 'ts' key, containing a numpy array of np.float64 timestamps, and then each iterable key should have the same number of elements (in the zeroth dimension) as the ts field. Thus a set of timestamped 'events' or other data type is defined. Other keys may be included which either aren't iterables or don't have the same number of elements in the zeroth dimension. These are therefore not interpreted as contributing dimensions to the set of data points. Concretely the datatypes which have some kind of support are:
+There are some datatypes which are simply dicts which act as containers to group information, for example the 'cam' type. However most of the functionality of the library is based around the idea of a datatype dict containing a set of keys where each is a numpy array (or other iterable) where there is a 'ts' key, containing a numpy array of float timestamps, and then each iterable key should have the same number of elements (in the zeroth dimension) as the ts field. Thus a set of timestamped 'events' or other data type is defined. Other keys may be included which either aren't iterables or don't have the same number of elements in the zeroth dimension. These are therefore not interpreted as contributing dimensions to the set of data points. Concretely the datatypes which have some kind of support are:
 
 - dvs
 - frame
@@ -195,49 +195,49 @@ Definitions of minimal and optional(*) fields follow.
 
 ## dvs:
 
-- ts  n np.float64
+- ts  n float
 - x   n np.uint16
 - y   n np.uint16 As the sensor outputs it; plot functions assume that y increases in downward direction, following https://arxiv.org/pdf/1610.08336.pdf
-- pol n np.bool To the extent possible, True means increase in light, False means decrease.
+- pol n bool To the extent possible, True means increase in light, False means decrease.
 - dimX* 1 int
 - dimY* 1 int
 
 ## frame:
 
-- ts    n np.float64
+- ts    n float
 - frame n list (of np.array of 2 or 3 dimensions np.uint8)
 
 ## sample:
 
-- ts     n np.float64
+- ts     n float
 - sensor n np.uint8
-- value  n np.int16
+- value  n int
 
 ## imu:
 
-- ts  n    np.float64
-- acc  nx3 np.float64 accelerometer readings [x,y,z] in m/s
-- angV nx3 np.float64 angV readings [yaw, pitch roll?] in rad/s
-- mag  nx3 np.float64 magnetometer readings [x, y, z] in tesla
-- temp n   np.float64
+- ts  n    float
+- acc  nx3 float accelerometer readings [x,y,z] in m/s
+- angV nx3 float angV readings [yaw, pitch roll?] in rad/s
+- mag  nx3 float magnetometer readings [x, y, z] in tesla
+- temp n   float
 
 ## point3:
 
-- ts    n   np.float64
-- point nx3 np.float64 row format is [x, y, z]
+- ts    n   float
+- point nx3 float row format is [x, y, z]
 
 
 ## pose6q (effectively extends point3):
 
-- ts       n   np.float64
-- point    nx3 np.float64 row format is [x, y, z]
-- rotation nx4 np.float64 row format is [rw, rx, ry, rz] where r(wxyz) define a quaternion
+- ts       n   float
+- point    nx3 float row format is [x, y, z]
+- rotation nx4 float row format is [rw, rx, ry, rz] where r(wxyz) define a quaternion
 
 Note: quaternion order follows the convention of e.g. blender (wxyz) but not e.g. ros. (xyzw)
 
 ## flow: (per-pixel flow events)
 
-- ts  n np.float64
+- ts  n float
 - x   n np.uint16
 - y   n np.uint16  
 - vx   n np.uint16
@@ -245,22 +245,22 @@ Note: quaternion order follows the convention of e.g. blender (wxyz) but not e.g
 
 ## skinEvents: (intended for iCub neuromorphic skin events; could be generalised)
 
-- ts n np.float64
+- ts n float
 - taxel n np.unit16
 - bodyPart n np.uint8
-- pol n np.bool
+- pol n bool
 
 ## skinSamples: (intended for dense iCub skin samples; could be generalised)
 
-- ts n np.float64
-- pressure nxm np.float64; m is the number of taxels concurrently sampled. Note:
+- ts n float
+- pressure nxm float; m is the number of taxels concurrently sampled. Note:
 there exist in the wild examples where the pressure value is a raw 8-bit sample.
 
 ## ear: (intended for cochlea events from UDS / Gutierrez-Galan, could be generalised)
 
-- ts n np.float64
+- ts n float
 - freq n np.uint8
-- pol n np.bool
+- pol n bool
 - (There follow a number of model-specific fields which contribute to the full address: xsoType, auditoryModel, itdNeuronIds)
 
 ## cam:
@@ -270,7 +270,7 @@ Following ros msg camera info, the fields this might contain include:
 - height           1   int
 - width            1   int
 - distortion_model     string
-- D                5   np.float64 distortion params
-- K                3x3 np.float64 Intrinsic camera matrix
-- R                3x4 np.float64 Rectification matrix
-- P                4x4 np.float64 projection matrix
+- D                5   float distortion params
+- K                3x3 float Intrinsic camera matrix
+- R                3x4 float Rectification matrix
+- P                4x4 float projection matrix

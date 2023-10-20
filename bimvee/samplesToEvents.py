@@ -78,7 +78,7 @@ def samplesToEvents(inDict, **kwargs):
             subOutDict = samplesToEvents(subInDict, **kwargs)
             numSubSamples = len(subOutDict['ts'])
             subAddrs = subOutDict.pop('addr', None)
-            newAddrs = np.ones((numSubSamples), dtype = np.int32) * addr
+            newAddrs = np.ones((numSubSamples), dtype = int) * addr
             if subAddrs is None:
                 subOutDict['addr'] = newAddrs
             else:
@@ -97,7 +97,7 @@ def samplesToEvents(inDict, **kwargs):
         last_val = values[0]
         ON_spikes = []
         OFF_spikes = []
-        values = values.astype(np.float64) # TODO: consider if this is necessary
+        values = values.astype(float) # TODO: consider if this is necessary
         delta_input = np.diff(values)
         dt = np.diff(ts)
         m = delta_input/dt
@@ -232,13 +232,13 @@ def samplesToEvents(inDict, **kwargs):
                         first_event_sample = True
         # Now we have lists of ON and OFF times - convert to a single sorted
         #dataType dict, including a 'pol' field
-        ON_spikes = np.array(ON_spikes, dtype = np.float64)
+        ON_spikes = np.array(ON_spikes, dtype = float)
         onDict = {'ts': ON_spikes,
-                  'pol': np.ones_like(ON_spikes, dtype=np.bool)
+                  'pol': np.ones_like(ON_spikes, dtype=bool)
                   }
-        OFF_spikes = np.array(OFF_spikes, dtype = np.float64)
+        OFF_spikes = np.array(OFF_spikes, dtype = float)
         offDict = {'ts': OFF_spikes,
-                  'pol': np.zeros_like(OFF_spikes, dtype=np.bool)
+                  'pol': np.zeros_like(OFF_spikes, dtype=bool)
                   }
         results = [onDict, offDict]
     return mergeDataTypeDicts(results) # This will sort by default

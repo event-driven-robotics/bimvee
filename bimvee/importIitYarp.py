@@ -128,10 +128,10 @@ def decodeEvents(data, **kwargs):
         channel           (c: 0 -> left; 1 -> right)
     """
     dvsBool = np.logical_not(data[:, 1] & 0xFF800000)
-    apsBool = np.bool_(data[:, 1] & 0x00800000)
-    skinBool = np.bool_(data[:, 1] & 0x01000000)
-    imuBool = np.bool_(data[:, 1] & 0x02000000)
-    earBool = np.bool_(data[:, 1] & 0x04000000)
+    apsBool = np.array(data[:, 1] & 0x00800000, dtype=bool)
+    skinBool = np.array(data[:, 1] & 0x01000000, dtype=bool)
+    imuBool = np.array(data[:, 1] & 0x02000000, dtype=bool)
+    earBool = np.array(data[:, 1] & 0x04000000, dtype=bool)
     if kwargs.get('codec', '24bit') == '20bit':
         dvsBool[:] = True
         apsBool[:] = False
@@ -152,11 +152,11 @@ def decodeEvents(data, **kwargs):
         ts = dataDvs[:, 0]
         if np.isscalar(ts):
             ts = np.ones((1), dtype=np.uint32) * ts
-        pol = ~np.bool_(dataDvs[:, 1] & 0x01)  # We want True=ON=brighter, False=OFF=darker, so we negate
+        pol = ~np.array(dataDvs[:, 1] & 0x01, dtype=bool)  # We want True=ON=brighter, False=OFF=darker, so we negate
         dataDvs[:, 1] >>= 1
         if kwargs.get('codec', '24bit') == '20bit':
             # If any non zero value shows up in bits 18-19 then we are sure that the new 24 bit codec is being used
-            if np.bool_(dataDvs[:, 1] & 0x00C00000).any():
+            if np.array(dataDvs[:, 1] & 0x00C00000, dtype=bool).any():
                 raise ValueError("Data codec not consistent or data check not valid")
             x = np.uint16(dataDvs[:, 1] & 0x1FF)
             dataDvs[:, 1] >>= 9
@@ -180,7 +180,7 @@ def decodeEvents(data, **kwargs):
         ts = np.uint32(dataImu[:, 0])
         if np.isscalar(ts):
             ts = np.ones((1), dtype=np.uint32) * ts
-        value = np.int16(dataImu[:, 1] & 0xFFFF)
+        value = int(dataImu[:, 1] & 0xFFFF)
         dataImu[:, 1] >>= 16
         sensor = np.uint8(dataImu[:, 1] & 0x0F)
         dataImu[:, 1] >>= 6
@@ -196,7 +196,7 @@ def decodeEvents(data, **kwargs):
         ts = np.uint32(dataSkin[:, 0])
         if np.isscalar(ts):
             ts = np.ones((1), dtype=np.uint32) * ts
-        polarity = np.bool_(dataSkin[:, 1] & 0x01)
+        polarity = np.array(dataSkin[:, 1] & 0x01, dtype=bool)
         dataSkin[:, 1] >>= 1
         taxel = np.uint16(dataSkin[:, 1] & 0x3FF)
         dataSkin[:, 1] >>= 12
@@ -219,7 +219,7 @@ def decodeEvents(data, **kwargs):
         ts = np.uint32(dataEar[:, 0])
         if np.isscalar(ts):
             ts = np.ones((1), dtype=np.uint32) * ts
-        polarity = np.bool_(dataEar[:, 1] & 0x01)
+        polarity = np.array(dataEar[:, 1] & 0x01, dtype=bool)
         dataEar[:, 1] >>= 1
         frequencyChannel = np.uint8(dataEar[:, 1] & 0x7F)
         dataEar[:, 1] >>= 7
@@ -284,15 +284,15 @@ def samplesToImu(inDict, **kwargs):
     # Otherwise, iterate through this sample by sample - slowest and most robust method
     # Possible to do this much faster, but only my assuming no gaps in data
     tsAll = inDict['ts']
-    sensorAll = inDict['sensor'].astype(np.int16)
+    sensorAll = inDict['sensor'].astype(int)
     valueAll = inDict['value']
     wrapIds = np.where((sensorAll[1:] - sensorAll[:-1]) < 1)[0]
     numImu = len(wrapIds) + 1
-    tsOut = np.zeros((numImu), dtype=np.float64)
-    acc = np.zeros((numImu, 3), dtype=np.int16)
-    angV = np.zeros((numImu, 3), dtype=np.int16)
-    temp = np.zeros((numImu, 1), dtype=np.int16)
-    mag = np.zeros((numImu, 3), dtype=np.int16)
+    tsOut = np.zeros((numImu), dtype=float)
+    acc = np.zeros((numImu, 3), dtype=int)
+    angV = np.zeros((numImu, 3), dtype=int)
+    temp = np.zeros((numImu, 1), dtype=int)
+    mag = np.zeros((numImu, 3), dtype=int)
     imuPtr = -1
     sensorPrev = 100
     for ts, sensor, value in zip(tsAll, sensorAll, valueAll):
@@ -320,10 +320,10 @@ def samplesToImu(inDict, **kwargs):
             mag[imuPtr, 0] = value
         elif sensor == 9:
             mag[imuPtr, 2] = value
-    acc = acc.astype(np.float64) / accConversionFactor
-    angV = angV.astype(np.float64) / angVConversionFactor
-    temp = temp.astype(np.float64) / tempConversionFactor - tempConversionOffset
-    mag = mag.astype(np.float64) / magConversionFactor
+    acc = acc.astype(float) / accConversionFactor
+    angV = angV.astype(float) / angVConversionFactor
+    temp = temp.astype(float) / tempConversionFactor - tempConversionOffset
+    mag = mag.astype(float) / magConversionFactor
     outDict = {
         'ts': tsOut,
         'acc': acc,
@@ -562,8 +562,8 @@ def importIitRawSkinSamples(**kwargs):
                 # TODO: Later, we might generalise the number of channels.
                 assert numSamples == 192
                 ts = float(numbers[1])
-                samples = np.array(numbers[2:], dtype=np.float64)[np.newaxis, :]
-                newSample = {'ts': np.ones((1), dtype=np.float64) * ts,
+                samples = np.array(numbers[2:], dtype=float)[np.newaxis, :]
+                newSample = {'ts': np.ones((1), dtype=float) * ts,
                              'pressure': samples}
                 skinSamples = appendBatch(skinSamples, newSample)
             except ValueError:  # sometimes finding malformed packets at the end of files - ignoring
@@ -646,7 +646,7 @@ def importIitYarpDataLog(**kwargs):
                 found = pattern.match(line)
                 # The following values would be useful for indexing the input file:
                 # bottlenumber = np.uint32(found[1])
-                # timestamp = np.float64(found[2])
+                # timestamp = float(found[2])
                 bottleType = found[3]
                 if bottleType not in ['AE', 'IMUS', 'LAE', 'FLOW', 'EAR', 'SKS', 'SKE']:
                     print('Unknown bottle type: ' + bottleType)
@@ -672,8 +672,8 @@ def importIitYarpDataLog(**kwargs):
                         events = events.reshape(numEventsInBatch, 4)
                         outDict = decodeEvents(events[:, :2], **kwargs)
                         dvsBatch = outDict['dvs']
-                        dvsBatch['vx'] = events[:, 2].view(dtype=np.float32)
-                        dvsBatch['vy'] = events[:, 3].view(dtype=np.float32)
+                        dvsBatch['vx'] = events[:, 2].view(dtype=float)
+                        dvsBatch['vy'] = events[:, 3].view(dtype=float)
                         dvsFlow = appendBatch(dvsFlow, dvsBatch)
                     elif bottleType == 'SKS':
                         ''' Skin samples are encoded with 4 words:
