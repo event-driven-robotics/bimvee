@@ -485,10 +485,14 @@ def importPostProcessing(inDict, **kwargs):
             del inDict[dataType]
         else:
             # Iron out any time-wraps which occurred and convert to seconds
-            isGen1 = (inDict[dataType]['x'] < 346).all() and (inDict[dataType]['y'] < 260).all()
-            clock_time = 0.00000008 if isGen1 else 0.000001
+            clock_period_ns = kwargs.get('clock')
+            if clock_period_ns is None:
+                clock_period_s = 1 / 1e6
+            else:
+                clock_period_s = clock_period_ns / 1e9
+
             inDict[dataType]['ts'] = unwrapTimestamps(inDict[dataType]['ts'],
-                                                      **kwargs) * clock_time
+                                                      **kwargs) * clock_period_s
             # Special handling for imu data
             if dataType == 'imuSamples':
                 if kwargs.get('convertSamplesToImu', True):
