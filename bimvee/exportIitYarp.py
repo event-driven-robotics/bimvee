@@ -174,7 +174,7 @@ def exportIitYarpViewer(importedDict, **kwargs):
 def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     # timestamps(ts) are 32 bit integers counted with clock period defined by the type of sensor. 
     # Events are encoded as 32 bits with x,y,channel(ch)(c) and polarity(pol)(p) as shown below
-    # 0000 0000 tcrr yyyy yyyy rrxx xxxx xxxp    (r = reserved)
+    # 0000 00CS TCYY YYYY YYYY XXXX XXXX XXXP
     # t = 0 to indicate events
     # Ignoring channel though
     clock_period_ns = kwargs.get('clock')
@@ -188,6 +188,7 @@ def encodeEvents24Bit(ts, x, y, pol, ch=None, **kwargs):
     ts = np.expand_dims(ts, 1)
     x = x.astype(np.uint32)
     y = y.astype(np.uint32)
+    pol[pol<0]=0
     pol = pol.astype(bool)
     pol = (~pol).astype(np.uint32)
     # if ch stream is absent, data has already been split into left and right channels
