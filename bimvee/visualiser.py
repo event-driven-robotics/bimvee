@@ -50,6 +50,7 @@ try:
     from .visualisers.visualiserPoint3 import VisualiserPoint3
     from .visualisers.visualiserPose6q import VisualiserPose6q
     from .visualisers.visualiserBoundingBoxes import VisualiserBoundingBoxes
+    from .visualisers.visualiserEyeTracking import VisualiserEyeTracking
     from .visualisers.visualiserOpticFlow import VisualiserOpticFlow
     from .visualisers.visualiserImu import VisualiserImu
     from .visualisers.visualiserSkeleton import VisualiserSkeleton
@@ -59,6 +60,7 @@ except ImportError:
     from bimvee.visualisers.visualiserPoint3 import VisualiserPoint3
     from bimvee.visualisers.visualiserPose6q import VisualiserPose6q
     from bimvee.visualisers.visualiserBoundingBoxes import VisualiserBoundingBoxes
+    from bimvee.visualisers.visualiserEyeTracking import VisualiserEyeTracking
     from bimvee.visualisers.visualiserOpticFlow import VisualiserOpticFlow
     from bimvee.visualisers.visualiserImu import VisualiserImu
     from bimvee.visualisers.visualiserSkeleton import VisualiserSkeleton
