@@ -56,8 +56,51 @@ class VisualiserEyeTracking(Visualiser):
 
     def get_settings(self):
         settings = {'show_eyes_gt': {'type': 'boolean',
-                                            'default': True
-                                            },
+                                     'default': True
+                                     },
+                    'x': {'type': 'range',
+                          'default': 0,
+                          'min': 0,
+                          'max': 640,
+                          'step': 1
+                          },
+                    'y': {'type': 'range',
+                          'default': 0,
+                          'min': 0,
+                          'max': 480,
+                          'step': 1
+                          },
+                    'phi': {'type': 'range',
+                            'default': 0,
+                            'min': 0,
+                            'max': 360,
+                            'step': 1
+                            },
+                    'theta': {'type': 'range',
+                              'default': 0,
+                              'min': 0,
+                              'max': 360,
+                              'step': 1
+                              },
+                    'orientation': {'type': 'range',
+                                    'default': 0,
+                                    'min': -180,
+                                    'max': 180,
+                                    'step': 1
+                                    },
+                    'major': {'type': 'range',
+                              'default': 0,
+                              'min': 5,
+                              'max': 500,
+                              'step': 1
+                              },
 
+
+                    'minor': {'type': 'range',
+                              'default': 0,
+                              'min': 5,
+                              'max': 500,
+                              'step': 1
+                              },
                     }
         return settings
