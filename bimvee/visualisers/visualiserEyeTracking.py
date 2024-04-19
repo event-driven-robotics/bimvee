@@ -72,35 +72,21 @@ class VisualiserEyeTracking(Visualiser):
                           },
                     'phi': {'type': 'range',
                             'default': 0,
-                            'min': 0,
-                            'max': 360,
+                            'min': -180,
+                            'max': 180,
                             'step': 1
                             },
                     'theta': {'type': 'range',
                               'default': 0,
-                              'min': 0,
-                              'max': 360,
+                              'min': -180,
+                              'max': 180,
                               'step': 1
                               },
-                    'orientation': {'type': 'range',
+                    'radius': {'type': 'range',
                                     'default': 0,
-                                    'min': -180,
-                                    'max': 180,
+                                    'min': 5,
+                                    'max': 500,
                                     'step': 1
                                     },
-                    'major': {'type': 'range',
-                              'default': 0,
-                              'min': 5,
-                              'max': 500,
-                              'step': 1
-                              },
-
-
-                    'minor': {'type': 'range',
-                              'default': 0,
-                              'min': 5,
-                              'max': 500,
-                              'step': 1
-                              },
                     }
         return settings
