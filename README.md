@@ -10,9 +10,10 @@
 
 ## Installation
 
-There is a pip installer:
+There is a pip installer but is currently out of date.
+Instead, the recommended approach using pip+git is the following
 
-    pip install bimvee
+    pip install git+https://github.com/event-driven-robotics/bimvee.git
 
 Important! If you clone this repo, use --recurse-submodules option, as this repo uses 'importRosbag' library as a submodule.
 
