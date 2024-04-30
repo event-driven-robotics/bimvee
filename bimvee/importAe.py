@@ -58,18 +58,7 @@ Celex ...???
 import os
 
 # local imports
-from .importIitNumpy import importIitNumpy
-from .importInivationNumpy import importInivationNumpy
-from .importIitYarp import importIitYarp
-from .importRpgDvsRos import importRpgDvsRos
-from .importSecDvs import importSecDvs
-from .importAer2 import importAer2
-from .importFrames import importFrames
 from .timestamps import rezeroTimestampsForImportedDicts
-from .importHdf5 import importHdf5
-from .importProph import importProph
-from .importAerdat import importAerdat
-from .importEs import importEs
 
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.
@@ -150,27 +139,38 @@ def importAe(**kwargs):
     if fileFormat in ['iityarp', 'yarp', 'iit', 'log', 'yarplog']:
         if not os.path.isdir(kwargs['filePathOrName']):
             kwargs['filePathOrName'] = os.path.dirname(kwargs['filePathOrName'])
+        from .importIitYarp import importIitYarp
         importedData = importIitYarp(**kwargs)
     elif fileFormat in ['rpgdvsros', 'rosbag', 'rpg', 'ros', 'bag', 'rpgdvs']:
+        from .importRpgDvsRos import importRpgDvsRos
         importedData = importRpgDvsRos(**kwargs)
     elif fileFormat in ['iitnpy', 'npy', 'numpy']:
         try:
+            from .importIitNumpy import importIitNumpy
             importedData = importIitNumpy(**kwargs)
         except ValueError:
+            from .importInivationNumpy import importInivationNumpy
             importedData = importInivationNumpy(**kwargs)
     elif fileFormat in ['dat', 'raw']:
+        from .importProph import importProph
         importedData = importProph(**kwargs)
     elif fileFormat in ['secdvs', 'bin', 'samsung', 'sec', 'gen3']:
+        from .importSecDvs import importSecDvs
         importedData = importSecDvs(**kwargs)
     elif fileFormat in ['aer2']:
+        from .importAer2 import importAer2
         importedData = importAer2(**kwargs)
     elif fileFormat in ['frame', 'frames', 'png', 'pngfolder', 'imagefolder']:
+        from .importFrames import importFrames
         importedData = importFrames(**kwargs)
     elif fileFormat in ['hdf5', 'bimveehdf5']:
+        from .importHdf5 import importHdf5
         importedData = importHdf5(**kwargs)
     elif fileFormat in ['aerdat']:
+        from .importAerdat import importAerdat
         importedData = importAerdat(**kwargs)
     elif fileFormat in ['es']:
+        from .importEs import importEs
         importedData = importEs(**kwargs)
     else:
         raise Exception("fileFormat: " + str(fileFormat) + " not supported.")
