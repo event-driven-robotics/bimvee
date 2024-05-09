@@ -63,35 +63,8 @@ class VisualiserEyeTracking(Visualiser):
         settings = {'show_eyes_gt': {'type': 'boolean',
                                      'default': True
                                      },
-                    'x': {'type': 'range',
-                          'default': 0,
-                          'min': 0,
-                          'max': 640,
-                          'step': 1
-                          },
-                    'y': {'type': 'range',
-                          'default': 0,
-                          'min': 0,
-                          'max': 480,
-                          'step': 1
-                          },
-                    'phi': {'type': 'range',
-                            'default': 0,
-                            'min': -180,
-                            'max': 180,
-                            'step': 1
-                            },
-                    'theta': {'type': 'range',
-                              'default': 0,
-                              'min': -180,
-                              'max': 180,
-                              'step': 1
-                              },
-                    'radius': {'type': 'range',
-                                    'default': 0,
-                                    'min': 5,
-                                    'max': 500,
-                                    'step': 1
-                                    },
+                    'show_xy_pointcloud': {'type': 'boolean',
+                                     'default': True
+                                     }
                     }
         return settings
