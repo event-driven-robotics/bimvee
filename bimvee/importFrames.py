@@ -68,7 +68,7 @@ def importFrames(**kwargs):
         elif file=='gt.json':
             eyes = importEyeTracking(filePathOrName=filePathAndName)
             gt_available = True
-        elif os.path.isfile(filePathAndName):
+        elif os.path.splitext(filePathAndName)[-1] in ['.png', '.jpeg', '.jpg']:
             frames.append(imageio.imread(filePathAndName))
 
     channelDict = {'frame': 
