@@ -52,7 +52,12 @@ class VisualiserEyeTracking(Visualiser):
         if self.__data is None or not kwargs.get('show_eyes_gt', True):
             return None
         idx = np.searchsorted(self.__data['ts'], time)
-        return {k: self.get_data()[k][idx] for k in self.get_data().keys() if hasattr(self.get_data()[k], '__len__')}
+        try:
+            if np.abs(self.__data['ts'][idx] - time) > timeWindow:
+                return None
+            return {k: self.get_data()[k][idx] for k in self.get_data().keys() if hasattr(self.get_data()[k], '__len__')}
+        except IndexError:
+            return None
 
     def get_settings(self):
         settings = {'show_eyes_gt': {'type': 'boolean',
