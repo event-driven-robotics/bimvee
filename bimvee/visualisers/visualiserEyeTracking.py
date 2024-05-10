@@ -38,22 +38,12 @@ class VisualiserEyeTracking(Visualiser):
 
     data_type = 'eyeTracking'
 
-    def __init__(self, data):
-        self.set_data(data)
-
-    def set_data(self, data):
-        self.__data = {}
-        self.__data.update(data)
-
-    def get_data(self):
-        return self.__data
-
     def get_frame(self, time, timeWindow, **kwargs):
-        if self.__data is None or not kwargs.get('show_eyes_gt', True):
+        if self._data is None or not kwargs.get('show_eyes_gt', True):
             return None
-        idx = np.searchsorted(self.__data['ts'], time)
+        idx = np.searchsorted(self._data['ts'], time)
         try:
-            if np.abs(self.__data['ts'][idx] - time) > timeWindow:
+            if np.abs(self._data['ts'][idx] - time) > timeWindow:
                 return None
             return {k: self.get_data()[k][idx] for k in self.get_data().keys() if hasattr(self.get_data()[k], '__len__')}
         except IndexError:
@@ -64,7 +54,7 @@ class VisualiserEyeTracking(Visualiser):
                                      'default': True
                                      },
                     'show_xy_pointcloud': {'type': 'boolean',
-                                     'default': True
-                                     }
+                                           'default': True
+                                           }
                     }
         return settings

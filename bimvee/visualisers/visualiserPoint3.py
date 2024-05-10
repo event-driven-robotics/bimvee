@@ -60,7 +60,7 @@ class VisualiserPoint3(Visualiser):
     '''
 
     def set_data(self, data):
-        # scale and offset point data so that it remains proportional 
+        # scale and offset point data so that it remains proportional
         # but stays in the range 0-1 for all dimensions
         pointX = data['point'][:, 0]
         pointY = data['point'][:, 1]
@@ -86,7 +86,7 @@ class VisualiserPoint3(Visualiser):
         internalData = {'ts': data['ts'],
                         'point': pointScaled
                         }
-        self.__data = internalData
+        self._data = internalData
 
     def project3dTo2d(self, x=0, y=0, z=0, **kwargs):
         smallestRenderDim = kwargs.get('smallestRenderDim', 1)
@@ -119,7 +119,7 @@ class VisualiserPoint3(Visualiser):
         return image
 
     def get_frame(self, time, timeWindow, **kwargs):
-        data = self.__data
+        data = self._data
         if data is None:
             print('Warning: data is not set')
             return np.zeros((1, 1), dtype=np.uint8)  # This should not happen

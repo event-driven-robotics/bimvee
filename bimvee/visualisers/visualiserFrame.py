@@ -41,10 +41,12 @@ from .visualiserBase import Visualiser
 
 # A function intended to find the nearest timestamp
 # adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
+
+
 def findNearest(array, value):
-    idx = np.searchsorted(array, value) # side="left" param is the default
-    if idx > 0 and ( \
-            idx == len(array) or \
+    idx = np.searchsorted(array, value)  # side="left" param is the default
+    if idx > 0 and (
+            idx == len(array) or
             math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
         return idx-1
     else:
@@ -56,42 +58,43 @@ class VisualiserFrame(Visualiser):
     data_type = 'frame'
 
     def set_data(self, data):
-        self.__data = {}
-        self.__data.update(data)
+        super().set_data(data)
 
-        if self.__data['frames'][0].dtype != np.uint8:
+        if self._data['frames'][0].dtype != np.uint8:
             # Convert to uint8, converting to fullscale accross the whole dataset
-            minValue = min([frame.min() for frame in self.__data['frames']])
-            maxValue = max([frame.max() for frame in self.__data['frames']])
-            self.__data['frames'] = [((frame-minValue)/(maxValue-minValue)*255).astype(np.uint8) for frame in data['frames']] #TODO: assuming that it starts scaled in 0-1 - could have more general approach?
+            minValue = min([frame.min() for frame in self._data['frames']])
+            maxValue = max([frame.max() for frame in self._data['frames']])
+            # TODO: assuming that it starts scaled in 0-1 - could have more general approach?
+            self._data['frames'] = [((frame-minValue)/(maxValue-minValue)*255).astype(np.uint8)
+                                    for frame in data['frames']]
 
     def get_colorfmt(self):
         try:
-            if len(self.__data['frames'][0].shape) == 3:
+            if len(self._data['frames'][0].shape) == 3:
                 return 'rgb'
             else:
                 return 'luminance'
-        except: # TODO None type error?
+        except:  # TODO None type error?
             return 'luminance'
-            
+
     def get_default_image(self):
         x, y = self.get_dims()
         # Return an x,y,3 by default i.e. rgb, for safety, since in the absence of data we may not know how the texture's colorfmt is set
-        return np.ones((x, y, 3), dtype=np.uint8) * 128 # TODO: Hardcoded midway (grey) value
+        return np.ones((x, y, 3), dtype=np.uint8) * 128  # TODO: Hardcoded midway (grey) value
 
     # TODO: There can be methods which better choose the best frame, or which create a visualisation which
-    # respects the time_window parameter 
+    # respects the time_window parameter
     def get_frame(self, time, timeWindow, **kwargs):
-        data = self.__data
+        data = self._data
         if 'tsEnd' in data:
-            # Optional mode in which frames are only displayed 
+            # Optional mode in which frames are only displayed
             # between corresponding ts and tsEnd
             frameIdx = np.searchsorted(data['ts'], time, side='right') - 1
             if frameIdx < 0:
                 image = self.get_default_image()
             elif time > data['tsEnd'][frameIdx]:
                 image = self.get_default_image()
-            else:                
+            else:
                 image = data['frames'][frameIdx]
         elif time < data['ts'][0] - timeWindow / 2 or time > data['ts'][-1] + timeWindow / 2:
             # Gone off the end of the frame data
@@ -105,13 +108,12 @@ class VisualiserFrame(Visualiser):
             kwargs['image'] = image
             image = kwargs['callback'](**kwargs)
         return image
-    
+
     def get_dims(self):
         try:
-            data = self.__data
-        except AttributeError: # data hasn't been set yet
+            data = self._data
+        except AttributeError:  # data hasn't been set yet
             return 1, 1
         x = data['dimX'] if 'dimX' in data else data['frames'][0].shape[1]
         y = data['dimY'] if 'dimY' in data else data['frames'][0].shape[0]
         return x, y
-

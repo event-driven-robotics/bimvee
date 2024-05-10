@@ -38,20 +38,10 @@ class VisualiserBoundingBoxes(Visualiser):
 
     data_type = 'boundingBoxes'
 
-    def __init__(self, data):
-        self.set_data(data)
-
-    def set_data(self, data):
-        self.__data = {}
-        self.__data.update(data)
-
-    def get_data(self):
-        return self.__data
-
     def get_frame(self, time, timeWindow, **kwargs):
-        if self.__data is None or not kwargs.get('show_bounding_boxes', True):
+        if self._data is None or not kwargs.get('show_bounding_boxes', True):
             return None
-        gt_bb = self.__data
+        gt_bb = self._data
         indices = abs(gt_bb['ts'] - time) < timeWindow
         if not any(indices):
             if not kwargs.get('interpolate'):
