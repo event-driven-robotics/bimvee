@@ -21,14 +21,6 @@ IMU samples contained.
 """
 import os
 import matplotlib.pyplot as plt
-import seaborn as sns
-
-sns.set(palette="colorblind")
-
-# Color Palette for Color Blindness
-zesty_palette     = ['#F5793A', '#A95AA1', '#85C0F9', '#0F2080']
-retro_palette     = ['#601A4A', '#EE442F', '#63ACBE', '#F9F4EC']
-corporate_palette = ['#8DB8AD', '#EBE7E0', '#C6D4E1', '#44749D']
 
 #-----------------------------------------------------------------------------------------------------
 def plotFlow(flowDict, fig_path=None, fig_name=None, fig_subtitle=None):
@@ -92,6 +84,14 @@ def plotFlowDistribution(flowDict, fig_path=None, fig_name=None, fig_subtitle=No
         fig_name {string} -- name of the generated figure (default: {None})
         fig_subtitle {string} -- figure sub-title (default: {None})
     """
+    import seaborn as sns
+    
+    sns.set(palette="colorblind")
+    
+    # Color Palette for Color Blindness
+    zesty_palette     = ['#F5793A', '#A95AA1', '#85C0F9', '#0F2080']
+    retro_palette     = ['#601A4A', '#EE442F', '#63ACBE', '#F9F4EC']
+    corporate_palette = ['#8DB8AD', '#EBE7E0', '#C6D4E1', '#44749D']
     fig = plt.figure(figsize=(14.0, 10.0))
     if isinstance(fig_subtitle, str):
         fig.suptitle("FLOW Events Distribution\n" + fig_subtitle, fontsize=20, fontweight='bold')
