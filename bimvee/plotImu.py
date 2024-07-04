@@ -19,14 +19,6 @@ IMU samples contained.
 """
 import os, sys
 import matplotlib.pyplot as plt
-import seaborn as sns
-
-sns.set(palette="colorblind")
-
-# Color Palette for Color Blindness
-zesty_palette     = ['#F5793A', '#A95AA1', '#85C0F9', '#0F2080']
-retro_palette     = ['#601A4A', '#EE442F', '#63ACBE', '#F9F4EC']
-corporate_palette = ['#8DB8AD', '#EBE7E0', '#C6D4E1', '#44749D']
 
 #-----------------------------------------------------------------------------------------------------
 def plotImu(inDict, **kwargs):
@@ -83,6 +75,14 @@ def plotImu(inDict, **kwargs):
 
 #-----------------------------------------------------------------------------------------------------
 def plotImuDistribution(imuDict, unitIMU='FPGA', fig_path=None, fig_name=None, fig_subtitle=None):
+    import seaborn as sns
+    
+    sns.set(palette="colorblind")
+    
+    # Color Palette for Color Blindness
+    zesty_palette     = ['#F5793A', '#A95AA1', '#85C0F9', '#0F2080']
+    retro_palette     = ['#601A4A', '#EE442F', '#63ACBE', '#F9F4EC']
+    corporate_palette = ['#8DB8AD', '#EBE7E0', '#C6D4E1', '#44749D']
     """
     Plot the distribution of the IMU data in imuDict. If specified, save the
     generated figure as fig_name.png at the location defined by fig_path.
