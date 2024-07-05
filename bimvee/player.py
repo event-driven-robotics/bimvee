@@ -66,6 +66,10 @@ def get_dvs_data(container):
                 dvs_dicts = dvs_dicts + get_dvs_data(elem)  
         return dvs_dicts
 
+from math import log10, floor
+def round_to_1_sf(x):
+    return round(x, -int(floor(log10(abs(x)))))
+
 class Player():
     
     # TODO: - there might be a global override for local controls like contrast, TBD
@@ -88,6 +92,7 @@ class Player():
         x_extent_per_col = (x_extent - x_spacing) / num_cols
         y_extent_per_row = (y_extent - y_spacing) / num_rows
         self.last_time = time.time()
+        self.speed = 1
         
         for idx, events in enumerate(dvs_containers):
             row_idx = math.floor(idx / num_cols)
@@ -105,7 +110,7 @@ class Player():
         self.max_time = max(max_times)
         
         # Add controls
-        self.ax_time_slider = self.fig.add_axes([0.2, 0.85, 0.7, 0.05]) # xmin ymin x-extent y-extent
+        self.ax_time_slider = self.fig.add_axes([0.2, 0.825, 0.7, 0.05]) # xmin ymin x-extent y-extent
         self.slider_time = Slider(
             ax=self.ax_time_slider,
             label='time', 
@@ -113,12 +118,31 @@ class Player():
             valmax=self.max_time,
             valinit=0)
 
+        self.ax_speed_slider = self.fig.add_axes([0.2, 0.875, 0.7, 0.05]) # xmin ymin x-extent y-extent
+        self.slider_speed = Slider(
+            ax=self.ax_speed_slider,
+            label='speed', 
+            valmin=-3, 
+            valmax=1,
+            valinit=0)
+
+        self.ax_window_slider = self.fig.add_axes([0.2, 0.925, 0.7, 0.05]) # xmin ymin x-extent y-extent
+        self.slider_window = Slider(
+            ax=self.ax_window_slider,
+            label='time_window', 
+            valmin=-3, 
+            valmax=3,
+            valinit=1.5)
+
         self.ax_button_play = self.fig.add_axes([0.05, 0.85, 0.05, 0.05]) # xmin ymin x-extent y-extent
         self.button_play = Button(self.ax_button_play, 'Pause') #, color="blue")
         self.button_play.on_clicked(self.toggle_play)
                         
-        # call update function on slider value change
-        self.slider_time.on_changed(self.slider_time_manual_control)
+        self.slider_time.on_changed(self.update_viewers)
+        self.slider_speed.on_changed(self.slider_speed_manual_control)
+        self.slider_speed_manual_control(self.slider_speed.valinit)
+        self.slider_window.on_changed(self.slider_window_manual_control)
+        self.slider_window_manual_control(self.slider_window.valinit)
         
         #self.fig.canvas.mpl_connect('button_press_event', self.on_click)
         
@@ -146,12 +170,19 @@ class Player():
         for viewer in self.viewers:
             viewer.update(target_time)
 
-    def slider_time_manual_control(self, val):
-        self.update_viewers(val)
-    
+    def slider_speed_manual_control(self, val):
+        self.speed = round_to_1_sf(10 ** val)
+        self.slider_speed.valtext.set_text(self.speed)
+
+    def slider_window_manual_control(self, val):
+        self.time_window = round_to_1_sf(10 ** val) / 1000
+        for viewer in self.viewers:
+            viewer.time_window = self.time_window
+        self.slider_window.valtext.set_text(self.time_window)
+
     def slider_time_autoplay(self, _):
         if self.is_playing:
-            interval = time.time() - self.last_time
+            interval = (time.time() - self.last_time) * self.speed
             self.last_time = time.time()
             new_time = (self.slider_time.val + interval) % self.slider_time.valmax
             self.slider_time.set_val(new_time)
