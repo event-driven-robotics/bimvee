@@ -5,7 +5,7 @@ Created on Wed Jul  3 13:39:02 2024
 @author: sbamford
 
 
-RETARD: Recorded Event Time-synchronization Agnostic Representation Dataplayer
+RETARD: Recorded Event Time-synchronization Agnostic Representation Dataplayer (Thanks, ChatGpt)
 
 Given a container, create a player with one subwindow for each channel / data type
 """
@@ -68,7 +68,7 @@ def get_dvs_data(container):
 
 class Player():
     
-    # Todo - there might bea global override for local contorls like contrast, TBD
+    # TODO: - there might be a global override for local controls like contrast, TBD
     is_playing = True
     interval_ms = 100 # time between animation frames
     viewers = []
