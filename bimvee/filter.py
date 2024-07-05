@@ -17,7 +17,7 @@ filter_spatiotemporal:
 Also known as a salt-and-pepper filter,
 lets an event pass if there has been a previous event 
 within a certain spatio-temporal window.
-"""
+'''
 
 import numpy as np
 
