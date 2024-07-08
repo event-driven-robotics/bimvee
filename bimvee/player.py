@@ -18,23 +18,29 @@ from bimvee.plotDvsContrast import getEventImageForTimeRange
 import math
 import time 
 
-class ViewerDvs():
+from bimvee.visualisers.visualiserDvs import VisualiserDvs
+from bimvee.visualisers.visualiserFrame import VisualiserFrame, findNearest
 
-    def __init__(self, events, ax):
-        # let's assume that the container is directly a single dvs event container
-        self.events = events
+class ViewerDvs(VisualiserDvs):
+
+    def __init__(self, data, ax):
+        #self.data = events
         self.ax = ax
-        self.dimX = np.max(self.events['x']) + 1
-        self.dimY = np.max(self.events['y']) + 1
-        self.contrast = 1 
-        self.time_window = 0.03
-        self.label = events.get('label', '')
+        # Making the dimensions instance attributes - TODO: push this improvement down into the visualisers
+        self.dimX = data.get('dimX') or np.max(data['x']) + 1
+        self.dimY = data.get('dimY') or np.max(data['y']) + 1
+        # Currently, the base class requires the data to carry dimX/Y attributes:
+        data['dimX'] = self.dimX
+        data['dimY'] = self.dimY
+        self.contrast = 1
+        self.time_window = 0.03 # this default is overwritten by the slider
+        self.label = data.get('label', '')
+        super(ViewerDvs, self).__init__(data)        
         
     def update(self, target_time):
-        # Remove previous data
-        self.ax.clear()
-        
-        # This function should be pushed to a visualiser
+    
+        event_image = self.get_frame(target_time, self.time_window, contrast=self.contrast) # to do -get the lower function internalise contrast
+        '''
         startTime = target_time - self.time_window / 2
         endTime = target_time + self.time_window / 2
         event_image = getEventImageForTimeRange(
@@ -47,6 +53,10 @@ class ViewerDvs():
             image_type='not_polarized')
         event_image += self.contrast
         self.ax.imshow(event_image, cmap='gray', vmin=0, vmax=self.contrast*2)
+        '''
+        # Remove previous data
+        self.ax.clear()
+        self.ax.imshow(event_image, cmap='gray', vmin=0, vmax=255)
         self.ax.set_xticks([])
         self.ax.set_xticks([], minor=True)
         self.ax.set_yticks([])
