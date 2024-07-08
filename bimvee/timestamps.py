@@ -370,6 +370,52 @@ def getEvent(inDict, idx):
             continue
     return outDict
 
+'''
+The following three functions implement a naive rezeroing, assuming that the 
+purpose is to bring all the individual datadict time offsets into alignment.
+This may be useful if the time offsets all came from the same source.
+However, if a container has files which have been aligned and which have 
+different tsoffsets in order to achieve this, the following approach will break that,
+'''
+
+def findLargestTsOffset(in_dict):
+    if type(in_dict) == dict:
+        if 'tsOffset' in in_dict.keys():
+            return in_dict['tsOffset']
+        else:
+            tsOffset = float(-np.inf)
+            for key, value in in_dict.items():
+                tsOffset = max(
+                    tsOffset,
+                    findLargestTsOffset(value))
+            return tsOffset
+    else:
+        return -np.inf
+
+def applyOffset(in_dict, ts_offset):
+    if 'ts' in in_dict.keys():
+        ts_offset_current = in_dict.get('tsOffset', 0.0)
+        out_dict = {
+            'ts': in_dict['ts'] + ts_offset - ts_offset_current,
+            'tsOffset': ts_offset
+            }
+        for key, value in in_dict.items():
+            if key not in ['ts', 'tsOffset']:
+                out_dict[key] = value
+        return out_dict
+    else:
+        out_dict = {}
+        for key, value in in_dict.items():
+            if type(value) == dict:
+                out_dict[key] = applyOffset(value, ts_offset)
+        return out_dict
+
+def rezeroTimestampsGeneral(in_dict):
+    # Find largest (i.e. least negative) offset
+    ts_offset = findLargestTsOffset(in_dict)
+    # Now we have the least negative tsOffset, iterate through all, reapplying it
+    return applyOffset(in_dict, ts_offset)
+
 
 
 #%% LEGACY CODE - timestamps for different data types present in aedat
