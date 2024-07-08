@@ -97,6 +97,7 @@ def plotEventRate(inDicts, **kwargs):
             plt.ylabel('Rate (events/s)')
             legend.append('period: ' + str(period) + ' s')
         axes.legend(legend)
+        axes.set_ylim(bottom=0)
         kwargs['legend'] = legend
         if kwargs.get('title') is not None:
             axes.set_title(kwargs.get('title'))            
