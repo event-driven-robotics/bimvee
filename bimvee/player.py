@@ -28,6 +28,7 @@ class ViewerDvs():
         self.dimY = np.max(self.events['y']) + 1
         self.contrast = 1 
         self.time_window = 0.03
+        self.label = events.get('label', '')
         
     def update(self, target_time):
         # Remove previous data
@@ -42,29 +43,33 @@ class ViewerDvs():
             endTime=endTime, 
             contrast=self.contrast,
             dimX=self.dimX,
-            dimY=self.dimY)
+            dimY=self.dimY,
+            image_type='not_polarized')
         event_image += self.contrast
         self.ax.imshow(event_image, cmap='gray', vmin=0, vmax=self.contrast*2)
         self.ax.set_xticks([])
         self.ax.set_xticks([], minor=True)
         self.ax.set_yticks([])
         self.ax.set_yticks([], minor=True)
+        self.ax.set_title(self.label)
 
 # TODO: This functionality, or some of it, may belong in the container class
-def get_dvs_data(container):
+def get_dvs_data(container, label=[]):
     keys = container.keys()
     if ('ts' in keys
         and 'pol' in keys
         and 'x' in keys
         and 'y' in keys):
+        container['label'] = '_'.join(label)
         return [container]
         # TODO: put stricter check here for data type
     else:
         dvs_dicts = []
-        for elem in container.values():
-            if type(elem) == dict:
-                dvs_dicts = dvs_dicts + get_dvs_data(elem)  
+        for key, value in container.items():
+            if type(value) == dict:
+                dvs_dicts = dvs_dicts + get_dvs_data(value, label + [str(key)])
         return dvs_dicts
+
 
 from math import log10, floor
 def round_to_1_sf(x):
