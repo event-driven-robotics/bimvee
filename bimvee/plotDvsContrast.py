@@ -83,8 +83,8 @@ def getEventsInTimeRange(events, **kwargs):
 def getEventImage(events, **kwargs):
     # dims might be in the events dict, but allow override from kwargs
     try:
-        dimX = kwargs.get('dimX', events.get('dimX', np.max(events['x']) + 1))
-        dimY = kwargs.get('dimY', events.get('dimY', np.max(events['y']) + 1))
+        dimX = kwargs.get('dimX') or events.get('dimX') or np.max(events['x']) + 1
+        dimY = kwargs.get('dimY') or events.get('dimY') or np.max(events['y']) + 1
     except ValueError:  # no defined dims and events arrays are empty
         dimX = 1
         dimY = 1
@@ -136,8 +136,10 @@ def getEventImage(events, **kwargs):
             elif kwargs.get('pol_to_show') == 'Neg':
                 eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = neg_colour
     except ValueError:
+        print('ValueError')
         pass
     except IndexError:
+        print('IndexError')
         pass
     # Clip the values according to the contrast
     if not image_type == 'coloured':
