@@ -21,7 +21,7 @@ within a certain spatio-temporal window.
 
 import numpy as np
 
-def filter_spatiotemporal(events, time_window=0.05, neighbourhood=1):
+def filter_spatiotemporal_single(events, time_window=0.05, neighbourhood=1):
     xs = events['x']
     ys = events['y']
     ts = events['ts']
@@ -48,5 +48,21 @@ def filter_spatiotemporal(events, time_window=0.05, neighbourhood=1):
         'pol' : events['pol'][keep],
         }
 
-#TODO: make a function that will descend a hierarchy of containers 
-# and apply to all dvs datatypes
+def filter_spatiotemporal(in_dict, **kwargs):
+    # check to see if this is dvs type:
+    if (in_dict.get('data_type', '') == 'dvs'
+        or ('x' in in_dict.keys()
+            and 'y' in in_dict.keys()
+            and 'pol' in in_dict.keys()
+            and 'ts' in in_dict.keys())):
+        return filter_spatiotemporal_single(in_dict, **kwargs)
+    else:
+        new_dict = {}
+        for key, value in in_dict.items():
+            if key == 'dvs':
+                new_dict[key] = filter_spatiotemporal_single(value, **kwargs)
+            elif type(value) == dict:
+                new_dict[key] = filter_spatiotemporal(value, **kwargs)
+            else:
+                new_dict[key] = value
+        return new_dict
