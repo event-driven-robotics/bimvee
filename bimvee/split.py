@@ -70,7 +70,7 @@ def selectByBool(inDict, selectedEvents):
             if isinstance(value, list):
                 outDict[key] = list(compress(value, selectedEvents))
             else:
-                outDict[fkey] = value[selectedEvents]
+                outDict[key] = value[selectedEvents]
         except (AssertionError, TypeError): # TypeError for case that value has no len(); #AssertionError, in case it does but that len is not the same as the ts len.
             outDict[key] = value
     return outDict
@@ -307,7 +307,7 @@ def cropSpace(inDict, **kwargs):
         for key, value in inDict.items():
             new_dict[key] = cropSpace(value, **kwargs)
         # TODO: frame datatype could be cropped spatially but doesn't get caught by this method
-        return inDict
+        return new_dict
 
 def cropSpaceTime(inDict, **kwargs):
     return cropSpace(cropTime(inDict, **kwargs), **kwargs)

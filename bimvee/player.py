@@ -35,11 +35,12 @@ class ViewerDvs(VisualiserDvs):
         self.contrast = 1
         self.time_window = 0.03 # this default is overwritten by the slider
         self.label = data.get('label', '')
-        super(ViewerDvs, self).__init__(data)        
+        self.image_type = 'not_polarized'
+        super(ViewerDvs, self).__init__(data)
         
     def update(self, target_time):
-    
-        event_image = self.get_frame(target_time, self.time_window, contrast=self.contrast) # to do -get the lower function internalise contrast
+            
+        event_image = self.get_frame(target_time, self.time_window, image_type=self.image_type, contrast=self.contrast) # to do -get the lower function internalise contrast
         '''
         startTime = target_time - self.time_window / 2
         endTime = target_time + self.time_window / 2
@@ -63,6 +64,37 @@ class ViewerDvs(VisualiserDvs):
         self.ax.set_yticks([], minor=True)
         self.ax.set_title(self.label)
 
+class ViewerFrame(VisualiserFrame):
+
+    def __init__(self, data, ax):
+        #self.data = events
+        self.ax = ax
+        # Making the dimensions instance attributes - TODO: push this improvement down into the visualisers
+        #self.dimX = data.get('dimX') or np.max(data['x']) + 1
+        #self.dimY = data.get('dimY') or np.max(data['y']) + 1
+        # Currently, the base class requires the data to carry dimX/Y attributes:
+        #data['dimX'] = self.dimX
+        #data['dimY'] = self.dimY
+        #self.contrast = 1
+        self.time_window = 0.03 # for frames, need to decide between either showing nearest frame within window, or showing the nearest one in any case
+        self.label = data.get('label', '')
+        self.image_type = 'not_polarized'
+        super(ViewerFrame, self).__init__(data)
+        
+    def update(self, target_time):
+            
+        image = self.get_frame(target_time, self.time_window) 
+        # Remove previous data
+        self.ax.clear()
+        self.ax.imshow(image, cmap='gray', vmin=0, vmax=255)
+        self.ax.set_xticks([])
+        self.ax.set_xticks([], minor=True)
+        self.ax.set_yticks([])
+        self.ax.set_yticks([], minor=True)
+        self.ax.set_title(self.label)
+
+
+
 # TODO: This functionality, or some of it, may belong in the container class
 def get_dvs_data(container, label=[]):
     keys = container.keys()
@@ -71,6 +103,7 @@ def get_dvs_data(container, label=[]):
         and 'x' in keys
         and 'y' in keys):
         container['label'] = '_'.join(label)
+        container['data_type'] = 'dvs'
         return [container]
         # TODO: put stricter check here for data type
     else:
@@ -79,6 +112,21 @@ def get_dvs_data(container, label=[]):
             if type(value) == dict:
                 dvs_dicts = dvs_dicts + get_dvs_data(value, label + [str(key)])
         return dvs_dicts
+
+def get_frame_data(container, label=[]):
+    keys = container.keys()
+    if ('ts' in keys
+        and 'frames' in keys):
+        container['label'] = '_'.join(label)
+        container['data_type'] = 'frame'
+        return [container]
+        # TODO: put stricter check here for data type
+    else:
+        frame_dicts = []
+        for key, value in container.items():
+            if type(value) == dict:
+                frame_dicts = frame_dicts + get_frame_data(value, label + [str(key)])
+        return frame_dicts
 
 
 from math import log10, floor
@@ -95,7 +143,9 @@ class Player():
     def __init__(self, container):
         self.fig = plt.figure()
         dvs_containers = get_dvs_data(container)
-        num_containers = len(dvs_containers)
+        frame_containers = get_frame_data(container)
+        all_rendered_containers = dvs_containers + frame_containers
+        num_containers = len(all_rendered_containers)
         num_cols = math.ceil(math.sqrt(num_containers))
         num_rows = math.ceil(num_containers / num_cols)
         x_min = 0
@@ -109,7 +159,7 @@ class Player():
         self.last_time = time.time()
         self.speed = 1
         
-        for idx, events in enumerate(dvs_containers):
+        for idx, rendered_container in enumerate(all_rendered_containers):
             row_idx = math.floor(idx / num_cols)
             col_idx = idx % num_cols
             ax = self.fig.add_axes([
@@ -117,11 +167,14 @@ class Player():
                 y_min + y_spacing / 2 + row_idx / max((num_rows - 1), 1) * y_extent_per_row, 
                 x_extent_per_col - x_spacing / 2, 
                 y_extent_per_row - y_spacing / 2]) # xmin ymin x-extent y-extent
-            viewer = ViewerDvs(events, ax)
+            if rendered_container['data_type'] == 'dvs':
+                viewer = ViewerDvs(rendered_container, ax)
+            elif rendered_container['data_type'] == 'frame':
+                viewer = ViewerFrame(rendered_container, ax)
             self.viewers.append(viewer)
         
         # recalculations here based on container(s)
-        max_times = [events['ts'][-1] for events in dvs_containers]
+        max_times = [rendered_container['ts'][-1] for rendered_container in all_rendered_containers]
         self.max_time = max(max_times)
         
         # Add controls
@@ -149,9 +202,13 @@ class Player():
             valmax=3,
             valinit=1.5)
 
-        self.ax_button_play = self.fig.add_axes([0.05, 0.85, 0.05, 0.05]) # xmin ymin x-extent y-extent
+        self.ax_button_play = self.fig.add_axes([0.05, 0.8, 0.05, 0.05]) # xmin ymin x-extent y-extent
         self.button_play = Button(self.ax_button_play, 'Pause') #, color="blue")
         self.button_play.on_clicked(self.toggle_play)
+                        
+        self.ax_button_pol = self.fig.add_axes([0.05, 0.875, 0.05, 0.05]) # xmin ymin x-extent y-extent
+        self.button_pol = Button(self.ax_button_pol, 'Polarity') #, color="blue")
+        self.button_pol.on_clicked(self.toggle_pol)
                         
         self.slider_time.on_changed(self.update_viewers)
         self.slider_speed.on_changed(self.slider_speed_manual_control)
@@ -177,6 +234,14 @@ class Player():
             self.last_time = time.time()
             self.is_playing = True
             self.button_play.label.set_text('Pause')
+                        
+    def toggle_pol(self, val):
+        for viewer in self.viewers:
+            if type(viewer) == ViewerDvs:
+                if viewer.image_type == 'not_polarized':
+                    viewer.image_type = 'count'
+                else:
+                    viewer.image_type = 'not_polarized'
                         
     # update a single plot pane - this should be pushed to a visualiser subclass
     def update_viewers(self, val):
