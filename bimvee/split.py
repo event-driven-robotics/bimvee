@@ -64,15 +64,15 @@ def selectByBool(inDict, selectedEvents):
     if not np.any(selectedEvents):
         return None
     outDict = {}
-    for fieldName in inDict.keys():
+    for key, value in inDict.items():
         try:
-            assert len(inDict[fieldName]) == len(selectedEvents)
-            if isinstance(inDict[fieldName], list):
-                outDict[fieldName] = list(compress(inDict[fieldName], selectedEvents))
+            assert len(value) == len(selectedEvents)
+            if isinstance(value, list):
+                outDict[key] = list(compress(value, selectedEvents))
             else:
-                outDict[fieldName] = inDict[fieldName][selectedEvents]
+                outDict[fkey] = value[selectedEvents]
         except (AssertionError, TypeError): # TypeError for case that value has no len(); #AssertionError, in case it does but that len is not the same as the ts len.
-            outDict[fieldName] = inDict[fieldName]
+            outDict[key] = value
     return outDict
 
 
