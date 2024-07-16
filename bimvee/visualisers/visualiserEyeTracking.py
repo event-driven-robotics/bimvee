@@ -55,6 +55,9 @@ class VisualiserEyeTracking(Visualiser):
                                      },
                     'show_xy_pointcloud': {'type': 'boolean',
                                            'default': True
+                                           },
+                    'fixed_radius': {'type': 'boolean',
+                                           'default': True
                                            }
                     }
         return settings
