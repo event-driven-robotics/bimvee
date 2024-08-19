@@ -86,7 +86,7 @@ def importAe(**kwargs):
             mostCommonFileType = max(set(fileTypes), key=fileTypes.count)
             if mostCommonFileType == 'log':
                 kwargs['fileFormat'] = 'iityarp'
-            elif mostCommonFileType == 'png':
+            elif mostCommonFileType in ['png', 'jpg', 'jpeg']:
                 kwargs['fileFormat'] = 'frames'
             else:
                 # recurse into this folder
