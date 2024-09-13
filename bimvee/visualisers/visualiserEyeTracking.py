@@ -52,6 +52,9 @@ class VisualiserEyeTracking(Visualiser):
                 out_dict = {}
                 for x in data_to_interpolate:
                     val = data_to_interpolate[x]
+                    if x == 'eye_closed':
+                        out_dict[x] = val[0] and val[1]
+                        continue
                     try:
                         out_dict[x] = val[0] + ratio * (val[1] - val[0])
                     except TypeError:
