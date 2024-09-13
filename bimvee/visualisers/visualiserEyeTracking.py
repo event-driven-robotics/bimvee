@@ -44,7 +44,20 @@ class VisualiserEyeTracking(Visualiser):
         idx = np.searchsorted(self._data['ts'], time)
         try:
             if np.abs(self._data['ts'][idx] - time) > timeWindow:
-                return None
+                if not kwargs.get('interpolate'):
+                    return None
+                data_to_interpolate = {k: self.get_data()[k][idx-1:idx + 1] for k in self.get_data().keys() if hasattr(self.get_data()[k], '__len__')}
+                assert data_to_interpolate['ts'][0] < time < data_to_interpolate['ts'][1]
+                ratio = (time - data_to_interpolate['ts'][0]) / (data_to_interpolate['ts'][1] - data_to_interpolate['ts'][0])
+                out_dict = {}
+                for x in data_to_interpolate:
+                    val = data_to_interpolate[x]
+                    try:
+                        out_dict[x] = val[0] + ratio * (val[1] - val[0])
+                    except TypeError:
+                        continue
+                out_dict['interpolated'] = True
+                return out_dict
             return {k: self.get_data()[k][idx] for k in self.get_data().keys() if hasattr(self.get_data()[k], '__len__')}
         except IndexError:
             return None
@@ -58,6 +71,9 @@ class VisualiserEyeTracking(Visualiser):
                                            },
                     'fixed_radius': {'type': 'boolean',
                                            'default': True
+                                           },
+                    'interpolate': {'type': 'boolean',
+                                           'default': False
                                            }
                     }
         return settings
