@@ -163,7 +163,7 @@ def decodeEvents(data, **kwargs):
             y = np.uint16(dataDvs[:, 1] & 0xFF)
             dataDvs[:, 1] >>= 10
         else:  # 24bit - default
-            x = np.uint16(dataDvs[:, 1] & 0x3FF)
+            x = np.uint16(dataDvs[:, 1] & 0x7FF)
             dataDvs[:, 1] >>= 11
             y = np.uint16(dataDvs[:, 1] & 0x3FF)
             dataDvs[:, 1] >>= 10
