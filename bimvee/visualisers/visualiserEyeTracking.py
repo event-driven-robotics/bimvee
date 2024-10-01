@@ -75,6 +75,9 @@ class VisualiserEyeTracking(Visualiser):
                     'fixed_radius': {'type': 'boolean',
                                            'default': True
                                            },
+                    'fixed_uv': {'type': 'boolean',
+                                           'default': True
+                                           },
                     'interpolate': {'type': 'boolean',
                                            'default': False
                                            }
