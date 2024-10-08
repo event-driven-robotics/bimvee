@@ -40,26 +40,25 @@ import numpy as np
 
 
 class Visualiser:
-    
-    __data = None
+
+    _data = None
     data_type = None
 
     def __init__(self, data):
         self.set_data(data)
 
     def set_data(self, data):
-        self.__data = {}
-        self.__data.update(data)
-        
-    def get_frame(self, time, timeWindow, **kwargs):
-        return np.zeros((1, 1), dtype=np.uint8)
+        self._data = {}
+        self._data.update(data)
 
-    def get_b_box(self, time, with_labels=True):
-        return [[0, 0, 0, 0]]
+    def get_data(self):
+        return self._data
+
+    def get_frame(self, time, timeWindow, **kwargs):
+        raise NotImplementedError
 
     def get_colorfmt(self):
         return 'luminance'
-    
+
     def get_settings(self):
         return {}
-

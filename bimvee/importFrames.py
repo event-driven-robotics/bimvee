@@ -32,15 +32,14 @@ Returns a dict:
 
 #%%
 
-import re
 import numpy as np
 import os
 from tqdm import tqdm
-import struct
 import imageio
 
 # local imports
 from .timestamps import zeroTimestampsForAChannel, rezeroTimestampsForAnImportedDict
+from .importEyeTracking import importEyeTracking
 
 def getOrInsertDefault(inDict, arg, default):
     # get an arg from a dict.
@@ -61,15 +60,22 @@ def importFrames(**kwargs):
     files = sorted(os.listdir(path))
     # TODO: trusting the os to sort the files may not work
     frames = []
+    gt_available = False
     for file in tqdm(files):
         filePathAndName = os.path.join(path, file) 
         if file == 'timestamps.txt': # todo: is there a more general form?
             ts = np.loadtxt(filePathAndName)
-        elif os.path.isfile(filePathAndName):
+        elif file=='gt.json':
+            eyes = importEyeTracking(filePathOrName=filePathAndName)
+            gt_available = True
+        elif os.path.splitext(filePathAndName)[-1] in ['.png', '.jpeg', '.jpg']:
             frames.append(imageio.imread(filePathAndName))
+
     channelDict = {'frame': 
                        {'ts': ts,
                         'frames': frames}}
+    if gt_available:
+        channelDict['eyeTracking'] = eyes
     if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
         zeroTimestampsForAChannel(channelDict)
     importedDict = {

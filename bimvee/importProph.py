@@ -200,7 +200,7 @@ def importRaw(raw):
     CONTINUED = 15
 
     data = raw.read()
-    events = np.frombuffer(data, dtype=np.dtype('uint32').newbyteorder('<'))
+    events = np.frombuffer(data, '<u4')
     ev_type = (events & 0xF0000000) >> 28
     ts_MSB = (events & 0x0FFFFFFF) << 6  # MSB of the timestamp, shifted by 6 bits to make room for the LSB of the timestamp
     # Spread the TS_MSB events through to the following events

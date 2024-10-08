@@ -34,10 +34,12 @@ from .visualiserBase import Visualiser
 
 # A function intended to find the nearest timestamp
 # adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
+
+
 def findNearest(array, value):
-    idx = np.searchsorted(array, value) # side="left" param is the default
-    if idx > 0 and ( \
-            idx == len(array) or \
+    idx = np.searchsorted(array, value)  # side="left" param is the default
+    if idx > 0 and (
+            idx == len(array) or
             math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
         return idx-1
     else:
@@ -49,12 +51,8 @@ class VisualiserOpticFlow(Visualiser):
     data_type = 'flowMap'
 
     def __init__(self, data):
+        super().__init__(data)
         self.colorwheel = self.make_colorwheel()  # shape [55x3]
-        self.set_data(data)
-
-    def set_data(self, data):
-        self.__data = {}
-        self.__data.update(data)
 
     def get_colorfmt(self):
         return 'rgb'
@@ -62,12 +60,12 @@ class VisualiserOpticFlow(Visualiser):
     def get_default_image(self):
         x, y = self.get_dims()
         # Return an x,y,3 by default i.e. rgb, for safety, since in the absence of data we may not know how the texture's colorfmt is set
-        return np.ones((x, y, 3), dtype=np.uint8) * 128 # TODO: Hardcoded midway (grey) value
+        return np.ones((x, y, 3), dtype=np.uint8) * 128  # TODO: Hardcoded midway (grey) value
 
     # TODO: There can be methods which better choose the best frame, or which create a visualisation which
     # respects the time_window parameter
     def get_frame(self, time, timeWindow, **kwargs):
-        data = self.__data
+        data = self._data
         if time < data['ts'][0] - timeWindow / 2 or time > data['ts'][-1] + timeWindow / 2:
             # Gone off the end of the frame data
             image = self.get_default_image()
@@ -79,8 +77,8 @@ class VisualiserOpticFlow(Visualiser):
 
     def get_dims(self):
         try:
-            data = self.__data
-        except AttributeError: # data hasn't been set yet
+            data = self._data
+        except AttributeError:  # data hasn't been set yet
             return 1, 1
         x = data['dimX'] if 'dimX' in data else data['flowMaps'][0].shape[1]
         y = data['dimY'] if 'dimY' in data else data['flowMaps'][0].shape[0]
@@ -192,4 +190,3 @@ class VisualiserOpticFlow(Visualiser):
         u = u / (rad_max + epsilon)
         v = v / (rad_max + epsilon)
         return self.flow_uv_to_colors(u, v, convert_to_bgr)
-

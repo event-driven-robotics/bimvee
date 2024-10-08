@@ -49,10 +49,6 @@ def findNearest(array, value):
 class VisualiserSkeleton(Visualiser):
     data_type = 'skeleton'
 
-    def set_data(self, data):
-        self.__data = {}
-        self.__data.update(data)
-
     def point_to_image(self, xS, yS, image, sktN, **kwargs):
         if xS is None:
             return image
@@ -74,7 +70,7 @@ class VisualiserSkeleton(Visualiser):
     def get_frame(self, time, timeWindow, **kwargs):
         if not kwargs.get('show_skeleton'):
             return None
-        data = self.__data
+        data = self._data
         kwargs['startTime'] = time - timeWindow / 2
         kwargs['stopTime'] = time + timeWindow / 2
 
@@ -111,9 +107,9 @@ class VisualiserSkeleton(Visualiser):
         #                },
         # 'jointZoom': {'type': 'value_list',
         #               'default': list(
-        #                   self.__data[
+        #                   self._data[
         #                       'gt'].keys())[0],
-        #               'values': self.__data[
+        #               'values': self._data[
         #                   'gt'].keys()
         #               }
         # }

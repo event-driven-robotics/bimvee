@@ -51,9 +51,9 @@ from .visualiserBase import Visualiser
 # adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
 def findNearest(array, value):
     idx = np.searchsorted(array, value)  # side="left" param is the default
-    if idx > 0 and ( \
-                    idx == len(array) or \
-                    math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])):
+    if idx > 0 and (
+            idx == len(array) or
+            math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])):
         return idx - 1
     else:
         return idx
@@ -111,7 +111,7 @@ class VisualiserPose6q(Visualiser):
     '''
 
     def set_data(self, data):
-        # scale and offset point data so that it remains proportional 
+        # scale and offset point data so that it remains proportional
         # but stays in the range 0-1 for all dimensions
         pointX = data['point'][:, 0]
         pointY = data['point'][:, 1]
@@ -141,10 +141,10 @@ class VisualiserPose6q(Visualiser):
         if 'bodyId' in data:
             # split pose data by label, for ease of reference during rendering
             internalData['bodyId'] = data['bodyId']
-            self.__data = splitByLabel(internalData, 'bodyId', outList=False)
+            self._data = splitByLabel(internalData, 'bodyId', outList=False)
             self.labels = np.unique(data['bodyId'])
         else:
-            self.__data = {'': internalData}
+            self._data = {'': internalData}
 
     def project3dTo2d(self, x=0, y=0, z=0, **kwargs):
         smallestRenderDim = kwargs.get('smallestRenderDim', 1)
@@ -195,7 +195,7 @@ class VisualiserPose6q(Visualiser):
         return image, (projX, projY)
 
     def get_frame(self, time, timeWindow, **kwargs):
-        allData = self.__data
+        allData = self._data
         if allData is None:
             print('Warning: data is not set')
             return np.zeros((1, 1), dtype=np.uint8)  # This should not happen
@@ -217,12 +217,12 @@ class VisualiserPose6q(Visualiser):
             idxPre = np.searchsorted(data['ts'], time, side='right') - 1
             timePre = data['ts'][idxPre]
             if timePre == time:
-                # In this edge-case of desired time == timestamp, there is no need 
-                # to interpolate 
+                # In this edge-case of desired time == timestamp, there is no need
+                # to interpolate
                 point = data['point'][idxPre, :]
                 rotation = data['rotation'][idxPre, :]
             elif idxPre < 0 or (idxPre >= len(data['ts']) - 1):
-                # In this edge-case of the time at the beginning or end, 
+                # In this edge-case of the time at the beginning or end,
                 # don't show any pose
                 point = None
                 rotation = None
@@ -238,7 +238,7 @@ class VisualiserPose6q(Visualiser):
                     point = locPre * (1 - timeRel) + locPost * timeRel
                     timeDist = min(time - timePre, timePost - time)
                     if timeDist > timeWindow / 2:
-                        # Warn the viewer that this interpolation is 
+                        # Warn the viewer that this interpolation is
                         # based on data beyond the timeWindow
                         image[:30, :30, 0] = 255  # TODO: Hardcoded
                 else:  # No interpolation, so just choose the sample which is nearest in time

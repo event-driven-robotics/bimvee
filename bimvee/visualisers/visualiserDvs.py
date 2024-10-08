@@ -40,15 +40,12 @@ class VisualiserDvs(Visualiser):
     data_type = 'dvs'
     coloured = False
 
-    def set_data(self, data):
-        self.__data = {}
-        self.__data.update(data)
-
     # TODO: There can be methods which better choose the best frame, or which create a visualisation which
-    # respects the time_window parameter 
+    # respects the time_window parameter
+
     def get_frame(self, time, timeWindow, **kwargs):
         self.coloured = kwargs.get('image_type') == 'coloured'
-        data = self.__data
+        data = self._data
         kwargs['startTime'] = time - timeWindow / 2
         kwargs['stopTime'] = time + timeWindow / 2
         kwargs['dimX'] = data['dimX']
@@ -71,7 +68,7 @@ class VisualiserDvs(Visualiser):
 
     def get_dims(self):
         try:
-            data = self.__data
+            data = self._data
         except AttributeError:  # data hasn't been set yet
             return 1, 1
         if 'dimX' in data:

@@ -49,9 +49,9 @@ from .visualiserBase import Visualiser
 # adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
 def findNearest(array, value):
     idx = np.searchsorted(array, value)  # side="left" param is the default
-    if idx > 0 and ( \
-                    idx == len(array) or \
-                    math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])):
+    if idx > 0 and (
+            idx == len(array) or
+            math.fabs(value - array[idx - 1]) < math.fabs(value - array[idx])):
         return idx - 1
     else:
         return idx
@@ -120,7 +120,7 @@ class VisualiserImu(Visualiser):
     '''
 
     def set_data(self, data):
-        # scale and offset point data so that it remains proportional 
+        # scale and offset point data so that it remains proportional
         # but stays in the range 0-1 for all dimensions
         minX = np.min(data['acc'][:, 0])
         maxX = np.max(data['acc'][:, 0])
@@ -133,9 +133,9 @@ class VisualiserImu(Visualiser):
             largestDim = 1
 
         pointScaled = data['acc'] / largestDim / 2 + 0.5
-        self.__data = {'ts': data['ts'],
-                       'point': pointScaled,
-                       'rotation': data['angV']}
+        self._data = {'ts': data['ts'],
+                      'point': pointScaled,
+                      'rotation': data['angV']}
 
     def project3dTo2d(self, x=0, y=0, z=0, **kwargs):
         smallestRenderDim = kwargs.get('smallestRenderDim', 1)
@@ -184,7 +184,7 @@ class VisualiserImu(Visualiser):
         return image
 
     def get_frame(self, time, timeWindow, **kwargs):
-        data = self.__data
+        data = self._data
         if data is None:
             print('Warning: data is not set')
             return np.zeros((1, 1), dtype=np.uint8)  # This should not happen
