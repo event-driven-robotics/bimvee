@@ -234,7 +234,11 @@ def cropSpaceXYArrays(inDict, **kwargs):
     selectedBool = np.logical_and(x >= minX, \
                                   np.logical_and(x <= maxX, \
                                           np.logical_and(y >= minY, y <= maxY)))
-    return selectByBool(inDict, selectedBool)
+    output = selectByBool(inDict, selectedBool)
+    if kwargs.get('zeroSpace', False):
+        output['x'] = output['x'] - minX
+        output['y'] = output['y'] - minY
+    return output
 
 def cropSpacePoint(inDict, **kwargs):
     if len(inDict['ts']) == 0: # no data to crop
