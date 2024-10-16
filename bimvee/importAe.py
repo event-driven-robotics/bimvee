@@ -69,8 +69,45 @@ def getOrInsertDefault(inDict, arg, default):
         inDict[arg] = default
     return value
 
+gt_candidate_names = ['ground_truth.csv', 'gt.json']
 
-def importAe(**kwargs):
+def importAe(filePathOrName='.', fileFormat='', **kwargs):
+    importers = []
+    for dir, dirList, fileList in os.walk(filePathOrName):
+        for f in fileList:    
+            ext = os.path.splitext(f)[-1]
+            # Detect datatype based on filename 
+            if f == 'data.log':
+                from .importers.ImporterDataLog import ImporterDataLog
+                importers.append(ImporterDataLog(dir, f))
+            elif f == 'timestamps.txt':
+                from .importers.ImporterFrames import ImporterFrames
+                importers.append(ImporterFrames(dir, f))
+            # Detect datatype based on extension
+            elif ext == '.dat' or ext == '.raw':
+                from .importers.ImporterProph import ImporterProph
+                importers.append(ImporterProph(dir, f))
+            elif ext == '.bag':
+                from .importers.ImporterRosBag import ImporterRosBag
+                importers.append(ImporterRosBag(dir, f))
+            elif ext == '.bin':
+                from .importers.ImporterSecDVS import ImporterSecDVS
+                importers.append(ImporterSecDVS(dir, f))
+            elif ext == '.aer2':
+                from .importers.ImporterAER2 import ImporterAER2
+                importers.append(ImporterAER2(dir, f))
+            elif ext == '.aerdat':
+                from .importers.ImporterAERDat import ImporterAERDat
+                importers.append(ImporterAERDat(dir, f))
+            elif ext == '.es':
+                from .importers.ImporterEs import ImporterEs
+                importers.append(ImporterEs(dir, f))
+            for gt in gt_candidate_names:
+                if gt == f:
+                    importers[-1].add_gt(gt)
+    pass
+
+def importAeBAK(**kwargs):
     print(kwargs)
     filePathOrName = getOrInsertDefault(kwargs, 'filePathOrName', '.')
     print(kwargs)
