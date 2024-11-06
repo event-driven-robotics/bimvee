@@ -69,6 +69,7 @@ class VisualiserEyeTracking(Visualiser):
                         elif x == 'eyeball_x' or x == 'eyeball_y':
                             is_far_enough = abs(val[0] - val[-1]) > 5
                         interp_kind = 'linear'   # interp_kind = 'cubic' if is_far_enough else 'linear'
+                        print(interp_kind)
                         try:
                             cubic_interp = interp1d(data_to_interpolate['ts'], val, kind=interp_kind)
                         except ValueError:
