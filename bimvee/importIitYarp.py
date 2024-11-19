@@ -75,6 +75,7 @@ from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimes
 from .split import selectByLabel
 from bimvee.importBoundingBoxes import importBoundingBoxes
 from bimvee.importSkeleton import importSkeleton
+from bimvee.importEyeTracking import importEyeTracking
 from tqdm import tqdm
 
 def decodeEvents(data, **kwargs):
@@ -800,6 +801,8 @@ def importIitYarpRecursive(**kwargs):
             tsOffset = importIitYarpInfoLog(**kwargs)
         if file == 'ground_truth.csv':
             boundingBoxes = importBoundingBoxes(**kwargs)
+        if file == 'gt.json':
+            eyes = importEyeTracking(**kwargs)
         if file == 'skeleton.json':
             skeleton = importSkeleton(**kwargs)
     if len(importedDicts) == 0:
@@ -811,6 +814,8 @@ def importIitYarpRecursive(**kwargs):
         addGroundTruth(boundingBoxes, importedDicts, 'boundingBoxes')
     if skeleton is not None:
         addGroundTruth(skeleton, importedDicts, 'skeleton')
+    if eyes is not None:
+        addGroundTruth(eyes, importedDicts, 'eyeTracking')
     return importedDicts
 
 
