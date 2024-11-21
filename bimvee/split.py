@@ -40,7 +40,7 @@ from itertools import compress
 from math import fabs
 
 # local imports
-from .timestamps import rezeroTimestampsForImportedDicts, sortDataTypeDictByTime
+from .timestamps import sortDataTypeDictByTime
 
 # In selectByLabel, the field from which a value is selected already exists in the iDict
 def selectByLabel(inDict, labelName, labelValue):
@@ -64,15 +64,15 @@ def selectByBool(inDict, selectedEvents):
     if not np.any(selectedEvents):
         return None
     outDict = {}
-    for fieldName in inDict.keys():
+    for key, value in inDict.items():
         try:
-            assert len(inDict[fieldName]) == len(selectedEvents)
-            if isinstance(inDict[fieldName], list):
-                outDict[fieldName] = list(compress(inDict[fieldName], selectedEvents))
+            assert len(value) == len(selectedEvents)
+            if isinstance(value, list):
+                outDict[key] = list(compress(value, selectedEvents))
             else:
-                outDict[fieldName] = inDict[fieldName][selectedEvents]
+                outDict[key] = value[selectedEvents]
         except (AssertionError, TypeError): # TypeError for case that value has no len(); #AssertionError, in case it does but that len is not the same as the ts len.
-            outDict[fieldName] = inDict[fieldName]
+            outDict[key] = value
     return outDict
 
 
@@ -157,62 +157,60 @@ If given a larger container, will split down all that it finds, realigning times
 If the container contains an info field, then the start and stopTime params
 will be added.
 '''
-def cropTime(inDict, **kwargs):
-    if isinstance(inDict, list):
-        return [cropTime(inDictInst, **kwargs) for inDictInst in inDict]
-    elif 'info' in inDict:
-        outDict = {'info': inDict['info'].copy(),
-                   'data': {}}
-        for channelName in inDict['data'].keys():
-            outDict['data'][channelName] = {}
-            for dataTypeName in inDict['data'][channelName].keys():
-                outDict['data'][channelName][dataTypeName] = cropTime(inDict['data'][channelName][dataTypeName], **kwargs)                
-        rezeroTimestampsForImportedDicts(outDict)
-        return outDict
-    elif 'ts' in inDict:
-        ts = inDict['ts']
-        if not np.any(ts): # the dataset is empty
-            return inDict
-        startTime = kwargs.get('startTime', 
-                    kwargs.get('minTime', 
-                    kwargs.get('beginTime', 
-                    kwargs.get('startTs', 
-                    kwargs.get('minTs', 
-                    kwargs.get('beginTs', 
-                    ts[0]))))))
-        stopTime = kwargs.get('stopTime', 
-                   kwargs.get('maxTime', 
-                   kwargs.get('endTime', 
-                   kwargs.get('stopTs', 
-                   kwargs.get('maxTs', 
-                   kwargs.get('endTs', 
-                   ts[-1]))))))
-        if startTime == ts[0] and stopTime == ts[-1]:
-            # No cropping to do - pass out the dict unmodified
-            return inDict
-        startIdx = np.searchsorted(ts, startTime, side='left')
-        stopIdx = np.searchsorted(ts, stopTime, side='right')
-        tsNew = ts[startIdx:stopIdx]
-        if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
-            tsNew = tsNew - startTime
-        outDict = {'ts': tsNew}
-        for fieldName in inDict.keys():
-            if fieldName != 'ts':
-                field = inDict[fieldName]
-                try:
-                    outDict[fieldName] = field[startIdx:stopIdx]
-                except IndexError:
-                    outDict[fieldName] = field.copy() # This might fail for certain data types
-                except TypeError:
-                    outDict[fieldName] = field # This might fail for certain data types
-        if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
-            tsOffsetOriginal = inDict.get('tsOffset', 0)
-            outDict['tsOffset'] = tsOffsetOriginal - startTime
-        return outDict
-    else:
-        # We assume that this is a datatype which doesn't contain ts, 
-        # so we pass it out unmodified
+def cropTimeSingle(inDict, **kwargs):    
+    ts = inDict['ts']
+    if not np.any(ts): # the dataset is empty
         return inDict
+    startTime = kwargs.get('startTime', 
+                kwargs.get('minTime', 
+                kwargs.get('beginTime', 
+                kwargs.get('startTs', 
+                kwargs.get('minTs', 
+                kwargs.get('beginTs', 
+                ts[0]))))))
+    stopTime = kwargs.get('stopTime', 
+               kwargs.get('maxTime', 
+               kwargs.get('endTime', 
+               kwargs.get('stopTs', 
+               kwargs.get('maxTs', 
+               kwargs.get('endTs', 
+               ts[-1]))))))
+    if startTime == ts[0] and stopTime == ts[-1]:
+        # No cropping to do - pass out the dict unmodified
+        return inDict
+    startIdx = np.searchsorted(ts, startTime, side='left')
+    stopIdx = np.searchsorted(ts, stopTime, side='right')
+    tsNew = ts[startIdx:stopIdx]
+    if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
+        tsNew = tsNew - startTime
+    outDict = {'ts': tsNew}
+    for key, value in inDict.items():
+        if key != 'ts':
+            try:
+                outDict[key] = value[startIdx:stopIdx]
+            except IndexError:
+                outDict[key] = value.copy() # This might fail for certain data types
+            except TypeError:
+                outDict[key] = value # This might fail for certain data types
+    if kwargs.get('zeroTime', kwargs.get('zeroTimestamps', True)):
+        tsOffsetOriginal = inDict.get('tsOffset', 0)
+        outDict['tsOffset'] = tsOffsetOriginal - startTime
+    return outDict
+
+def cropTime(in_dict, **kwargs):
+    # descend the hierarchy to the base layer:
+    if isinstance(in_dict, list):
+        return [cropTime(elem, **kwargs) for elem in in_dict]
+    if 'ts' in in_dict.keys():
+        new_dict = cropTimeSingle(in_dict, **kwargs)
+    else:
+        new_dict = {}
+        for key, value in in_dict.items():
+            if type(value) == dict:
+                new_dict[key] = cropTime(value, **kwargs)
+            else:
+                new_dict[key] = value
+    return new_dict
 
 # Could apply to any datatype with separate xy arrays; at the time of writing:
 # dvs, flow
@@ -287,7 +285,8 @@ def cropSpaceFrame(inDict, **kwargs):
 
 def cropSpace(inDict, **kwargs):
     if isinstance(inDict, list):
-        return [cropSpace(inDictInst, **kwargs) for inDictInst in inDict]
+        return [cropSpace(elem, **kwargs) for elem in inDict]
+
     elif 'info' in inDict:
         outDict = {'info': inDict['info'].copy(),
                    'data': {}}
@@ -304,10 +303,11 @@ def cropSpace(inDict, **kwargs):
     elif 'point' in inDict:
         return cropSpacePoint(inDict, **kwargs)
     else:
-        # We assume that this is a datatype which doesn't contain x/y
-        # so we pass it out unmodified
+        new_dict = {}
+        for key, value in inDict.items():
+            new_dict[key] = cropSpace(value, **kwargs)
         # TODO: frame datatype could be cropped spatially but doesn't get caught by this method
-        return inDict
+        return new_dict
 
 def cropSpaceTime(inDict, **kwargs):
     return cropSpace(cropTime(inDict, **kwargs), **kwargs)
