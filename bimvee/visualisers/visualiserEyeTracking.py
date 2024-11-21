@@ -38,6 +38,7 @@ def radian_difference(rad1, rad2):
     diff = rad1 - rad2
     # Normalize the difference to be within [-π, π]
     return (diff + np.pi) % (2 * np.pi) - np.pi
+
 class VisualiserEyeTracking(Visualiser):
 
     data_type = 'eyeTracking'
@@ -67,7 +68,7 @@ class VisualiserEyeTracking(Visualiser):
                             is_far_enough = abs(val[0] - val[-1]) > 10
                         elif x == 'eyeball_x' or x == 'eyeball_y':
                             is_far_enough = abs(val[0] - val[-1]) > 5
-                        interp_kind = 'cubic' if is_far_enough else 'linear'
+                        interp_kind = 'linear'   # interp_kind = 'cubic' if is_far_enough else 'linear'
                         try:
                             cubic_interp = interp1d(data_to_interpolate['ts'], val, kind=interp_kind)
                         except ValueError:
