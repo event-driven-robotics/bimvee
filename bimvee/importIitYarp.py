@@ -491,8 +491,7 @@ def importPostProcessing(inDict, **kwargs):
             else:
                 clock_period_s = clock_period_ns / 1e9
 
-            inDict[dataType]['ts'] = unwrapTimestamps(inDict[dataType]['ts'],
-                                                      **kwargs) * clock_period_s
+            inDict[dataType]['ts'] = inDict[dataType]['ts'] * clock_period_s
             # Special handling for imu data
             if dataType == 'imuSamples':
                 if kwargs.get('convertSamplesToImu', True):
@@ -714,15 +713,9 @@ def importIitYarpDataLog(**kwargs):
             bottleNum, ts, bottleType, _ = c[:firstQuoteIdx - 1].decode().split(' ')
             data = c[firstQuoteIdx + 1:-(lastQuoteIdx + 1)]
             bitStrings = np.frombuffer(fromStringNested(data), np.uint32)
-            if not check_if_with_ts:
-                with_ts = np.all(sorted(bitStrings[::2]) == bitStrings[::2])
-                check_if_with_ts = True
             eventsToDecode.append(bitStrings)
             timestamps += [float(ts) / 0.000001]*len(bitStrings)
-        if with_ts:
-            outDict = decodeEvents(np.reshape(np.concatenate(eventsToDecode), (-1, 2)))
-        else:
-            outDict = decodeEvents(np.vstack((timestamps, np.concatenate(eventsToDecode))).swapaxes(0, 1).astype(int))
+        outDict = decodeEvents(np.vstack((timestamps, np.concatenate(eventsToDecode))).swapaxes(0, 1).astype(int))
         del content
         return importPostProcessing(outDict, **kwargs)
 
