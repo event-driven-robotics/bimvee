@@ -60,8 +60,8 @@ class VisualiserEyeTracking(Visualiser):
                     if x == 'eye_closed':
                         out_dict[x] = val[0] and val[1]
                         continue
-                    cubic_interp = interp1d(data_to_interpolate['ts'], val, kind='linear')
-                    out_dict[x] = cubic_interp(time)
+                    linear_interp = interp1d(data_to_interpolate['ts'], val, kind='linear')
+                    out_dict[x] = linear_interp(time)
                 out_dict['interpolated'] = True
                 return out_dict
             return {k: self.get_data()[k][idx] for k in self.get_data().keys() if hasattr(self.get_data()[k], '__len__')}
