@@ -60,22 +60,8 @@ class VisualiserEyeTracking(Visualiser):
                     if x == 'eye_closed':
                         out_dict[x] = val[0] and val[1]
                         continue
-                    try:
-                        if x == 'eyeball_theta' or x == 'eyeball_phi':
-                            ang_dist = abs(radian_difference(val[0], val[-1]))
-                            is_far_enough = ang_dist > 0.05
-                        elif x == 'eyeball_radius':
-                            is_far_enough = abs(val[0] - val[-1]) > 10
-                        elif x == 'eyeball_x' or x == 'eyeball_y':
-                            is_far_enough = abs(val[0] - val[-1]) > 5
-                        interp_kind = 'linear'   # interp_kind = 'cubic' if is_far_enough else 'linear'
-                        try:
-                            cubic_interp = interp1d(data_to_interpolate['ts'], val, kind=interp_kind)
-                        except ValueError:
-                            cubic_interp = interp1d(data_to_interpolate['ts'], val, kind='linear')
-                        out_dict[x] = cubic_interp(time)
-                    except TypeError:
-                        continue
+                    cubic_interp = interp1d(data_to_interpolate['ts'], val, kind='linear')
+                    out_dict[x] = cubic_interp(time)
                 out_dict['interpolated'] = True
                 return out_dict
             return {k: self.get_data()[k][idx] for k in self.get_data().keys() if hasattr(self.get_data()[k], '__len__')}
