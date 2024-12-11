@@ -69,7 +69,7 @@ def plotSpikeogramDvs(inDict, **kwargs):
                 print('Channel ' + channelName + ' skipped because it contains no polarity data')
         return
     # Break out data arrays for cleaner code
-    print('plotSpikeogram working: ' + kwargs['title'])
+    print('plotSpikeogram working: ' + kwargs.get('title', ''))
     x = inDict['x']
     y = inDict['y']
     ts = inDict['ts']

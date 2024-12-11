@@ -21,7 +21,8 @@ and creates a point cloud viewer containing
 '''
 
 import numpy as np
-import pptk
+#import pptk
+import matplotlib.pyplot as plt
 
 from .split import cropSpaceTime
 
@@ -56,8 +57,20 @@ def plotDvsSpaceTime(inDicts, **kwargs):
     timeRange = inDict['ts'][-1] - inDict['ts'][0]
     spatialDim = max(max(inDict['x']), max(inDict['y']))
     scalingFactor = timeRange / spatialDim
-    events = np.concatenate((inDict['x'][:, np.newaxis] * scalingFactor, 
-                             inDict['y'][:, np.newaxis] * scalingFactor, 
-                             inDict['ts'][:, np.newaxis]), axis=1)
-    pptkViewer = pptk.viewer(events) 
-    return pptkViewer
+    #events = np.concatenate((inDict['x'][:, np.newaxis] * scalingFactor, 
+    #                         inDict['y'][:, np.newaxis] * scalingFactor, 
+    #                         inDict['ts'][:, np.newaxis]), axis=1)
+    #pptkViewer = pptk.viewer(events) 
+    #return pptkViewer
+    axes = kwargs.get('axes', None) 
+    if axes is None:
+        fig = plt.figure()
+        axes = fig.add_subplot(projection='3d')
+    axes.scatter(
+        inDict['x'] * scalingFactor, 
+        inDict['y'] * scalingFactor, 
+        inDict['ts']
+    )
+    axes.set_xlabel('X')
+    axes.set_ylabel('Y')
+    axes.set_zlabel('Time')
