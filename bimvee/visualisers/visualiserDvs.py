@@ -43,14 +43,12 @@ class VisualiserDvs(Visualiser):
     # TODO: There can be methods which better choose the best frame, or which create a visualisation which
     # respects the time_window parameter
 
-    def get_frame(self, time, timeWindow, **kwargs):
-        self.coloured = kwargs.get('image_type') == 'coloured'
+    def get_frame(self, time, time_window, **kwargs):
         data = self._data
-        kwargs['startTime'] = time - timeWindow / 2
-        kwargs['stopTime'] = time + timeWindow / 2
-        kwargs['dimX'] = data['dimX']
-        kwargs['dimY'] = data['dimY']
-        image = getEventImageForTimeRange(data, **kwargs)
+        events = data.get_event_window(time, time_window)
+        self.coloured = kwargs.get('image_type') == 'coloured'
+        kwargs['dimX'], kwargs['dimY'] = self.get_dims()
+        image = getEventImageForTimeRange(events, **kwargs)
         # Post processing to get image into uint8 with correct scale
         contrast = kwargs.get('contrast', 3)
         if kwargs.get('image_type') == 'coloured':
@@ -67,21 +65,7 @@ class VisualiserDvs(Visualiser):
         return image
 
     def get_dims(self):
-        try:
-            data = self._data
-        except AttributeError:  # data hasn't been set yet
-            return 1, 1
-        if 'dimX' in data:
-            x = data['dimX']
-        else:
-            x = np.max(data['x']) + 1
-            data['dimX'] = x
-        if 'dimY' in data:
-            y = data['dimY']
-        else:
-            y = np.max(data['y']) + 1
-            data['dimY'] = y
-        return x, y
+        return self._data.get_dims()
 
     def get_settings(self):
         settings = {'image_type': {'type': 'value_list',

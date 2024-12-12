@@ -51,35 +51,6 @@ def roundToSf(x, sig=3):
         return 0
 
 
-'''
-nomenclature:
-    idx = index
-    ids = indices
-'''
-
-
-def idsEventsInTimeRange(events, **kwargs):
-    startTime = kwargs.get('startTime', kwargs.get('minTime', kwargs.get('beginTime', events['ts'][0])))
-    endTime = kwargs.get('stopTime', kwargs.get('maxTime', kwargs.get('endTime', events['ts'][-1])))
-    # The following returns logical indices
-    # return (events['ts'] >= startTime) & (events['ts'] < endTime)
-    # Alternatively, search for the start and end indices, then return a range
-    # This might be faster, given that the ts array is already sorted
-    startIdx = np.searchsorted(events['ts'], startTime)
-    endIdx = np.searchsorted(events['ts'], endTime)
-    return range(startIdx, endIdx)
-
-
-def getEventsInTimeRange(events, **kwargs):
-    ids = kwargs.get('ids', idsEventsInTimeRange(events, **kwargs))
-    return {
-        'y': events['y'][ids],
-        'x': events['x'][ids],
-        'pol': events['pol'][ids],
-        'ts': events['ts'][ids]
-    }
-
-
 def getEventImage(events, **kwargs):
     # dims might be in the events dict, but allow override from kwargs
     try:
@@ -147,7 +118,6 @@ def getEventImage(events, **kwargs):
 
 
 def getEventImageForTimeRange(events, **kwargs):
-    events = getEventsInTimeRange(events, **kwargs)
     return getEventImage(events, **kwargs)
 
 

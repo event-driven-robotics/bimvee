@@ -105,7 +105,9 @@ def importAe(filePathOrName='.', fileFormat='', **kwargs):
             for gt in gt_candidate_names:
                 if gt == f:
                     importers[-1].add_gt(gt)
-    pass
+    out_dict = {'info' : {'tsOffset' : 0},  
+        'data' : {'left': {'dvs': importers[0]}}} #TODO Remove debug line and make it general
+    return out_dict
 
 def importAeBAK(**kwargs):
     print(kwargs)

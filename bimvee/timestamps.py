@@ -34,6 +34,7 @@ If this is not given, then the maximum timestamp before each wrap event is used.
 
 import numpy as np
 import math
+from .importers.ImporterBase import ImporterBase
 
 def zeroTimestampsForADataType(dataTypeDict, tsOffset=None):
     # Probably the common format is 'ts' for all dtypes, 
@@ -283,8 +284,8 @@ def getLastTimestamp(inDict):
         for inDictElement in inDict:
             lastTs = max(lastTs, getLastTimestamp(inDictElement))
     elif isinstance(inDict, dict):
-        if 'ts' in inDict:
-            return inDict['ts'][-1]
+        if isinstance(inDict, ImporterBase):
+            return inDict.get_last_ts()
         else: # It's a dictionary - go through it's elements
             for keyName in inDict.keys():
                 lastTs = max(lastTs, getLastTimestamp(inDict[keyName]))
