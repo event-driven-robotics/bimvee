@@ -14,9 +14,6 @@ class ImporterBase(dict): # TODO remove dict inheritance
         self['tsOffset'] = 0
         self.do_indexing()
 
-    def add_gt(self, gt_file):
-        self.gt_file = gt_file
-
     def do_indexing(self):
         raise NotImplementedError('Indexing must be implemented in derived Importer class')
     
@@ -26,5 +23,18 @@ class ImporterBase(dict): # TODO remove dict inheritance
     def get_dims(self):
         raise NotImplementedError('Data dimension is only known to inerhited class')
 
+    def get_data_type(self):
+        raise NotImplementedError('Data type is only known to inerhited class')
+
     def get_last_ts(self):
         return self.timestamps[-1]
+    
+    def get_first_ts(self):
+        return self.timestamps[0]
+
+    def set_ts_offset(self, ts_offset):
+        self.timestamps -= ts_offset
+        self['tsOffset'] = ts_offset
+
+    def __getitem__(self, key):
+        return super().__getitem__(key)

@@ -58,12 +58,9 @@ class VisualiserFrame(Visualiser):
     data_type = 'frame'
 
     def get_colorfmt(self):
-        try:
-            if len(self._data['frames'][0].shape) == 3:
-                return 'rgb'
-            else:
-                return 'luminance'
-        except:  # TODO None type error?
+        if len(self._data.get_data_at_time(0).shape) == 3:
+            return 'rgb'
+        else:
             return 'luminance'
 
     def get_default_image(self):

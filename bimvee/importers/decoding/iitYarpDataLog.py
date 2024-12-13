@@ -52,7 +52,7 @@ def extract_events_from_data_log(data_file):
     if with_ts:
         timestamps, eventsToDecode = np.reshape(np.concatenate(eventsToDecode), (-1, 2))
 
-    return timestamps, eventsToDecode
+    return np.array(timestamps), eventsToDecode
 
 
 def decode_events(bitstrings):

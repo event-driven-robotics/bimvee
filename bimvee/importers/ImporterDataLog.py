@@ -43,3 +43,6 @@ class ImporterDataLog(ImporterBase):
             self.dimX = max(x) + 1
             self.dimY = max(y) + 1
         return self.dimX, self.dimY
+    
+    def get_data_type(self):
+        return 'dvs'

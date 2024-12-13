@@ -71,47 +71,55 @@ def getOrInsertDefault(inDict, arg, default):
 
 gt_candidate_names = ['gt.json']
 
+
 def importAe(filePathOrName='.', fileFormat='', **kwargs):
-    out_dict = {'info' : {'tsOffset' : 0},  
-                'data' : {}} #TODO Remove debug line and make it general
+    out_dict = {'info' : {},  
+                'data' : {}}
+    importers = []
     for dir, dirList, fileList in os.walk(filePathOrName):
         ch_dict = {} 
         for f in fileList:
             ext = os.path.splitext(f)[-1]
-            
+            importer = None
             # Detect datatype based on filename 
             if f == 'data.log':
                 from .importers.ImporterDataLog import ImporterDataLog
-                ch_dict['dvs'] = ImporterDataLog(dir, f)
+                importer = ImporterDataLog(dir, f)
             elif f == 'timestamps.txt':
                 from .importers.ImporterFrames import ImporterFrames
-                ch_dict['frame'] = ImporterFrames(dir, f)
+                importer = ImporterFrames(dir, f)
             # Detect datatype based on extension
             elif ext == '.dat' or ext == '.raw':
                 from .importers.ImporterProph import ImporterProph
-                ch_dict['dvs'] = ImporterProph(dir, f)
+                importer = ImporterProph(dir, f)
             elif ext == '.bag':
                 from .importers.ImporterRosBag import ImporterRosBag
-                ch_dict['rosbag'] = ImporterRosBag(dir, f)
+                importer = ImporterRosBag(dir, f)
             elif ext == '.bin':
                 from .importers.ImporterSecDVS import ImporterSecDVS
-                ch_dict['dvs'] = ImporterSecDVS(dir, f)
+                importer = ImporterSecDVS(dir, f)
             elif ext == '.aer2':
                 from .importers.ImporterAER2 import ImporterAER2
-                ch_dict['dvs'] = ImporterAER2(dir, f)
+                importer = ImporterAER2(dir, f)
             elif ext == '.aerdat':
                 from .importers.ImporterAERDat import ImporterAERDat
-                ch_dict['dvs'] = ImporterAERDat(dir, f)
+                importer = ImporterAERDat(dir, f)
             elif ext == '.es':
                 from .importers.ImporterEs import ImporterEs
-                ch_dict['dvs'] = ImporterEs(dir, f)
+                importer = ImporterEs(dir, f)
             for gt in gt_candidate_names:
                 if gt == f:
                     #TODO add gt type detection
-                    from .importEyeTracking import importEyeTracking
-                    ch_dict['eyeTracking'] = importEyeTracking(os.path.join(dir, f))
+                    from .importers.ImporterEyeTracking import ImporterEyeTracking
+                    importer = ImporterEyeTracking(dir, f)
+            if importer is not None:
+                importers.append(importer)
+                ch_dict[importer.get_data_type()] = importer
         if ch_dict:
             out_dict['data'][os.path.basename(dir)] = ch_dict
+    min_timestamp = min([x.get_first_ts() for x in importers])
+    for imp in importers:
+        imp.set_ts_offset(min_timestamp)
     return out_dict
 
 def importAeBAK(**kwargs):
