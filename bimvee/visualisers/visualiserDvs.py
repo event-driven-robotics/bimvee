@@ -45,7 +45,7 @@ class VisualiserDvs(Visualiser):
 
     def get_frame(self, time, time_window, **kwargs):
         data = self._data
-        events = data.get_event_window(time, time_window)
+        events = data.get_data_at_time(time, time_window)
         self.coloured = kwargs.get('image_type') == 'coloured'
         kwargs['dimX'], kwargs['dimY'] = self.get_dims()
         image = getEventImageForTimeRange(events, **kwargs)
@@ -64,8 +64,6 @@ class VisualiserDvs(Visualiser):
             image = kwargs['callback'](**kwargs)
         return image
 
-    def get_dims(self):
-        return self._data.get_dims()
 
     def get_settings(self):
         settings = {'image_type': {'type': 'value_list',

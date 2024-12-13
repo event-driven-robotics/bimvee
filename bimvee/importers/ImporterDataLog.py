@@ -9,8 +9,8 @@ class ImporterDataLog(ImporterBase):
         self.file_stream.seek(0)
         self.timestamps, self.ts_associated_bitstrings = extract_events_from_data_log(self.file_stream)
 
-    def get_event_window(self, time, time_window):
-        data_idx_start, data_idx_end = self.get_time_window_as_idx_range(time, time_window)
+    def get_data_at_time(self, time, time_window):
+        data_idx_start, data_idx_end = self._get_time_window_as_idx_range(time, time_window)
         data = self.ts_associated_bitstrings[data_idx_start:data_idx_end]
         new_dict = {'x': [],
                     'y': [],
@@ -32,7 +32,7 @@ class ImporterDataLog(ImporterBase):
                 new_dict[key] = new_dict[key]
         return new_dict
 
-    def get_time_window_as_idx_range(self, time, time_window):
+    def _get_time_window_as_idx_range(self, time, time_window):
         data_idx_start = np.searchsorted(self.timestamps, time - time_window / 2)
         data_idx_end = np.searchsorted(self.timestamps, self.timestamps[data_idx_start] + time_window)
         return data_idx_start, data_idx_end

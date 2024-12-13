@@ -69,44 +69,49 @@ def getOrInsertDefault(inDict, arg, default):
         inDict[arg] = default
     return value
 
-gt_candidate_names = ['ground_truth.csv', 'gt.json']
+gt_candidate_names = ['gt.json']
 
 def importAe(filePathOrName='.', fileFormat='', **kwargs):
-    importers = []
+    out_dict = {'info' : {'tsOffset' : 0},  
+                'data' : {}} #TODO Remove debug line and make it general
     for dir, dirList, fileList in os.walk(filePathOrName):
-        for f in fileList:    
+        ch_dict = {} 
+        for f in fileList:
             ext = os.path.splitext(f)[-1]
+            
             # Detect datatype based on filename 
             if f == 'data.log':
                 from .importers.ImporterDataLog import ImporterDataLog
-                importers.append(ImporterDataLog(dir, f))
+                ch_dict['dvs'] = ImporterDataLog(dir, f)
             elif f == 'timestamps.txt':
                 from .importers.ImporterFrames import ImporterFrames
-                importers.append(ImporterFrames(dir, f))
+                ch_dict['frame'] = ImporterFrames(dir, f)
             # Detect datatype based on extension
             elif ext == '.dat' or ext == '.raw':
                 from .importers.ImporterProph import ImporterProph
-                importers.append(ImporterProph(dir, f))
+                ch_dict['dvs'] = ImporterProph(dir, f)
             elif ext == '.bag':
                 from .importers.ImporterRosBag import ImporterRosBag
-                importers.append(ImporterRosBag(dir, f))
+                ch_dict['rosbag'] = ImporterRosBag(dir, f)
             elif ext == '.bin':
                 from .importers.ImporterSecDVS import ImporterSecDVS
-                importers.append(ImporterSecDVS(dir, f))
+                ch_dict['dvs'] = ImporterSecDVS(dir, f)
             elif ext == '.aer2':
                 from .importers.ImporterAER2 import ImporterAER2
-                importers.append(ImporterAER2(dir, f))
+                ch_dict['dvs'] = ImporterAER2(dir, f)
             elif ext == '.aerdat':
                 from .importers.ImporterAERDat import ImporterAERDat
-                importers.append(ImporterAERDat(dir, f))
+                ch_dict['dvs'] = ImporterAERDat(dir, f)
             elif ext == '.es':
                 from .importers.ImporterEs import ImporterEs
-                importers.append(ImporterEs(dir, f))
+                ch_dict['dvs'] = ImporterEs(dir, f)
             for gt in gt_candidate_names:
                 if gt == f:
-                    importers[-1].add_gt(gt)
-    out_dict = {'info' : {'tsOffset' : 0},  
-        'data' : {'left': {'dvs': importers[0]}}} #TODO Remove debug line and make it general
+                    #TODO add gt type detection
+                    from .importEyeTracking import importEyeTracking
+                    ch_dict['eyeTracking'] = importEyeTracking(os.path.join(dir, f))
+        if ch_dict:
+            out_dict['data'][os.path.basename(dir)] = ch_dict
     return out_dict
 
 def importAeBAK(**kwargs):

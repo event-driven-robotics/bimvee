@@ -61,3 +61,6 @@ class Visualiser:
 
     def get_settings(self):
         return {}
+
+    def get_dims(self):
+        return self._data.get_dims()

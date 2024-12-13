@@ -2,4 +2,4 @@ from .ImporterBase import ImporterBase
 
 
 class ImporterRosBag(ImporterBase):
-    pass
+    raise NotImplementedError('ImporterRosBag yet to be ported to bimvee 2.0')

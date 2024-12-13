@@ -2,4 +2,4 @@ from .ImporterBase import ImporterBase
 
 
 class ImporterProph(ImporterBase):
-    pass
+    raise NotImplementedError('ImporterProph yet to be ported to bimvee 2.0')

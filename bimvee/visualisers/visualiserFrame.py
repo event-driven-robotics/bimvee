@@ -57,17 +57,6 @@ class VisualiserFrame(Visualiser):
 
     data_type = 'frame'
 
-    def set_data(self, data):
-        super().set_data(data)
-
-        if self._data['frames'][0].dtype != np.uint8:
-            # Convert to uint8, converting to fullscale accross the whole dataset
-            minValue = min([frame.min() for frame in self._data['frames']])
-            maxValue = max([frame.max() for frame in self._data['frames']])
-            # TODO: assuming that it starts scaled in 0-1 - could have more general approach?
-            self._data['frames'] = [((frame-minValue)/(maxValue-minValue)*255).astype(np.uint8)
-                                    for frame in data['frames']]
-
     def get_colorfmt(self):
         try:
             if len(self._data['frames'][0].shape) == 3:
@@ -86,34 +75,10 @@ class VisualiserFrame(Visualiser):
     # respects the time_window parameter
     def get_frame(self, time, timeWindow, **kwargs):
         data = self._data
-        if 'tsEnd' in data:
-            # Optional mode in which frames are only displayed
-            # between corresponding ts and tsEnd
-            frameIdx = np.searchsorted(data['ts'], time, side='right') - 1
-            if frameIdx < 0:
-                image = self.get_default_image()
-            elif time > data['tsEnd'][frameIdx]:
-                image = self.get_default_image()
-            else:
-                image = data['frames'][frameIdx]
-        elif time < data['ts'][0] - timeWindow / 2 or time > data['ts'][-1] + timeWindow / 2:
-            # Gone off the end of the frame data
-            image = self.get_default_image()
-        else:
-            frameIdx = findNearest(data['ts'], time)
-            image = data['frames'][frameIdx]
+        image = data.get_data_at_time(time)
         # Allow for arbitrary post-production on image with a callback
         # TODO: as this is boilerplate, it could be pushed into pie syntax ...
         if kwargs.get('callback', None) is not None:
             kwargs['image'] = image
             image = kwargs['callback'](**kwargs)
         return image
-
-    def get_dims(self):
-        try:
-            data = self._data
-        except AttributeError:  # data hasn't been set yet
-            return 1, 1
-        x = data['dimX'] if 'dimX' in data else data['frames'][0].shape[1]
-        y = data['dimY'] if 'dimY' in data else data['frames'][0].shape[0]
-        return x, y
