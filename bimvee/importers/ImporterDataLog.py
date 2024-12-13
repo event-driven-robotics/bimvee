@@ -33,8 +33,8 @@ class ImporterDataLog(ImporterBase):
         return new_dict
 
     def _get_time_window_as_idx_range(self, time, time_window):
-        data_idx_start = np.searchsorted(self.timestamps, time - time_window / 2)
-        data_idx_end = np.searchsorted(self.timestamps, self.timestamps[data_idx_start] + time_window)
+        data_idx_start = self.get_idx_at_time(time - time_window / 2)
+        data_idx_end = self.get_idx_at_time(self.timestamps[data_idx_start] + time_window)
         return data_idx_start, data_idx_end
     
     def get_dims(self):

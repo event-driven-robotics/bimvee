@@ -1,5 +1,5 @@
 import os
-
+import numpy as np
 class ImporterBase(dict): # TODO remove dict inheritance
     def __init__(self, dir, file):
         self.containing_dir_name = dir
@@ -25,6 +25,9 @@ class ImporterBase(dict): # TODO remove dict inheritance
 
     def get_data_type(self):
         raise NotImplementedError('Data type is only known to inerhited class')
+
+    def get_idx_at_time(self, time):
+        return min(np.searchsorted(self.timestamps, time), len(self.timestamps) - 1)
 
     def get_last_ts(self):
         return self.timestamps[-1]

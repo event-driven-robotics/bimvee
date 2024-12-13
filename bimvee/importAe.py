@@ -93,8 +93,11 @@ def importAe(filePathOrName='.', fileFormat='', **kwargs):
                 from .importers.ImporterProph import ImporterProph
                 importer = ImporterProph(dir, f)
             elif ext == '.bag':
-                from .importers.ImporterRosBag import ImporterRosBag
-                importer = ImporterRosBag(dir, f)
+                from .importers.ImporterRosBag import generateRosBagImporters
+                rosbagImporters = generateRosBagImporters(dir, f)
+                ch_dict.update(rosbagImporters)
+                for x in rosbagImporters.values():
+                    importers.append(x)
             elif ext == '.bin':
                 from .importers.ImporterSecDVS import ImporterSecDVS
                 importer = ImporterSecDVS(dir, f)
