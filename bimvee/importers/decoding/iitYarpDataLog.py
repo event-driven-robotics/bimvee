@@ -26,7 +26,7 @@ def fromStringNested(in_string):
     return re.sub(b'\\\{2,}|\\\\\"', unquoting, re.sub(b'\\\\+[nr0]', unquoting, in_string))
 
 
-def extract_events_from_data_log(data_file):
+def extract_events_from_data_file(data_file):
     eventsToDecode = []
     timestamps = []
     check_if_with_ts = False
@@ -59,5 +59,5 @@ def decode_events(bitstrings):
     pol = ~np.array(bitstrings & 0x01, dtype=bool)  # We want True=ON=brighter, False=OFF=darker, so we negate
     x = np.uint16(bitstrings >> 1 & 0x7FF)
     y = np.uint16(bitstrings >> 12 & 0x3FF)
-    ch = np.uint8(bitstrings >> 23 & 0x01)
-    return pol, x, y, ch
+    ch = np.uint8(bitstrings >> 23 & 0x01) #TODO check if channel is useful
+    return pol, x, y
