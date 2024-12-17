@@ -72,11 +72,16 @@ def getOrInsertDefault(inDict, arg, default):
 gt_candidate_names = ['gt.json']
 
 
-def importAe(filePathOrName='.', fileFormat='', **kwargs):
+def importAe(filePathOrName):
     out_dict = {'info' : {},  
                 'data' : {}}
     importers = []
-    for dir, dirList, fileList in os.walk(filePathOrName):
+    if os.path.isdir(filePathOrName):
+        walk_generator = os.walk(filePathOrName)
+    elif os.path.isfile(filePathOrName):
+        # If a file name is given then make a fake walk with a single file list
+        walk_generator = [[*next(os.walk(os.path.dirname(filePathOrName)))[:2], [os.path.basename(filePathOrName)]]]
+    for dir, dirList, fileList in walk_generator:
         ch_dict = {} 
         for f in fileList:
             ext = os.path.splitext(f)[-1]
