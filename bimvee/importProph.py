@@ -17,8 +17,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 Intended as part of bimvee (Batch Import, Manipulation, Visualisation and Export of Events etc)
 importProph opens a file in either the .raw or .dat formats of Prophesee. 
 
-https://docs.prophesee.ai/data_formats/file_formats/dat.html
-https://docs.prophesee.ai/data_formats/data_encoding_formats/evt2.html
+https://docs.prophesee.ai/stable/data/encoding_formats/evt2.html#chapter-data-encoding-formats-evt2
 
 Returns a dict in this format:
 {'info': {},
