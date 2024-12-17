@@ -56,25 +56,17 @@ class ImporterEventsBase(ImporterBase):
 
     def get_data_at_time(self, time, time_window):
         data_idx_start, data_idx_end = self._get_time_window_as_idx_range(time, time_window)
-        data = self.bitstrings[data_idx_start:data_idx_end]
+        data = np.concatenate(self.bitstrings[data_idx_start:data_idx_end])
         new_dict = {'x': [],
                     'y': [],
                     'pol': [],
-                    'ch': [],
                     'ts': [],
                     }
-        for ts, d in zip(self.timestamps[data_idx_start:data_idx_end], data):
-            pol, x, y = self.decode_events(d)
-            new_dict['x'].append(x)
-            new_dict['y'].append(y)
-            new_dict['pol'].append(pol)
-            # new_dict['ch'].append(ch)
-            new_dict['ts'].append([ts] * len(pol))
-        for key in new_dict:
-            try:
-                new_dict[key] = np.concatenate(new_dict[key])
-            except ValueError:
-                new_dict[key] = new_dict[key]
+        pol, x, y = self.decode_events(data)
+        new_dict['x'] = x
+        new_dict['y'] = y
+        new_dict['pol'] = pol
+        new_dict['ts'] = [self.timestamps[data_idx_start]] * len(pol)
         return new_dict
     
     def _get_time_window_as_idx_range(self, time, time_window):

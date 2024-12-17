@@ -68,7 +68,7 @@ class TimestampedList(list):
 
     def __getitem__(self, i):
         if type(i) == slice:
-            return self.ts_associated_data[self.ts_correspondences[i.start]:self.ts_correspondences[i.stop]]
+            return [self[x] for x in range(i.start, i.stop)]
         elif hasattr(i, '__len__'):
             return [self[x] for x in i]
         else:
