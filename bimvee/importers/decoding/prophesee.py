@@ -63,8 +63,8 @@ def importRawHeaders(raw):
 
 class TimestampedList(list):
     def __init__(self, ts_correspondences, ts_associated_data):
-        self.ts_correspondences = ts_correspondences
-        self.ts_associated_data = ts_associated_data
+        self._ts_correspondences = ts_correspondences
+        self._ts_associated_data = ts_associated_data
 
     def __getitem__(self, i):
         if type(i) == slice:
@@ -72,10 +72,10 @@ class TimestampedList(list):
         elif hasattr(i, '__len__'):
             return [self[x] for x in i]
         else:
-            return self.ts_associated_data[self.ts_correspondences[i]:self.ts_correspondences[i + 1]]
+            return self._ts_associated_data[self._ts_correspondences[i]:self._ts_correspondences[i + 1]]
 
     def __len__(self):
-        return len(self.ts_correspondences)
+        return len(self._ts_correspondences)
 
 
 def extract_events_from_data_file(file_stream):
