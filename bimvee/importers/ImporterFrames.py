@@ -11,7 +11,7 @@ class ImporterFrames(ImporterBase):
 
     def get_data_at_time(self, time, time_window=None):
         data_idx = self.get_idx_at_time(time)
-        return imageio.imread(os.path.join(self._containing_dir_name, self.image_list[data_idx]))
+        return imageio.imread(os.path.join(self._containing_dir_name, self._image_list[data_idx]))
 
     def get_dims(self):
         if not hasattr(self, '_dimX'):
