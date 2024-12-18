@@ -40,12 +40,10 @@ def extract_events_from_data_file(data_file):
         if not check_if_with_ts and len(bitStrings) > 10:
             with_ts = np.all(sorted(bitStrings[::2]) == bitStrings[::2])
             check_if_with_ts = True
+        if not with_ts:
             timestamps.append(float(ts))
-        if check_if_with_ts:
-            if not with_ts:
-                timestamps.append(float(ts))
-            else:
-                timestamps.clear()
+        else:
+            timestamps.clear()
 
         eventsToDecode.append(bitStrings)
 
@@ -55,9 +53,12 @@ def extract_events_from_data_file(data_file):
     return np.array(timestamps), eventsToDecode
 
 
-def decode_events(bitstrings):
-    pol = ~np.array(bitstrings & 0x01, dtype=bool)  # We want True=ON=brighter, False=OFF=darker, so we negate
-    x = np.uint16(bitstrings >> 1 & 0x7FF)
-    y = np.uint16(bitstrings >> 12 & 0x3FF)
-    ch = np.uint8(bitstrings >> 23 & 0x01) #TODO check if channel is useful
-    return pol, x, y
+def decode_events(bitstrings, timestamps):
+    assert len(bitstrings) == len(timestamps)
+    ts = np.concatenate([[timestamps[i]] * len(bitstrings[i]) for i in range(len(bitstrings))])
+    concatenated_bitstrings = np.concatenate(bitstrings)
+    pol = ~np.array(concatenated_bitstrings & 0x01, dtype=bool)  # We want True=ON=brighter, False=OFF=darker, so we negate
+    x = np.uint16(concatenated_bitstrings >> 1 & 0x7FF)
+    y = np.uint16(concatenated_bitstrings >> 12 & 0x3FF)
+    ch = np.uint8(concatenated_bitstrings >> 23 & 0x01) #TODO check if channel is useful
+    return pol, x, y, ts

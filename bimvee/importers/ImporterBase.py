@@ -56,19 +56,20 @@ class ImporterEventsBase(ImporterBase):
 
     def get_data_at_time(self, time, time_window):
         data_idx_start, data_idx_end = self._get_time_window_as_idx_range(time, time_window)
-        data = np.concatenate(self._bitstrings[data_idx_start:data_idx_end])
+        data = self._bitstrings[data_idx_start:data_idx_end]
+        timestamps = self._timestamps[data_idx_start:data_idx_end]
         new_dict = {'x': [],
                     'y': [],
                     'pol': [],
                     'ts': [],
                     }
-        pol, x, y = self._decode_events(data)
+        pol, x, y, ts = self._decode_events(data, timestamps)
         new_dict['x'] = x
         new_dict['y'] = y
         new_dict['pol'] = pol
-        new_dict['ts'] = [self._timestamps[data_idx_start]] * len(pol)
+        new_dict['ts'] = ts
         return new_dict
-    
+
     def _get_time_window_as_idx_range(self, time, time_window):
         data_idx_start = self.get_idx_at_time(time - time_window / 2)
         data_idx_end = self.get_idx_at_time(self._timestamps[data_idx_start] + time_window)
@@ -76,7 +77,8 @@ class ImporterEventsBase(ImporterBase):
     
     def get_dims(self):
         if not hasattr(self, 'dimX'):
-            _, x, y = self._decode_events(np.concatenate(random.sample(self._bitstrings, 5000)))
+            random_indices = np.random.choice(np.arange(len(self._bitstrings)), 1000, replace=False)
+            _, x, y, _ = self._decode_events([self._bitstrings[i] for i in random_indices], self._timestamps[random_indices])
             self._dimX = max(x) + 1
             self._dimY = max(y) + 1
         return self._dimX, self._dimY
@@ -85,7 +87,7 @@ class ImporterEventsBase(ImporterBase):
         return 'dvs'
     
     @staticmethod
-    def _decode_events(bitstring_array):
+    def _decode_events(bitstring_array, timestamps):
         raise NotImplementedError("Event decoding function must be implemented in child class")
 
     @staticmethod
