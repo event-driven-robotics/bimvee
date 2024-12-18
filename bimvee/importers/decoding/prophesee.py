@@ -9,6 +9,7 @@ EXT_TRIGGER = 12
 OTHERS = 14
 CONTINUED = 15
 
+TS_SCALER = 1000000
 
 def importRawHeaders(raw):
 
@@ -99,22 +100,23 @@ def extract_events_from_data_file(file_stream):
         bitstrings.append(events[~is_timestamp_msb])
         offset += len(bitstrings[-1])
 
-    timestamps = np.concatenate(timestamps) / 1000000
+    timestamps = np.concatenate(timestamps) / TS_SCALER
     bitstrings = np.concatenate(bitstrings)
     ts_correspondences = np.concatenate(ts_correspondences)
     ts_map = TimestampedList(ts_correspondences, bitstrings)
     return timestamps, ts_map
 
 
-def decode_events(bitstrings_array):
-    ev_type = (bitstrings_array & 0xF0000000) >> 28
+def decode_events(bitstrings, timestamps):
+    assert(len(bitstrings) == len(timestamps))
+    concatenated_bitstrings = np.concatenate(bitstrings)
+    ev_type = (concatenated_bitstrings & 0xF0000000) >> 28
     notEvents = ev_type > 1
-    bitstrings_array = bitstrings_array[~notEvents]  # Filtering non events
-    y = (bitstrings_array & 0x000007FF).astype(int)           # y is bits 10..0
-    x = ((bitstrings_array & 0x003FF800) >> 11).astype(int)    # x is bits 21..11
+    ts_lsb = ((concatenated_bitstrings & 0x0FC00000) >> 22) / TS_SCALER
+    ts = ts_lsb + np.concatenate([[timestamps[i]] * len(bitstrings[i]) for i in range(len(bitstrings))])
+    ts = ts[~notEvents] # Filtering non events. Timestamps are concatenated first for efficiency
+    concatenated_bitstrings = concatenated_bitstrings[~notEvents]  
+    y = (concatenated_bitstrings & 0x000007FF).astype(int)           # y is bits 10..0
+    x = ((concatenated_bitstrings & 0x003FF800) >> 11).astype(int)    # x is bits 21..11
     pol = ev_type[~notEvents] == 1
-    # if timestamps is not None:
-    #     ts_LSB = ((bitstrings_array & 0x0FC00000) >> 22) / 1000000  # ts is bits 27..22
-    #     ts = (timestamps + ts_LSB)
-    #     return pol, x, y, ts
-    return pol, x, y
+    return pol, x, y, ts
