@@ -14,7 +14,7 @@ class ImporterFrames(ImporterBase):
         return imageio.imread(os.path.join(self._containing_dir_name, self.image_list[data_idx]))
 
     def get_dims(self):
-        if not hasattr(self, 'dimX'):
+        if not hasattr(self, '_dimX'):
             example_frame = self.get_data_at_time(0)
             self._dimX = example_frame.shape[1]
             self._dimY = example_frame.shape[0]
