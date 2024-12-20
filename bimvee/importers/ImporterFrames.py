@@ -9,7 +9,7 @@ class ImporterFrames(ImporterBase):
         self._timestamps = np.loadtxt(self._file_stream)
         self._image_list = sorted([x for x in os.listdir(self._containing_dir_name) if os.path.splitext(x)[-1] in ['.jpg', '.jpeg', '.png']])
 
-    def get_data_at_time(self, time, time_window=None):
+    def get_data_at_time(self, time, time_window=None, **kwargs):
         data_idx = self.get_idx_at_time(time)
         return imageio.imread(os.path.join(self._containing_dir_name, self._image_list[data_idx]))
 

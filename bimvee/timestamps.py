@@ -280,15 +280,11 @@ Accepts a container at any level of the container hierarchy and finds the highes
 '''
 def getLastTimestamp(inDict):
     lastTs = 0
-    if isinstance(inDict, list):
-        for inDictElement in inDict:
-            lastTs = max(lastTs, getLastTimestamp(inDictElement))
-    elif isinstance(inDict, dict):
-        if isinstance(inDict, ImporterBase):
-            return inDict.get_last_ts()
-        else: # It's a dictionary - go through it's elements
-            for keyName in inDict.keys():
-                lastTs = max(lastTs, getLastTimestamp(inDict[keyName]))
+    if isinstance(inDict, ImporterBase):
+        return inDict.get_last_ts()
+    elif isinstance(inDict, dict): # It's a dictionary - go through it's elements
+        for keyName in inDict.keys():
+            lastTs = max(lastTs, getLastTimestamp(inDict[keyName]))
     return lastTs
 
 '''

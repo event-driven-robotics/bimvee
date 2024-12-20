@@ -2,7 +2,7 @@ import os
 import numpy as np
 import random
 
-class ImporterBase(dict): # TODO remove dict inheritance
+class ImporterBase: # TODO remove dict inheritance
     def __init__(self, dir, file):
         self._containing_dir_name = dir
         self._full_file_path = os.path.join(dir, file)
@@ -13,13 +13,13 @@ class ImporterBase(dict): # TODO remove dict inheritance
             self._file_stream = open(self._full_file_path, 'rb')
         self._file_stream.seek(0)
         self._timestamps = []
-        self['tsOffset'] = 0
+        self._ts_offset = 0
         self._do_indexing()
 
     def _do_indexing(self):
         raise NotImplementedError('Indexing must be implemented in derived Importer class')
     
-    def get_data_at_time(self, time, time_window=None):
+    def get_data_at_time(self, time, time_window=None, **kwargs):
         raise NotImplementedError('Data retrieval must be implemented in derived Importer class')
 
     def get_dims(self):
@@ -28,9 +28,15 @@ class ImporterBase(dict): # TODO remove dict inheritance
     def get_data_type(self):
         raise NotImplementedError('Data type is only known to inerhited class')
 
-    def get_idx_at_time(self, time):
-        return min(np.searchsorted(self._timestamps, time), len(self._timestamps) - 1)
-
+    def get_idx_at_time(self, time, ids_around_time=0):
+        idx = np.searchsorted(self._timestamps, time)
+        if ids_around_time == 0:
+            if abs(self._timestamps[idx - 1] - time) < abs(self._timestamps[idx ] - time):
+                idx -= 1
+            return min(idx, len(self._timestamps) - 1)
+        else:
+            return slice(max(0, idx - ids_around_time), min(len(self._timestamps), idx + ids_around_time))
+        
     def get_last_ts(self):
         return self._timestamps[-1]
     
@@ -39,11 +45,15 @@ class ImporterBase(dict): # TODO remove dict inheritance
 
     def set_ts_offset(self, ts_offset):
         self._timestamps -= ts_offset
-        self['tsOffset'] = ts_offset
-
-    def __getitem__(self, key):
-        return super().__getitem__(key)
+        self._ts_offset = ts_offset
     
+    def get_full_data_as_dict(self):
+        data_list = [self.get_data_at_time(ts, 0) for ts in self._timestamps]
+        # merge list of dicts in one dict 
+        return {k: [d[k] for d in data_list] for k in data_list[0].keys()}
+
+    def __len__(self):
+        return len(self._timestamps)
 class ImporterEventsBase(ImporterBase):
     
     def __init__(self, dir, file):
@@ -54,15 +64,11 @@ class ImporterEventsBase(ImporterBase):
         self._file_stream.seek(0)
         self._timestamps, self._bitstrings = self._extract_events_from_data_file(self._file_stream)
 
-    def get_data_at_time(self, time, time_window):
+    def get_data_at_time(self, time, time_window, **kwargs):
         data_idx_start, data_idx_end = self._get_time_window_as_idx_range(time, time_window)
         data = self._bitstrings[data_idx_start:data_idx_end]
         timestamps = self._timestamps[data_idx_start:data_idx_end]
-        new_dict = {'x': [],
-                    'y': [],
-                    'pol': [],
-                    'ts': [],
-                    }
+        new_dict = {}
         pol, x, y, ts = self._decode_events(data, timestamps)
         new_dict['x'] = x
         new_dict['y'] = y
