@@ -2,7 +2,7 @@ import os
 import numpy as np
 import random
 
-class ImporterBase: # TODO remove dict inheritance
+class ImporterBase:
     def __init__(self, dir, file):
         self._containing_dir_name = dir
         self._full_file_path = os.path.join(dir, file)
@@ -31,8 +31,11 @@ class ImporterBase: # TODO remove dict inheritance
     def get_idx_at_time(self, time, ids_around_time=0):
         idx = np.searchsorted(self._timestamps, time)
         if ids_around_time == 0:
-            if abs(self._timestamps[idx - 1] - time) < abs(self._timestamps[idx ] - time):
-                idx -= 1
+            try:
+                if abs(self._timestamps[idx - 1] - time) < abs(self._timestamps[idx ] - time):
+                    idx -= 1
+            except IndexError:
+                pass
             return min(idx, len(self._timestamps) - 1)
         else:
             return slice(max(0, idx - ids_around_time), min(len(self._timestamps), idx + ids_around_time))
