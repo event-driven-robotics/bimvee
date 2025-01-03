@@ -86,10 +86,13 @@ class ImporterEventsBase(ImporterBase):
     
     def get_dims(self):
         if not hasattr(self, '_dimX'):
-            random_indices = np.random.choice(np.arange(len(self._bitstrings)), 1000, replace=False)
-            _, x, y, _ = self._decode_events([self._bitstrings[i] for i in random_indices], self._timestamps[random_indices])
-            self._dimX = max(x) + 1
-            self._dimY = max(y) + 1
+            self._dimX = 0
+            self._dimY = 0
+            random_indices = np.random.choice(np.arange(len(self._timestamps)), 50, replace=False)
+            for i in random_indices:
+                events_dict = self.get_data_at_time(self._timestamps[i], 0.3)
+                self._dimX = max(self._dimX, max(events_dict['x']) + 1)
+                self._dimY = max(self._dimY, max(events_dict['y']) + 1)
         return self._dimX, self._dimY
     
     def get_data_type(self):

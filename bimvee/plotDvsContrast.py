@@ -109,7 +109,7 @@ def getEventImage(events, **kwargs):
     except ValueError:
         pass
     except IndexError:
-        pass
+        print('Spotted an event outside the image bounds. Check image dimensions.')
     # Clip the values according to the contrast
     if not image_type == 'coloured':
         contrast = kwargs.get('contrast', 3)
