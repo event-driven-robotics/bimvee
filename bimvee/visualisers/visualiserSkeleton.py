@@ -34,7 +34,6 @@ import numpy as np
 from scipy import ndimage
 import math
 # Local imports
-from ..plotDvsContrast import getEventImageForTimeRange
 from .visualiserBase import Visualiser
 
 

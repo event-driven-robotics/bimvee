@@ -72,6 +72,12 @@ class ImporterEventsBase(ImporterBase):
         data = self._bitstrings[data_idx_start:data_idx_end]
         timestamps = self._timestamps[data_idx_start:data_idx_end]
         new_dict = {}
+        if not len(timestamps):
+            new_dict['x'] = []
+            new_dict['y'] = []
+            new_dict['pol'] = []
+            new_dict['ts'] = []
+            return new_dict
         pol, x, y, ts = self._decode_events(data, timestamps)
         new_dict['x'] = x
         new_dict['y'] = y

@@ -32,7 +32,7 @@ are counted against each other).
 import numpy as np
 
 # Local imports
-from ..plotDvsContrast import getEventImageForTimeRange
+from ..plotDvsContrast import getEventImage
 from .visualiserBase import Visualiser
 
 
@@ -48,7 +48,7 @@ class VisualiserDvs(Visualiser):
         events = data.get_data_at_time(time, time_window)
         self.coloured = kwargs.get('image_type') == 'coloured'
         kwargs['dimX'], kwargs['dimY'] = self.get_dims()
-        image = getEventImageForTimeRange(events, **kwargs)
+        image = getEventImage(events, **kwargs)
         # Post processing to get image into uint8 with correct scale
         contrast = kwargs.get('contrast', 3)
         if kwargs.get('image_type') == 'coloured':

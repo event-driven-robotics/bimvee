@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.widgets import Slider, Button
-from bimvee.plotDvsContrast import getEventImageForTimeRange
+from bimvee.plotDvsContrast import getEventImage
 import math
 import time 
 
@@ -37,7 +37,7 @@ class ViewerDvs():
         # This function should be pushed to a visualiser
         startTime = target_time - self.time_window / 2
         endTime = target_time + self.time_window / 2
-        event_image = getEventImageForTimeRange(
+        event_image = getEventImage(
             self.events, 
             startTime=startTime, 
             endTime=endTime, 

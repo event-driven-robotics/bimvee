@@ -51,14 +51,19 @@ def roundToSf(x, sig=3):
         return 0
 
 
-def getEventImage(events, **kwargs):
-    # dims might be in the events dict, but allow override from kwargs
-    try:
-        dimX = kwargs.get('dimX', events.get('dimX', np.max(events['x']) + 1))
-        dimY = kwargs.get('dimY', events.get('dimY', np.max(events['y']) + 1))
-    except ValueError:  # no defined dims and events arrays are empty
-        dimX = 1
-        dimY = 1
+def getEventImage(events, dimX, dimY, **kwargs):
+    if not len(events['ts']):
+        if kwargs.get('image_type', 'count') == 'coloured':
+            return np.zeros((dimY, dimX, 3), dtype=np.uint8)
+        else:
+            return np.zeros((dimY, dimX))
+    pol = np.array(events['pol'], dtype=bool)
+    if kwargs.get('pol_to_show', 'Both') == 'Pos':
+        events = {k : events[k][pol] for k in events}
+    elif kwargs.get('pol_to_show', 'Both') == 'Neg':
+        events = {k : events[k][~pol] for k in events}
+    pol = np.array(events['pol'], dtype=bool)
+
     try:
         image_type = kwargs.get('image_type', 'count')
         if image_type == 'count':
@@ -72,12 +77,8 @@ def getEventImage(events, **kwargs):
                                          bins=[dimY, dimX],
                                          range=[[-0.5, dimY-0.5], [-0.5, dimX-0.5]]
                                          )[0]
-            if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
-                eventImage = eventImagePos - eventImageNeg
-            elif kwargs.get('pol_to_show') == 'Pos':
-                eventImage = eventImagePos
-            elif kwargs.get('pol_to_show') == 'Neg':
-                eventImage = - eventImageNeg
+            eventImage = np.zeros((dimY, dimX)) - eventImageNeg + eventImagePos
+
         elif image_type == 'not_polarized':
             eventImage = np.histogram2d(events['y'],
                                         events['x'],
@@ -90,35 +91,19 @@ def getEventImage(events, **kwargs):
             eventImage = eventImage / eventImage.max()
         elif image_type == 'binary':
             eventImage = np.zeros((dimY, dimX))
-            if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
-                eventImage[events['y'], events['x']] = (events['pol'].astype(int) * 2 - 1)
-            elif kwargs.get('pol_to_show') == 'Pos':
-                eventImage[events['y'][events['pol']], events['x'][events['pol']]] = 1
-            elif kwargs.get('pol_to_show') == 'Neg':
-                eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = -1
+            eventImage[events['y'], events['x']] = (events['pol'].astype(int) * 2 - 1)
         elif image_type == 'coloured':
-            pos_colour = [255, 0, 0]
-            neg_colour = [0, 0, 255]
-            eventImage = np.full((dimY, dimX, 3), 255, dtype=np.uint8)
-            if kwargs.get('pol_to_show') is None or kwargs.get('pol_to_show') == 'Both':
-                eventImage[events['y'], events['x']] = [pos_colour if p else neg_colour for p in events['pol']]
-            elif kwargs.get('pol_to_show') == 'Pos':
-                eventImage[events['y'][events['pol']], events['x'][events['pol']]] = pos_colour
-            elif kwargs.get('pol_to_show') == 'Neg':
-                eventImage[events['y'][~events['pol']], events['x'][~events['pol']]] = neg_colour
+            pos_colour = [0, 0, 255]
+            neg_colour = [255, 0, 0]
+            eventImage = np.zeros((dimY, dimX, 3), dtype=np.uint8)
+            eventImage[events['y'][pol], events['x'][pol]] = pos_colour
+            eventImage[events['y'][~pol], events['x'][~pol]] = neg_colour
     except ValueError:
         pass
     except IndexError:
         print('Spotted an event outside the image bounds. Check image dimensions.')
-    # Clip the values according to the contrast
-    if not image_type == 'coloured':
-        contrast = kwargs.get('contrast', 3)
-        eventImage = np.clip(eventImage, -contrast, contrast)
+
     return eventImage
-
-
-def getEventImageForTimeRange(events, **kwargs):
-    return getEventImage(events, **kwargs)
 
 
 '''
