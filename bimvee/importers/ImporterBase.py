@@ -57,6 +57,11 @@ class ImporterBase:
         else:
             return slice(max(0, idx - ids_around_time), min(len(self._timestamps), idx + ids_around_time))
         
+    def insert_sorted(self, new_entry, timestamp):
+        insert_idx = np.searchsorted(self._timestamps, timestamp)
+        self._timestamps = np.insert(self._timestamps, insert_idx, timestamp)
+        self._data.insert(insert_idx, new_entry)
+
     def get_last_ts(self):
         return self._timestamps[-1]
     

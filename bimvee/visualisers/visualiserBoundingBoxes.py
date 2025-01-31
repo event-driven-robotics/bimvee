@@ -32,18 +32,23 @@ import numpy as np
 
 # Local imports
 from .visualiserBase import Visualiser
-
+from ..importers.ImporterBoundingBoxes import ImporterBoundingBoxes
 
 class VisualiserBoundingBoxes(Visualiser):
 
     data_type = 'boundingBoxes'
 
+    def __init__(self, data=None):
+        if data is None:
+                data = ImporterBoundingBoxes()
+        super().__init__(data)
+
     def get_frame(self, time, timeWindow, **kwargs):
         if self._data is None or not kwargs.get('show_bounding_boxes', True):
             return None
-        gt_bb = self._data
+        gt_bb = self._data.get_data_at_time(time, timeWindow, **kwargs)
         indices = abs(gt_bb['ts'] - time) < timeWindow
-        if not any(indices):
+        if not indices.any():
             if not kwargs.get('interpolate'):
                 return None
         if kwargs.get('interpolate'):
@@ -86,7 +91,8 @@ class VisualiserBoundingBoxes(Visualiser):
                 else:
                     boxes.append((minY_interp, minX_interp, maxY_interp, maxX_interp))
             boxes = np.array(boxes).astype(int)
-        else:
+        else: #TODO Recover possibility to return multiple boxes
+            return [[gt_bb['minY'], gt_bb['minX'], gt_bb['maxY'], gt_bb['maxX']]]
             boxes = np.column_stack((gt_bb['minY'][indices], gt_bb['minX'][indices],
                                      gt_bb['maxY'][indices], gt_bb['maxX'][indices])).astype(int)
             if kwargs.get('with_labels', True) and 'label' in gt_bb.keys():

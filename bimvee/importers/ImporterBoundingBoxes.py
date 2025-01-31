@@ -3,15 +3,24 @@ import json
 import numpy as np
 from scipy.interpolate import interp1d
 
-class ImporterEyeTracking(ImporterBase):
+class ImporterBoundingBoxes(ImporterBase):
 
     def _do_indexing(self):        
         self._file_stream.seek(0)
-        self._data = json.load(self._file_stream)
-        self._timestamps = [x['ts'] for x in self._data]
+        bboxes = np.loadtxt(self._file_stream)
+        if len(bboxes.shape) == 1:
+            bboxes = np.expand_dims(bboxes,0)
+        bboxes = bboxes[np.argsort(bboxes[:, 0])]
+        self._data = {'minY': bboxes[:, 1],
+                      'minX': bboxes[:, 2],
+                      'maxY': bboxes[:, 3],
+                      'maxX': bboxes[:, 4],
+                      'label': bboxes[:, 5],
+                      }
+        self._timestamps = bboxes[:, 0]
 
     def get_data_type(self):
-        return 'eyeTracking'
+        return 'boxes'
     
     def get_data_at_time(self, time, time_window=None, **kwargs):
         if not kwargs.get('interpolate'):
@@ -27,9 +36,6 @@ class ImporterEyeTracking(ImporterBase):
             out_dict = {}
             for key in data_to_interpolate[0].keys():
                 val = [x[key] for x in data_to_interpolate]
-                if key == 'eye_closed':
-                    out_dict[key] = val[0] and val[1]
-                    continue
                 linear_interp = interp1d(self._timestamps[ids_to_interpolate], val, kind='linear')
                 try:
                     out_dict[key] = linear_interp(time)
@@ -38,15 +44,3 @@ class ImporterEyeTracking(ImporterBase):
             out_dict['interpolated'] = True
             return out_dict
         
-    def set_fixed_radius(self, radius):
-        if radius is None:
-            return
-        for entry in self._data:
-            entry['eyeball_radius'] = radius
-    
-    def set_fixed_uv(self, u, v):
-        if u is None or v is None:
-            return
-        for entry in self._data:
-            entry['eyeball_x'] = u
-            entry['eyeball_y'] = v
