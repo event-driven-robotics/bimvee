@@ -33,17 +33,20 @@ class ImporterBase:
         raise NotImplementedError('Data type is only known to inerhited class')
 
     def get_time_of_next_data_point(self, time, backward=False):
-        idx = self.get_idx_at_time(time)
-        if backward:
-            if self._timestamps[idx] < time:
-                return self._timestamps[idx]
-            else:
-                return self._timestamps[(idx - 1)]
-        else:    
-            if self._timestamps[idx] > time:
-                return self._timestamps[idx]
-            else:
-                return self._timestamps[(idx + 1) % len(self)]
+        try:
+            idx = self.get_idx_at_time(time)
+            if backward:
+                if self._timestamps[idx] < time:
+                    return self._timestamps[idx]
+                else:
+                    return self._timestamps[(idx - 1)]
+            else:    
+                if self._timestamps[idx] > time:
+                    return self._timestamps[idx]
+                else:
+                    return self._timestamps[(idx + 1) % len(self)]
+        except IndexError:
+            return time
 
     def get_idx_at_time(self, time, ids_around_time=0):
         idx = np.searchsorted(self._timestamps, time)
