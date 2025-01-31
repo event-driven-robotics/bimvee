@@ -3,18 +3,22 @@ import numpy as np
 import random
 
 class ImporterBase:
-    def __init__(self, dir, file):
-        self._containing_dir_name = dir
-        self._full_file_path = os.path.join(dir, file)
-        self._file_stream = open(self._full_file_path)
-        try:
-            self._file_stream.readline()
-        except UnicodeDecodeError:
-            self._file_stream = open(self._full_file_path, 'rb')
-        self._file_stream.seek(0)
-        self._timestamps = []
-        self._ts_offset = 0
-        self._do_indexing()
+    def __init__(self, dir=None, file=None):
+        if dir is None or file is None:
+            self._timestamps = []
+            self._data = []
+        else:
+            self._containing_dir_name = dir
+            self._full_file_path = os.path.join(dir, file)
+            self._file_stream = open(self._full_file_path)
+            try:
+                self._file_stream.readline()
+            except UnicodeDecodeError:
+                self._file_stream = open(self._full_file_path, 'rb')
+            self._file_stream.seek(0)
+            self._timestamps = []
+            self._ts_offset = 0
+            self._do_indexing()
 
     def _do_indexing(self):
         raise NotImplementedError('Indexing must be implemented in derived Importer class')
@@ -27,6 +31,19 @@ class ImporterBase:
 
     def get_data_type(self):
         raise NotImplementedError('Data type is only known to inerhited class')
+
+    def get_time_of_next_data_point(self, time, backward=False):
+        idx = self.get_idx_at_time(time)
+        if backward:
+            if self._timestamps[idx] < time:
+                return self._timestamps[idx]
+            else:
+                return self._timestamps[(idx - 1)]
+        else:    
+            if self._timestamps[idx] > time:
+                return self._timestamps[idx]
+            else:
+                return self._timestamps[(idx + 1) % len(self)]
 
     def get_idx_at_time(self, time, ids_around_time=0):
         idx = np.searchsorted(self._timestamps, time)
@@ -45,11 +62,16 @@ class ImporterBase:
     
     def get_first_ts(self):
         return self._timestamps[0]
-
-    def set_ts_offset(self, ts_offset):
+    
+    @property
+    def ts_offset(self):
+        return self._ts_offset
+    
+    @ts_offset.setter
+    def ts_offset(self, ts_offset):
         self._timestamps -= ts_offset
         self._ts_offset = ts_offset
-    
+
     def get_full_data_as_dict(self):
         data_list = [self.get_data_at_time(ts, 0) for ts in self._timestamps]
         # merge list of dicts in one dict 

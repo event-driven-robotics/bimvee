@@ -127,7 +127,7 @@ def importAe(filePathOrName):
             out_dict['data'][os.path.basename(dir)] = ch_dict
     min_timestamp = min([x.get_first_ts() for x in importers])
     for imp in importers:
-        imp.set_ts_offset(min_timestamp)
+        imp.ts_offset = min_timestamp
     return out_dict
 
 def importAeBAK(**kwargs):

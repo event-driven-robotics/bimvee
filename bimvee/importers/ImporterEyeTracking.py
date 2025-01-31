@@ -15,7 +15,9 @@ class ImporterEyeTracking(ImporterBase):
     
     def get_data_at_time(self, time, time_window=None, **kwargs):
         if not kwargs.get('interpolate'):
-            data_idx = self.get_idx_at_time(time)
+            data_idx = self.get_idx_at_time(time) 
+            if data_idx < 0:
+                return None
             if np.abs(self._timestamps[data_idx] - time) > time_window:
                 return None
             return self._data[data_idx]

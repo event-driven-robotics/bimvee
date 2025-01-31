@@ -32,11 +32,16 @@ import numpy as np
 
 # Local imports
 from .visualiserBase import Visualiser
-
+from ..importers.ImporterEyeTracking import ImporterEyeTracking
 
 class VisualiserEyeTracking(Visualiser):
 
     data_type = 'eyeTracking'
+
+    def __init__(self, data=None):
+        if data is None:
+                data = ImporterEyeTracking()
+        super().__init__(data)
 
     def get_frame(self, time, timeWindow, **kwargs):
         if self._data is None or not kwargs.get('show_eyes_gt', True):
