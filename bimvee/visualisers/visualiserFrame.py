@@ -34,24 +34,9 @@ frame is shown or not.
 """
 
 import numpy as np
-import math
 
 # Local imports
 from .visualiserBase import Visualiser
-
-# A function intended to find the nearest timestamp
-# adapted from https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
-
-
-def findNearest(array, value):
-    idx = np.searchsorted(array, value)  # side="left" param is the default
-    if idx > 0 and (
-            idx == len(array) or
-            math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
-        return idx-1
-    else:
-        return idx
-
 
 class VisualiserFrame(Visualiser):
 
@@ -68,8 +53,6 @@ class VisualiserFrame(Visualiser):
         # Return an x,y,3 by default i.e. rgb, for safety, since in the absence of data we may not know how the texture's colorfmt is set
         return np.ones((x, y, 3), dtype=np.uint8) * 128  # TODO: Hardcoded midway (grey) value
 
-    # TODO: There can be methods which better choose the best frame, or which create a visualisation which
-    # respects the time_window parameter
     def get_frame(self, time, timeWindow, **kwargs):
         data = self._data
         image = data.get_data_at_time(time)
