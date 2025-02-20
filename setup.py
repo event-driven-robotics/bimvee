@@ -11,7 +11,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     
 setup(
   name = 'bimvee',
-  packages=['bimvee', 'bimvee.importRosbag', 'bimvee.importRosbag.importRosbag', 'bimvee.importRosbag.importRosbag.messageTypes', 'bimvee.visualisers', 'bimvee.importers', 'bimvee.importers.*'],
+  packages=['bimvee', 'bimvee.importRosbag', 'bimvee.importRosbag.importRosbag', 'bimvee.importRosbag.importRosbag.messageTypes', 'bimvee.visualisers', 'bimvee.importers', 'bimvee.importers.decoding'],
   version = '2.0.0',
   license='gpl',
   description = 'Batch Import, Manipulation, Visualisation and Export of Events etc',
