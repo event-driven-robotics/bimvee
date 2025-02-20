@@ -83,6 +83,7 @@ class ImporterBase:
     def get_full_data_as_dict(self):
         data_list = [self.get_data_at_time(ts, 0) for ts in self._timestamps]
         # merge list of dicts in one dict 
+        # TODO handle case with empty dict
         return {k: [d[k] for d in data_list] for k in data_list[0].keys()}
 
     def __len__(self):
