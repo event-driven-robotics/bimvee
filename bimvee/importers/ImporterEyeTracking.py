@@ -8,7 +8,7 @@ class ImporterEyeTracking(ImporterBase):
     def _do_indexing(self):        
         self._file_stream.seek(0)
         self._data = json.load(self._file_stream)
-        self._timestamps = [x['ts'] for x in self._data]
+        self._timestamps = np.array([x['ts'] for x in self._data])
 
     def get_data_type(self):
         return 'eyeTracking'
