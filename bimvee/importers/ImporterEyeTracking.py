@@ -1,9 +1,9 @@
-from .ImporterBase import ImporterBase
+from .ImporterBase import EditableImporterBase
 import json
 import numpy as np
 from scipy.interpolate import interp1d
 
-class ImporterEyeTracking(ImporterBase):
+class ImporterEyeTracking(EditableImporterBase):
 
     def _do_indexing(self):        
         self._file_stream.seek(0)

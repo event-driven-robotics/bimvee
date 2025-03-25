@@ -1,6 +1,7 @@
 import os
 import numpy as np
-import random
+from copy import deepcopy
+
 
 class ImporterBase:
     def __init__(self, dir=None, file=None):
@@ -22,7 +23,7 @@ class ImporterBase:
 
     def _do_indexing(self):
         raise NotImplementedError('Indexing must be implemented in derived Importer class')
-    
+
     def get_data_at_time(self, time, time_window=None, **kwargs):
         raise NotImplementedError('Data retrieval must be implemented in derived Importer class')
 
@@ -40,7 +41,7 @@ class ImporterBase:
                     return self._timestamps[idx]
                 else:
                     return self._timestamps[(idx - 1)]
-            else:    
+            else:
                 if self._timestamps[idx] > time:
                     return self._timestamps[idx]
                 else:
@@ -52,29 +53,24 @@ class ImporterBase:
         idx = np.searchsorted(self._timestamps, time)
         if ids_around_time == 0:
             try:
-                if abs(self._timestamps[idx - 1] - time) < abs(self._timestamps[idx ] - time):
+                if abs(self._timestamps[idx - 1] - time) < abs(self._timestamps[idx] - time):
                     idx -= 1
             except IndexError:
                 pass
             return min(idx, len(self._timestamps) - 1)
         else:
             return slice(max(0, idx - ids_around_time), min(len(self._timestamps), idx + ids_around_time))
-        
-    def insert_sorted(self, new_entry, timestamp):
-        insert_idx = np.searchsorted(self._timestamps, timestamp)
-        self._timestamps = np.insert(self._timestamps, insert_idx, timestamp)
-        self._data.insert(insert_idx, new_entry)
 
     def get_last_ts(self):
         return self._timestamps[-1]
-    
+
     def get_first_ts(self):
         return self._timestamps[0]
-    
+
     @property
     def ts_offset(self):
         return self._ts_offset
-    
+
     @ts_offset.setter
     def ts_offset(self, ts_offset):
         self._timestamps -= ts_offset
@@ -82,14 +78,57 @@ class ImporterBase:
 
     def get_full_data_as_dict(self):
         data_list = [self.get_data_at_time(ts, 0) for ts in self._timestamps]
-        # merge list of dicts in one dict 
+        # merge list of dicts in one dict
         # TODO handle case with empty dict
         return {k: [d[k] for d in data_list] for k in data_list[0].keys()}
 
     def __len__(self):
         return len(self._timestamps)
+
+
+class EditableImporterBase(ImporterBase):
+
+    def __init__(self, dir=None, file=None):
+        super().__init__(dir, file)
+        self._timestamps_histories = []
+        self._data_histories = []
+        self._history_idx = 0
+        self.update_history()
+
+    def delete_by_time(self, time):
+        self.delete_by_index(self.get_idx_at_time(time))  # TODO check if time is close enough to timestamp
+
+    def delete_by_index(self, idx):
+        self._data.pop(idx)
+        self._timestamps = np.delete(self._timestamps, idx)
+        self.update_history()
+
+    def undo(self):
+        self._history_idx = max(0, self._history_idx - 1)
+        self.recover_history(self._history_idx)
+
+    def redo(self):
+        self._history_idx = min(len(self._timestamps_histories) - 1, self._history_idx + 1)
+        self.recover_history(self._history_idx)
+
+    def update_history(self):
+        self._timestamps_histories = self._timestamps_histories[:self._history_idx + 1]
+        self._data_histories = self._data_histories[:self._history_idx + 1]
+        self._timestamps_histories.append(deepcopy(self._timestamps))
+        self._data_histories.append(deepcopy(self._data))
+        self._history_idx = len(self._timestamps_histories) - 1
+
+    def recover_history(self, idx):
+        self._timestamps = deepcopy(self._timestamps_histories[idx])
+        self._data = deepcopy(self._data_histories[idx])
+
+    def insert_sorted(self, new_entry, timestamp):
+        insert_idx = np.searchsorted(self._timestamps, timestamp)
+        self._timestamps = np.insert(self._timestamps, insert_idx, timestamp)
+        self._data.insert(insert_idx, new_entry)
+
 class ImporterEventsBase(ImporterBase):
-    
+
     def __init__(self, dir, file):
         self._bitstrings = []
         super().__init__(dir, file)
@@ -120,7 +159,7 @@ class ImporterEventsBase(ImporterBase):
         data_idx_start = self.get_idx_at_time(time - time_window / 2)
         data_idx_end = self.get_idx_at_time(self._timestamps[data_idx_start] + time_window)
         return data_idx_start, data_idx_end
-    
+
     def get_dims(self):
         if not hasattr(self, '_dimX'):
             self._dimX = 0
@@ -131,10 +170,10 @@ class ImporterEventsBase(ImporterBase):
                 self._dimX = max(self._dimX, max(events_dict['x']) + 1)
                 self._dimY = max(self._dimY, max(events_dict['y']) + 1)
         return self._dimX, self._dimY
-    
+
     def get_data_type(self):
         return 'dvs'
-    
+
     @staticmethod
     def _decode_events(bitstring_array, timestamps):
         raise NotImplementedError("Event decoding function must be implemented in child class")
