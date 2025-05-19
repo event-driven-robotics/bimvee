@@ -21,32 +21,85 @@ within a certain spatio-temporal window.
 
 import numpy as np
 
-def filter_spatiotemporal_single(events, time_window=0.05, neighbourhood=1):
-    xs = events['x']
-    ys = events['y']
-    ts = events['ts']
-    pol = events['pol']
+# def filter_spatiotemporal_single(events, time_window=0.05, neighbourhood=1):
+#     xs = events['x']
+#     ys = events['y']
+#     ts = events['ts']
+#     pol = events['pol']
  
+#     offset_neg = neighbourhood
+#     offset_pos = neighbourhood + 1
+    
+#     xs = xs + neighbourhood
+#     ys = ys + neighbourhood
+#     keep = np.zeros_like(ts, dtype=bool)
+#     last_ts = np.full((np.max(ys) + neighbourhood * 2, 
+#                        np.max(xs) +  + neighbourhood * 2), 
+#                       -np.inf)
+#     for i, (x, y, t) in enumerate(zip(xs, ys, ts)):
+#         if t - last_ts[y, x] <= time_window:
+#             keep[i] = True
+#         last_ts[y - offset_neg : y + offset_pos, 
+#                 x - offset_neg : x + offset_pos] = t #update
+#     return {
+#         'x' : events['x'][keep],
+#         'y' : events['y'][keep],
+#         'ts' : events['ts'][keep],
+#         'pol' : events['pol'][keep],
+#         }
+
+
+
+def filter_spatiotemporal_single(events, time_window=0.01, neighbourhood=0):
+    """
+    Filters DVS events using a spatio-temporal consistency check.
+    
+    An event is kept only if a previous event occurred in its spatial neighborhood
+    within a defined time window.
+
+    Parameters:
+        events (dict): Dictionary with 'x', 'y', 'ts', 'pol'.
+        time_window (float): Maximum time difference (in seconds) for an event to be considered consistent.
+        neighbourhood (int): Number of pixels in each direction for spatial neighborhood.
+
+    Returns:
+        dict: Filtered events.
+    """
+    xs = np.array(events['x'])
+    ys = np.array(events['y'])
+    ts = np.array(events['ts'])
+
+    # Shift coordinates to allow for neighborhood offset
+    xs_shifted = xs + neighbourhood
+    ys_shifted = ys + neighbourhood
+
+    # Create last timestamp matrix padded for neighborhood
+    max_x = np.max(xs_shifted) + neighbourhood + 1
+    max_y = np.max(ys_shifted) + neighbourhood + 1
+    last_ts = np.full((max_y, max_x), -np.inf)
+
+    keep = np.zeros_like(ts, dtype=bool)
+
+    # Define offset for neighborhood indexing
     offset_neg = neighbourhood
     offset_pos = neighbourhood + 1
-    
-    xs = xs + neighbourhood
-    ys = ys + neighbourhood
-    keep = np.zeros_like(ts, dtype=bool)
-    last_ts = np.full((np.max(ys) + neighbourhood * 2, 
-                       np.max(xs) +  + neighbourhood * 2), 
-                      -np.inf)
-    for i, (x, y, t) in enumerate(zip(xs, ys, ts)):
+
+    for i, (x, y, t) in enumerate(zip(xs_shifted, ys_shifted, ts)):
+        # Check if a previous event occurred recently at the same or neighboring location
         if t - last_ts[y, x] <= time_window:
             keep[i] = True
-        last_ts[y - offset_neg : y + offset_pos, 
-                x - offset_neg : x + offset_pos] = t #update
+
+        # Update the timestamps in the local neighborhood
+        last_ts[y - offset_neg : y + offset_pos,
+                x - offset_neg : x + offset_pos] = t
+
+    # Return only the events that passed the filter
     return {
-        'x' : events['x'][keep],
-        'y' : events['y'][keep],
-        'ts' : events['ts'][keep],
-        'pol' : events['pol'][keep],
-        }
+        'x': xs[keep],
+        'y': ys[keep],
+        'ts': ts[keep],
+        'pol': np.array(events['pol'])[keep],
+    }
 
 def filter_spatiotemporal(in_dict, **kwargs):
     # check to see if this is dvs type:
