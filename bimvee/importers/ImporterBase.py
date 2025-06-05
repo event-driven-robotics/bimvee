@@ -76,8 +76,13 @@ class ImporterBase:
         self._timestamps -= ts_offset
         self._ts_offset = ts_offset
 
-    def get_full_data_as_dict(self):
-        data_list = [self.get_data_at_time(ts, 0) for ts in self._timestamps]
+    def get_full_data_as_dict(self, **kwargs):
+        interpolate = kwargs.get('interpolate', False)
+        if interpolate:
+            timestamps = np.arange(self.get_first_ts(), self.get_last_ts(), kwargs.get('time_step', 0.01))
+        else:
+            timestamps = self._timestamps
+        data_list = [self.get_data_at_time(ts, 0, **kwargs) for ts in timestamps]
         # merge list of dicts in one dict
         # TODO handle case with empty dict
         return {k: [d[k] for d in data_list] for k in data_list[0].keys()}
