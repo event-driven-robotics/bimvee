@@ -62,3 +62,24 @@ def decode_events(bitstrings, timestamps):
     y = np.uint16(concatenated_bitstrings >> 12 & 0x3FF)
     ch = np.uint8(concatenated_bitstrings >> 23 & 0x01) #TODO check if channel is useful
     return pol, x, y, ts
+
+
+def decode_events_v1(bitstrings, timestamps):
+    assert len(bitstrings) == len(timestamps)
+    pol = ~np.array(bitstrings & 0x01, dtype=bool)  # We want True=ON=brighter, False=OFF=darker, so we negate
+    x = np.uint16(bitstrings >> 1 & 0x7FF)
+    y = np.uint16(bitstrings >> 12 & 0x3FF)
+    ch = np.uint8(bitstrings >> 23 & 0x01) #TODO check if channel is useful
+    return pol, x, y, timestamps
+
+def extract_events_from_data_file_v1(data_file):
+    eventsToDecode = []
+    timestamps = []
+    pattern = re.compile('\d+ \d+.\d+ AE \((.*)\)')
+    for c in data_file:
+        found = pattern.findall(c)
+        reshaped_data = np.reshape(found[0].split(' '), (-1,2)).astype(int)
+        timestamps.append(reshaped_data[:, 0])
+        eventsToDecode.append(reshaped_data[:, 1])
+        
+    return np.concatenate(timestamps) * 80e-9 , np.concatenate(eventsToDecode)

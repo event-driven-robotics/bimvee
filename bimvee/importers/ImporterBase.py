@@ -186,10 +186,8 @@ class ImporterEventsBase(ImporterBase):
     def get_data_type(self):
         return 'dvs'
 
-    @staticmethod
-    def _decode_events(bitstring_array, timestamps):
+    def _decode_events(self, bitstring_array, timestamps):
         raise NotImplementedError("Event decoding function must be implemented in child class")
 
-    @staticmethod
-    def _extract_events_from_data_file(file_stream):
+    def _extract_events_from_data_file(self, file_stream):
         raise NotImplementedError("Event extraction from file function must be implemented in child class")
