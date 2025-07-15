@@ -708,6 +708,7 @@ def importIitYarpDataLog(**kwargs):
         eventsToDecode = []
         timestamps = []
         check_if_with_ts = False
+        with_ts: bool = True
         for c in tqdm(content):
             firstQuoteIdx = c.find(b'\"')
             lastQuoteIdx = c[::-1].find(b'\"')
@@ -716,7 +717,10 @@ def importIitYarpDataLog(**kwargs):
             bitStrings = np.frombuffer(fromStringNested(data), np.uint32)
             if not check_if_with_ts:
                 with_ts = np.all(sorted(bitStrings[::2]) == bitStrings[::2])
-                check_if_with_ts = True
+                if not with_ts:
+                    check_if_with_ts = True
+                    break
+
             eventsToDecode.append(bitStrings)
             timestamps += [float(ts) / 0.000001]*len(bitStrings)
         if with_ts:
