@@ -707,22 +707,20 @@ def importIitYarpDataLog(**kwargs):
             content = file.readlines()
         eventsToDecode = []
         timestamps = []
-        check_if_with_ts = False
-        with_ts: bool = True
         for c in tqdm(content):
             firstQuoteIdx = c.find(b'\"')
             lastQuoteIdx = c[::-1].find(b'\"')
             bottleNum, ts, bottleType, _ = c[:firstQuoteIdx - 1].decode().split(' ')
             data = c[firstQuoteIdx + 1:-(lastQuoteIdx + 1)]
             bitStrings = np.frombuffer(fromStringNested(data), np.uint32)
-            if not check_if_with_ts:
-                with_ts = np.all(sorted(bitStrings[::2]) == bitStrings[::2])
-                if not with_ts:
-                    check_if_with_ts = True
-                    break
-
             eventsToDecode.append(bitStrings)
             timestamps += [float(ts) / 0.000001]*len(bitStrings)
+
+        events: np.ndarray = np.concatenate(eventsToDecode)
+        with_ts: bool = False
+        # Check if 1) shape size is even number, and 2) 1% (hard-corded for lower processing time) events have sorted timestamps.
+        if events.shape[0] % 2 == 0 and np.all(sorted(events[:int(events.shape[0]*0.01):2]) == events[:int(events.shape[0]*0.01):2]):
+            with_ts = True
         if with_ts:
             outDict = decodeEvents(np.reshape(np.concatenate(eventsToDecode), (-1, 2)))
         else:
