@@ -722,9 +722,9 @@ def importIitYarpDataLog(**kwargs):
         if events.shape[0] % 2 == 0 and np.all(sorted(events[:int(events.shape[0]*0.01):2]) == events[:int(events.shape[0]*0.01):2]):
             with_ts = True
         if with_ts:
-            outDict = decodeEvents(np.reshape(np.concatenate(eventsToDecode), (-1, 2)))
+            outDict = decodeEvents(np.reshape(events, (-1, 2)))
         else:
-            outDict = decodeEvents(np.vstack((timestamps, np.concatenate(eventsToDecode))).swapaxes(0, 1).astype(int))
+            outDict = decodeEvents(np.vstack((timestamps, events)).swapaxes(0, 1).astype(int))
         del content
         return importPostProcessing(outDict, **kwargs)
 
