@@ -75,7 +75,6 @@ from .timestamps import unwrapTimestamps, zeroTimestampsForAChannel, rezeroTimes
 from .split import selectByLabel
 from bimvee.importBoundingBoxes import importBoundingBoxes
 from bimvee.importSkeleton import importSkeleton
-from bimvee.importEyeTracking import importEyeTracking
 from tqdm import tqdm
 
 def decodeEvents(data, **kwargs):
@@ -164,7 +163,7 @@ def decodeEvents(data, **kwargs):
             y = np.uint16(dataDvs[:, 1] & 0xFF)
             dataDvs[:, 1] >>= 10
         else:  # 24bit - default
-            x = np.uint16(dataDvs[:, 1] & 0x7FF)
+            x = np.uint16(dataDvs[:, 1] & 0x3FF)
             dataDvs[:, 1] >>= 11
             y = np.uint16(dataDvs[:, 1] & 0x3FF)
             dataDvs[:, 1] >>= 10
@@ -709,6 +708,7 @@ def importIitYarpDataLog(**kwargs):
         eventsToDecode = []
         timestamps = []
         check_if_with_ts = False
+        bitString_accum = []
         for c in tqdm(content):
             firstQuoteIdx = c.find(b'\"')
             lastQuoteIdx = c[::-1].find(b'\"')
@@ -716,8 +716,11 @@ def importIitYarpDataLog(**kwargs):
             data = c[firstQuoteIdx + 1:-(lastQuoteIdx + 1)]
             bitStrings = np.frombuffer(fromStringNested(data), np.uint32)
             if not check_if_with_ts:
-                with_ts = np.all(sorted(bitStrings[::2]) == bitStrings[::2])
-                check_if_with_ts = True
+                bitString_accum.extend(bitStrings)
+                if len(bitString_accum) > 20:
+                    timestamps_to_check = np.array(bitString_accum[::2], dtype=np.int64)
+                    with_ts = np.all(np.diff(timestamps_to_check) >= 0)
+                    check_if_with_ts = True
             eventsToDecode.append(bitStrings)
             timestamps += [float(ts) / 0.000001]*len(bitStrings)
         if with_ts:
@@ -801,8 +804,6 @@ def importIitYarpRecursive(**kwargs):
             tsOffset = importIitYarpInfoLog(**kwargs)
         if file == 'ground_truth.csv':
             boundingBoxes = importBoundingBoxes(**kwargs)
-        if file == 'gt.json':
-            eyes = importEyeTracking(**kwargs)
         if file == 'skeleton.json':
             skeleton = importSkeleton(**kwargs)
     if len(importedDicts) == 0:
@@ -814,8 +815,6 @@ def importIitYarpRecursive(**kwargs):
         addGroundTruth(boundingBoxes, importedDicts, 'boundingBoxes')
     if skeleton is not None:
         addGroundTruth(skeleton, importedDicts, 'skeleton')
-    if eyes is not None:
-        addGroundTruth(eyes, importedDicts, 'eyeTracking')
     return importedDicts
 
 
