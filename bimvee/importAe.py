@@ -87,39 +87,43 @@ def importAe(filePathOrName):
             ext = os.path.splitext(f)[-1]
             importer = None
             # Detect datatype based on filename 
-            if f == 'data.log':
-                from .importers.ImporterDataLog import ImporterDataLog
-                importer = ImporterDataLog(dir, f)
-            elif f == 'timestamps.txt':
-                from .importers.ImporterFrames import ImporterFrames
-                importer = ImporterFrames(dir, f)
-            # Detect datatype based on extension
-            elif ext == '.dat' or ext == '.raw':
-                from .importers.ImporterProph import ImporterProph
-                importer = ImporterProph(dir, f)
-            elif ext == '.bag':
-                from .importers.ImporterRosBag import generateRosBagImporters
-                rosbagImporters = generateRosBagImporters(dir, f)
-                ch_dict.update(rosbagImporters)
-                for x in rosbagImporters.values():
-                    importers.append(x)
-            elif ext == '.bin':
-                from .importers.ImporterSecDVS import ImporterSecDVS
-                importer = ImporterSecDVS(dir, f)
-            elif ext == '.aer2':
-                from .importers.ImporterAER2 import ImporterAER2
-                importer = ImporterAER2(dir, f)
-            elif ext == '.aerdat':
-                from .importers.ImporterAERDat import ImporterAERDat
-                importer = ImporterAERDat(dir, f)
-            elif ext == '.es':
-                from .importers.ImporterEs import ImporterEs
-                importer = ImporterEs(dir, f)
-            for gt in gt_candidate_names:
-                if gt == f:
-                    #TODO add gt type detection
-                    from .importers.ImporterEyeTracking import ImporterEyeTracking
-                    importer = ImporterEyeTracking(dir, f)
+            try:
+                if f == 'data.log':
+                    from .importers.ImporterDataLog import ImporterDataLog
+                    importer = ImporterDataLog(dir, f)
+                elif f == 'timestamps.txt':
+                    from .importers.ImporterFrames import ImporterFrames
+                    importer = ImporterFrames(dir, f)
+                # Detect datatype based on extension
+                elif ext == '.dat' or ext == '.raw':
+                    from .importers.ImporterProph import ImporterProph
+                    importer = ImporterProph(dir, f)
+                elif ext == '.bag':
+                    from .importers.ImporterRosBag import generateRosBagImporters
+                    rosbagImporters = generateRosBagImporters(dir, f)
+                    ch_dict.update(rosbagImporters)
+                    for x in rosbagImporters.values():
+                        importers.append(x)
+                elif ext == '.bin':
+                    from .importers.ImporterSecDVS import ImporterSecDVS
+                    importer = ImporterSecDVS(dir, f)
+                elif ext == '.aer2':
+                    from .importers.ImporterAER2 import ImporterAER2
+                    importer = ImporterAER2(dir, f)
+                elif ext == '.aerdat':
+                    from .importers.ImporterAERDat import ImporterAERDat
+                    importer = ImporterAERDat(dir, f)
+                elif ext == '.es':
+                    from .importers.ImporterEs import ImporterEs
+                    importer = ImporterEs(dir, f)
+                for gt in gt_candidate_names:
+                    if gt == f:
+                        #TODO add gt type detection
+                        from .importers.ImporterEyeTracking import ImporterEyeTracking
+                        importer = ImporterEyeTracking(dir, f)
+            except Exception as e:
+                print("Error importing " + os.path.join(dir, f) + ": " + str(e))
+                continue
             if importer is not None:
                 importers.append(importer)
                 ch_dict[importer.get_data_type()] = importer
