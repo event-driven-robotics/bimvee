@@ -18,6 +18,13 @@ Important! If you clone this repo, use --recurse-submodules option, as this repo
 
 ## Usage
 
+The easiest approach to import your data is to use the importAE function as such:
+```
+from bimvee.importAe import importAe
+importers_dict = importAe("/path/to/your/data") 
+```
+Where ``/path/to/your/data`` needs to be replaced with the path of a compatible file or a folder (in which case all subfolders will be searched recursively for compatible data)
+
 Look at [examples.py](https://github.com/event-driven-robotics/bimvee/blob/master/examples/examples.py) for examples of how to use the functionality in this library.
 
 Want to play back your timestamped multi-channel data? Consider using https://github.com/event-driven-robotics/mustard
