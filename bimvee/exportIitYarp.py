@@ -231,7 +231,7 @@ def exportDvs(dataFile, data, bottleNumber, **kwargs):
         pbar.update(nextPtr - ptr)
         if exportAsEv2:
             eventData = eventsAsListOfInts[ptr * 2: nextPtr * 2]
-            if not kwargs.get('exportTimestamps', True):
+            if not kwargs.get('exportTimestamps', False):
                 eventData = eventData[1::2]
 
             eventData = toStringNested(eventData.tobytes())
