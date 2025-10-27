@@ -61,6 +61,13 @@ class ImporterBase:
         else:
             return slice(max(0, idx - ids_around_time), min(len(self._timestamps), idx + ids_around_time))
 
+    def _get_time_window_as_idx_range(self, time, time_window):
+        data_idx_start = self.get_idx_at_time(time - time_window / 2)
+        data_idx_end = self.get_idx_at_time(self._timestamps[data_idx_start] + time_window)
+        if data_idx_end == data_idx_start:
+            data_idx_end += 1
+        return data_idx_start, data_idx_end
+
     def get_last_ts(self):
         return self._timestamps[-1]
 
@@ -159,14 +166,6 @@ class ImporterEventsBase(ImporterBase):
         new_dict['pol'] = pol
         new_dict['ts'] = ts
         return new_dict
-
-    def _get_time_window_as_idx_range(self, time, time_window):
-        data_idx_start = self.get_idx_at_time(time - time_window / 2)
-        data_idx_end = self.get_idx_at_time(self._timestamps[data_idx_start] + time_window)
-        if data_idx_end == data_idx_start:
-            data_idx_end += 1
-        return data_idx_start, data_idx_end
-
 
     def get_full_data_as_dict(self):
         out_dict = super().get_full_data_as_dict()

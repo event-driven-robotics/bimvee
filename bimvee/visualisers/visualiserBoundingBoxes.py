@@ -46,11 +46,9 @@ class VisualiserBoundingBoxes(Visualiser):
     def get_frame(self, time, timeWindow, **kwargs):
         if self._data is None or not kwargs.get('show_bounding_boxes', True):
             return None
-        gt_bb = self._data.get_data_at_time(time, timeWindow, **kwargs)
-        indices = abs(gt_bb['ts'] - time) < timeWindow
-        if not indices.any():
-            if not kwargs.get('interpolate'):
-                return None
+        return self._data.get_data_at_time(time, timeWindow, **kwargs)
+        
+        
         if kwargs.get('interpolate'):
             boxes = []
             for label in np.unique(gt_bb['label']):

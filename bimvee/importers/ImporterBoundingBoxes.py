@@ -1,9 +1,9 @@
-from .ImporterBase import ImporterBase
+from .ImporterBase import EditableImporterBase
 import json
 import numpy as np
 from scipy.interpolate import interp1d
 
-class ImporterBoundingBoxes(ImporterBase):
+class ImporterBoundingBoxes(EditableImporterBase):
 
     def _do_indexing(self):        
         self._file_stream.seek(0)
@@ -29,7 +29,8 @@ class ImporterBoundingBoxes(ImporterBase):
                 return None
             if np.abs(self._timestamps[data_idx] - time) > time_window:
                 return None
-            return self._data[data_idx]
+            data_idx_start, data_idx_end = self._get_time_window_as_idx_range(time, time_window)
+            return {k: [x[k] for x in self._data[data_idx_start:data_idx_end]] for k in self._data[0].keys()}
         else:
             ids_to_interpolate = self.get_idx_at_time(time, 1)
             data_to_interpolate = self._data[ids_to_interpolate]
