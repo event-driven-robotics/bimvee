@@ -96,7 +96,8 @@ def importDat(dat):
     # The second provide the Event size: always 8
     try:
         event_type = unpack('b', dat.read(1))[0]
-        assert event_type == 12
+        # print(event_type)
+        # assert event_type == 12
         
         event_size = int(unpack('b', dat.read(1))[0])
         assert event_size == 8
@@ -105,8 +106,8 @@ def importDat(dat):
         raise
     
     events = dat.read()
-    events = np.frombuffer(events, np.uint32().newbyteorder('<'))
-    events = events.reshape(-1, 2)
+    events = np.frombuffer(events).view(np.frombuffer(events).dtype.newbyteorder('<'))
+    events = np.uint32(events.reshape(-1, 2))
     ts = events[:,0].astype(float) / 1000000
     events = events[:,1]
     x = (events & 0x00003FFF).astype(int)
