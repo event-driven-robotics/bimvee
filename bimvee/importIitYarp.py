@@ -703,8 +703,23 @@ def importIitYarpDataLog(**kwargs):
                     continue
                 line = file.readline()
     except UnicodeDecodeError:
+        if importToByte is not None:
+            importToByte += importFromByte
         with open(kwargs['filePathOrName'], 'rb') as file:
-            content = file.readlines()
+            file.seek(importFromByte)
+            content = []
+            pos = 0
+            last_pos = 0
+            while True:
+                pos = file.tell()
+                if importToByte is not None and pos > importToByte:
+                    break
+                line = file.readline()
+                if not line:
+                    break
+                content.append(line)
+                last_pos = pos
+            importedToByte = last_pos - 1
         eventsToDecode = []
         timestamps = []
         check_if_with_ts = False
@@ -728,6 +743,7 @@ def importIitYarpDataLog(**kwargs):
         else:
             outDict = decodeEvents(np.vstack((timestamps, np.concatenate(eventsToDecode))).swapaxes(0, 1).astype(int))
         del content
+        kwargs['importedToByte'] = importedToByte
         return importPostProcessing(outDict, **kwargs)
 
 
